@@ -1,0 +1,1074 @@
+{
+	"info": {
+		"_postman_id": "phase5-review-system",
+		"name": "Phase 5 - Review System (25 APIs)",
+		"description": "Complete Postman collection for Phase 5: Bidding, Review, COI, and Assignment APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost/qly_hthao/qlyhoithao/public/api",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "conference_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "paper_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "reviewer_id",
+			"value": "5",
+			"type": "string"
+		},
+		{
+			"key": "assignment_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "review_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "coi_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "0. Authentication (Setup)",
+			"item": [
+				{
+					"name": "Login as Reviewer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Reviewer logged in successfully');",
+									"    console.log('Token:', jsonData.data.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"reviewer@huit.edu.vn\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Chair",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Chair logged in successfully');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"chair@huit.edu.vn\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('jwt_token', jsonData.data.access_token);",
+									"    console.log('✅ Admin logged in successfully');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@huit.edu.vn\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "1. Bidding System (6 APIs)",
+			"item": [
+				{
+					"name": "1.1 View Available Papers for Bidding",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/bidding/available-papers?conference_id={{conference_id}}&per_page=20",
+							"host": ["{{base_url}}"],
+							"path": ["bidding", "available-papers"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								},
+								{
+									"key": "per_page",
+									"value": "20"
+								},
+								{
+									"key": "keywords",
+									"value": "machine learning",
+									"disabled": true
+								},
+								{
+									"key": "track_id",
+									"value": "1",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Reviewer views papers available for bidding.\n\nFilters:\n- conference_id: Required\n- keywords: Filter by paper keywords\n- track_id: Filter by track\n- submitted_after: Filter by submission date\n- per_page: Pagination (default 20)"
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Submit Bidding - EAGER",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paper_id\": {{paper_id}},\n    \"bidding_code\": \"EAGER\",\n    \"note\": \"This paper aligns perfectly with my research expertise in machine learning and neural networks.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/papers/{{paper_id}}/bid",
+							"host": ["{{base_url}}"],
+							"path": ["papers", "{{paper_id}}", "bid"]
+						},
+						"description": "Submit bidding for a paper.\n\nBidding Codes:\n- EAGER: Very interested (Score: 4)\n- WILLING: Willing to review (Score: 3)\n- NEUTRAL: Neutral (Score: 2)\n- UNWILLING: Prefer not to\n- CONFLICT: Conflict of interest (auto-creates COI)"
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Submit Bidding - WILLING",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paper_id\": 2,\n    \"bidding_code\": \"WILLING\",\n    \"note\": \"I can review this paper on data mining.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/papers/2/bid",
+							"host": ["{{base_url}}"],
+							"path": ["papers", "2", "bid"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Submit Bidding - CONFLICT (Auto-COI)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paper_id\": 3,\n    \"bidding_code\": \"CONFLICT\",\n    \"note\": \"Author is my PhD advisor - clear conflict of interest.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/papers/3/bid",
+							"host": ["{{base_url}}"],
+							"path": ["papers", "3", "bid"]
+						},
+						"description": "When bidding_code=CONFLICT, system automatically creates COI record."
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 View My Biddings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/my-biddings?conference_id={{conference_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["my-biddings"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								},
+								{
+									"key": "bidding_code",
+									"value": "EAGER",
+									"disabled": true
+								}
+							]
+						},
+						"description": "View all my submitted biddings.\n\nFilters:\n- conference_id: Optional\n- bidding_code: Filter by specific code"
+					},
+					"response": []
+				},
+				{
+					"name": "1.4 Update Bidding",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"bidding_code\": \"WILLING\",\n    \"note\": \"Changed to WILLING after reviewing abstract more carefully.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/biddings/{{paper_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["biddings", "{{paper_id}}"]
+						},
+						"description": "Update existing bidding.\n\nNote: Cannot update if already assigned to paper."
+					},
+					"response": []
+				},
+				{
+					"name": "1.5 Withdraw Bidding",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/biddings/{{paper_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["biddings", "{{paper_id}}"]
+						},
+						"description": "Withdraw bidding.\n\nNote: Cannot withdraw if already assigned."
+					},
+					"response": []
+				},
+				{
+					"name": "1.6 Bidding Statistics (Admin/Chair)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/bidding/statistics?conference_id={{conference_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["bidding", "statistics"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								}
+							]
+						},
+						"description": "Get bidding statistics.\n\nIncludes:\n- Total biddings\n- Breakdown by code\n- Participation rate\n- Papers with/without bids\n- Avg bids per paper/reviewer"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Assignment System (7 APIs)",
+			"item": [
+				{
+					"name": "2.1 Manual Assignment (Chair)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('assignment_id', jsonData.data.assignment_id);",
+									"    console.log('✅ Assignment created:', jsonData.data.assignment_id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paper_id\": {{paper_id}},\n    \"reviewer_id\": {{reviewer_id}},\n    \"deadline\": \"2025-02-28 23:59:59\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assignments",
+							"host": ["{{base_url}}"],
+							"path": ["assignments"]
+						},
+						"description": "Manually assign reviewer to paper.\n\nValidations:\n- Reviewer cannot be paper author\n- No confirmed COI\n- No duplicate assignment\n\nPermission: Admin, Chair"
+					},
+					"response": []
+				},
+				{
+					"name": "2.2 Auto-Assignment Algorithm ⭐",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    console.log('✅ Auto-assignment completed!');",
+									"    console.log('Total assignments:', jsonData.data.total_assignments);",
+									"    console.log('Errors:', jsonData.data.errors.length);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"conference_id\": {{conference_id}},\n    \"reviewers_per_paper\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assignments/auto-assign",
+							"host": ["{{base_url}}"],
+							"path": ["assignments", "auto-assign"]
+						},
+						"description": "**SMART AUTO-ASSIGNMENT ALGORITHM**\n\nHow it works:\n1. Get papers needing reviewers\n2. Score biddings:\n   - EAGER = 4\n   - WILLING = 3\n   - NEUTRAL = 2\n   - UNWILLING = 1 (excluded)\n   - CONFLICT = 0 (excluded)\n3. Calculate workload per reviewer\n4. Adjust score: base_score - (workload × 0.5)\n5. Exclude: authors, COI, already assigned\n6. Rank & assign top N reviewers\n\nReturns: assignments[], errors[]\n\nPermission: Admin, Chair"
+					},
+					"response": []
+				},
+				{
+					"name": "2.3 View Paper Assignments (Chair)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/papers/{{paper_id}}/assignments",
+							"host": ["{{base_url}}"],
+							"path": ["papers", "{{paper_id}}", "assignments"]
+						},
+						"description": "View all reviewer assignments for a paper.\n\nShows:\n- Reviewer details\n- Assignment status\n- Review submission status\n- Deadlines\n\nPermission: Admin, Chair, Paper Authors"
+					},
+					"response": []
+				},
+				{
+					"name": "2.4 View My Assignments (Reviewer)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/my-assignments?conference_id={{conference_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["my-assignments"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								},
+								{
+									"key": "status",
+									"value": "INVITED",
+									"disabled": true
+								}
+							]
+						},
+						"description": "View all my assignments as reviewer.\n\nFilters:\n- conference_id: Optional\n- status: INVITED, ACCEPTED, DECLINED, REVIEWED\n\nIncludes:\n- Paper details\n- Deadline tracking\n- My bidding preference\n- Review status"
+					},
+					"response": []
+				},
+				{
+					"name": "2.5 Accept Assignment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accept\": true,\n    \"note\": \"Happy to review this paper on machine learning architectures.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assignments/{{assignment_id}}/accept",
+							"host": ["{{base_url}}"],
+							"path": ["assignments", "{{assignment_id}}", "accept"]
+						},
+						"description": "Accept assignment.\n\nStatus: INVITED → ACCEPTED\n\nPermission: Assigned reviewer only"
+					},
+					"response": []
+				},
+				{
+					"name": "2.5 Decline Assignment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accept\": false,\n    \"note\": \"Current workload is too heavy, unable to commit to deadline.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assignments/{{assignment_id}}/accept",
+							"host": ["{{base_url}}"],
+							"path": ["assignments", "{{assignment_id}}", "accept"]
+						},
+						"description": "Decline assignment.\n\nStatus: INVITED → DECLINED\n\nPermission: Assigned reviewer only"
+					},
+					"response": []
+				},
+				{
+					"name": "2.6 Unassign Reviewer (Chair)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/assignments/{{assignment_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["assignments", "{{assignment_id}}"]
+						},
+						"description": "Remove reviewer assignment.\n\nNote: Cannot unassign if review already submitted.\n\nPermission: Admin, Chair"
+					},
+					"response": []
+				},
+				{
+					"name": "2.7 Assignment Statistics (Admin/Chair)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/assignment/statistics?conference_id={{conference_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["assignment", "statistics"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								}
+							]
+						},
+						"description": "Get assignment statistics.\n\nIncludes:\n- Total assignments\n- By status breakdown\n- Completion rate\n- Acceptance rate\n- Overloaded reviewers\n- Papers needing reviewers"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Review System (7 APIs)",
+			"item": [
+				{
+					"name": "3.1 Submit Review",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('review_id', jsonData.data.review_id);",
+									"    console.log('✅ Review submitted:', jsonData.data.review_id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assignment_id\": {{assignment_id}},\n    \"overall_rating\": 4,\n    \"recommendation_code\": \"MINOR_REVISION\",\n    \"confidence_level\": 4,\n    \"strengths\": \"1. Novel approach to neural network architecture\\n2. Comprehensive experimental results\\n3. Well-written and clear presentation\\n4. Strong theoretical foundation\",\n    \"weaknesses\": \"1. Limited comparison with recent state-of-art methods\\n2. Could benefit from additional ablation studies\\n3. Some implementation details missing\",\n    \"suggestions\": \"1. Add comparison with GPT-4 and recent transformer models\\n2. Include ablation study on key components\\n3. Provide code repository for reproducibility\\n4. Expand discussion on limitations\",\n    \"confidential_comments\": \"This is a strong paper with minor issues. Author shows deep understanding of the field.\",\n    \"is_draft\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reviews",
+							"host": ["{{base_url}}"],
+							"path": ["reviews"]
+						},
+						"description": "Submit review for assigned paper.\n\nFields:\n- overall_rating: 1-5 (required)\n- recommendation_code: ACCEPT, MINOR_REVISION, MAJOR_REVISION, REJECT\n- confidence_level: 1-5\n- strengths, weaknesses, suggestions: Text\n- confidential_comments: For chair only\n- is_draft: true = save as draft, false = submit\n\nValidations:\n- Must be ACCEPTED assignment\n- Cannot submit after deadline (with grace period)\n- One review per assignment"
+					},
+					"response": []
+				},
+				{
+					"name": "3.1 Save Review as Draft",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assignment_id\": {{assignment_id}},\n    \"overall_rating\": 3,\n    \"recommendation_code\": \"MAJOR_REVISION\",\n    \"confidence_level\": 3,\n    \"strengths\": \"Work in progress - will complete later\",\n    \"is_draft\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reviews",
+							"host": ["{{base_url}}"],
+							"path": ["reviews"]
+						},
+						"description": "Save review as draft (can edit later)."
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 List All Reviews (Admin/Chair)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reviews?conference_id={{conference_id}}&per_page=20",
+							"host": ["{{base_url}}"],
+							"path": ["reviews"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								},
+								{
+									"key": "paper_id",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "reviewer_id",
+									"value": "5",
+									"disabled": true
+								},
+								{
+									"key": "recommendation_code",
+									"value": "ACCEPT",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List all reviews (Admin/Chair only).\n\nFilters:\n- conference_id: Required\n- paper_id: Filter by paper\n- reviewer_id: Filter by reviewer\n- recommendation_code: Filter by recommendation"
+					},
+					"response": []
+				},
+				{
+					"name": "3.3 View Review Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reviews/{{review_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["reviews", "{{review_id}}"]
+						},
+						"description": "View specific review details.\n\nPermission:\n- Admin/Chair: See all reviews\n- Reviewer: See own reviews only"
+					},
+					"response": []
+				},
+				{
+					"name": "3.4 Update Review (Draft)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"overall_rating\": 5,\n    \"recommendation_code\": \"ACCEPT\",\n    \"confidence_level\": 5,\n    \"strengths\": \"Updated: Excellent paper with groundbreaking results\",\n    \"weaknesses\": \"Updated: Minor presentation issues only\",\n    \"suggestions\": \"Updated: Ready for publication with minor edits\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reviews/{{review_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["reviews", "{{review_id}}"]
+						},
+						"description": "Update existing review.\n\nNote: Cannot update if finalized (is_finalized=true)"
+					},
+					"response": []
+				},
+				{
+					"name": "3.5 View My Reviews (Reviewer)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/my-reviews?conference_id={{conference_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["my-reviews"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								}
+							]
+						},
+						"description": "View all my submitted reviews.\n\nShows:\n- Paper details\n- My ratings & recommendations\n- Submission date\n- Finalization status"
+					},
+					"response": []
+				},
+				{
+					"name": "3.6 Finalize Review (Chair)",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reviews/{{review_id}}/finalize",
+							"host": ["{{base_url}}"],
+							"path": ["reviews", "{{review_id}}", "finalize"]
+						},
+						"description": "Finalize review (lock editing).\n\nAfter finalization:\n- Reviewer cannot edit\n- Review can be shared with authors\n\nPermission: Admin, Chair"
+					},
+					"response": []
+				},
+				{
+					"name": "3.7 Review Statistics (Admin/Chair)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/review/statistics?conference_id={{conference_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["review", "statistics"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								}
+							]
+						},
+						"description": "Get review statistics.\n\nIncludes:\n- Total reviews\n- By recommendation breakdown\n- Avg ratings\n- On-time/late submissions\n- Completion rate"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. COI Management (6 APIs)",
+			"item": [
+				{
+					"name": "4.1 Declare COI Manually",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('coi_id', jsonData.data.coi_id);",
+									"    console.log('✅ COI declared:', jsonData.data.coi_id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paper_id\": {{paper_id}},\n    \"coi_code\": \"ADVISOR_STUDENT\",\n    \"description\": \"The paper author was my PhD advisor at Stanford University from 2018-2022.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/coi/declare",
+							"host": ["{{base_url}}"],
+							"path": ["coi", "declare"]
+						},
+						"description": "Manually declare conflict of interest.\n\nCOI Types:\n- AUTHOR_REVIEWER: Reviewer is also author\n- SAME_INSTITUTION: Same institution\n- COLLABORATION: Recent collaboration (<2 years)\n- ADVISOR_STUDENT: Advisor-student relationship\n- FAMILY_RELATION: Family member\n- FINANCIAL_INTEREST: Financial conflict\n\nPermission: Reviewer (self-declare)"
+					},
+					"response": []
+				},
+				{
+					"name": "4.1 Declare COI - Collaboration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paper_id\": 2,\n    \"coi_code\": \"COLLABORATION\",\n    \"description\": \"Co-authored 2 papers with the author in 2024.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/coi/declare",
+							"host": ["{{base_url}}"],
+							"path": ["coi", "declare"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 List Paper COIs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/papers/{{paper_id}}/cois",
+							"host": ["{{base_url}}"],
+							"path": ["papers", "{{paper_id}}", "cois"]
+						},
+						"description": "List all COIs for a specific paper.\n\nPermission: Admin, Chair, Paper Authors"
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 List All COIs (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/cois?conference_id={{conference_id}}&per_page=20",
+							"host": ["{{base_url}}"],
+							"path": ["cois"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								},
+								{
+									"key": "coi_code",
+									"value": "ADVISOR_STUDENT",
+									"disabled": true
+								},
+								{
+									"key": "resolution_status",
+									"value": "PENDING",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "20"
+								}
+							]
+						},
+						"description": "List all COIs in system.\n\nFilters:\n- conference_id: Required\n- coi_code: Filter by type\n- resolution_status: PENDING, CONFIRMED, REJECTED\n\nPermission: Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "4.4 Auto-Detect COI",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"conference_id\": {{conference_id}}\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/coi/detect",
+							"host": ["{{base_url}}"],
+							"path": ["coi", "detect"]
+						},
+						"description": "**AUTO-DETECT COI ALGORITHM**\n\nChecks:\n- Reviewer is also paper author (AUTHOR_REVIEWER)\n\nFuture enhancements:\n- Same institution check\n- Recent collaboration check\n- Co-authorship history\n\nPermission: Admin, Chair"
+					},
+					"response": []
+				},
+				{
+					"name": "4.5 Resolve COI - CONFIRM",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"decision\": \"CONFIRMED\",\n    \"note\": \"COI confirmed. Removing reviewer assignment.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/coi/{{coi_id}}/resolve",
+							"host": ["{{base_url}}"],
+							"path": ["coi", "{{coi_id}}", "resolve"]
+						},
+						"description": "Resolve COI - Confirm it's valid.\n\nActions:\n- Removes reviewer assignment\n- Updates bidding to CONFLICT\n- Blocks future assignments\n\nPermission: Admin, Chair"
+					},
+					"response": []
+				},
+				{
+					"name": "4.5 Resolve COI - REJECT",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"decision\": \"REJECTED\",\n    \"note\": \"COI claim is not valid. Collaboration was >5 years ago. Restoring assignment.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/coi/{{coi_id}}/resolve",
+							"host": ["{{base_url}}"],
+							"path": ["coi", "{{coi_id}}", "resolve"]
+						},
+						"description": "Resolve COI - Reject it (not valid).\n\nActions:\n- Restores reviewer assignment (if removed)\n- Allows reviewer to continue\n\nPermission: Admin, Chair"
+					},
+					"response": []
+				},
+				{
+					"name": "4.6 COI Statistics (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/coi/statistics?conference_id={{conference_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["coi", "statistics"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "{{conference_id}}"
+								}
+							]
+						},
+						"description": "Get COI statistics.\n\nIncludes:\n- Total COIs\n- By type breakdown\n- By resolution status\n- Auto-detected vs manual\n- Papers affected\n- Reviewers with COI"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Complete Workflow Test",
+			"item": [
+				{
+					"name": "Step 1: Reviewer Bids EAGER",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"paper_id\": {{paper_id}},\n    \"bidding_code\": \"EAGER\",\n    \"note\": \"Perfect match for my expertise!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/papers/{{paper_id}}/bid",
+							"host": ["{{base_url}}"],
+							"path": ["papers", "{{paper_id}}", "bid"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2: Chair Runs Auto-Assignment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"conference_id\": {{conference_id}},\n    \"reviewers_per_paper\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assignments/auto-assign",
+							"host": ["{{base_url}}"],
+							"path": ["assignments", "auto-assign"]
+						},
+						"description": "Should assign EAGER bidder with high priority!"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3: Reviewer Accepts Assignment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accept\": true,\n    \"note\": \"Happy to review!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/assignments/{{assignment_id}}/accept",
+							"host": ["{{base_url}}"],
+							"path": ["assignments", "{{assignment_id}}", "accept"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 4: Reviewer Submits Review",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assignment_id\": {{assignment_id}},\n    \"overall_rating\": 5,\n    \"recommendation_code\": \"ACCEPT\",\n    \"confidence_level\": 5,\n    \"strengths\": \"Excellent work!\",\n    \"weaknesses\": \"Minor issues only\",\n    \"suggestions\": \"Ready for publication\",\n    \"is_draft\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reviews",
+							"host": ["{{base_url}}"],
+							"path": ["reviews"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 5: Chair Finalizes Review",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reviews/{{review_id}}/finalize",
+							"host": ["{{base_url}}"],
+							"path": ["reviews", "{{review_id}}", "finalize"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

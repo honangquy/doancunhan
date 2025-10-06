@@ -1,0 +1,1232 @@
+{
+	"info": {
+		"_postman_id": "huit-conference-complete-2025",
+		"name": "HUIT Conference Management System - Complete (42 APIs)",
+		"description": "Complete API collection for HUIT Conference Management System\n\n**Phases Included:**\n- Phase 1: Database & Setup ✅\n- Phase 2: Authentication (7 APIs) ✅\n- Phase 3: Conference Management (22 APIs) ✅\n- Phase 4: Paper Management (13 APIs) ✅\n\n**Total: 42 APIs**\n\n**Base URL:** http://localhost/qly_hthao/qlyhoithao/public/api\n\n**Test Accounts:**\n- Admin: admin@huit.edu.vn / admin123\n- Chair: chair1@huit.edu.vn / password123\n- Author: author2@huit.edu.vn / password123\n- Reviewer: reviewer6@huit.edu.vn / password123\n\n**Usage:**\n1. Run \"1.2 Login Admin\" → Copy token\n2. Set {{token}} variable in Postman environment\n3. Test other APIs with Bearer token\n\n**Documentation:**\n- PHASE4_API_DOCS.md - Detailed API docs\n- PHASE4_QUICK.md - Quick reference\n- POSTMAN_GUIDE.md - Testing guide",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "huit-2025"
+	},
+	"item": [
+		{
+			"name": "1. Authentication (7 APIs)",
+			"item": [
+				{
+					"name": "1.1 Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Check API health status. No authentication required."
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set('token', jsonData.access_token);",
+									"    pm.environment.set('adminToken', jsonData.access_token);",
+									"    console.log('Admin token saved:', jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@huit.edu.vn\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login as Admin. Token will be auto-saved to {{token}} variable."
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 Login Chair",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set('token', jsonData.access_token);",
+									"    pm.environment.set('chairToken', jsonData.access_token);",
+									"    console.log('Chair token saved:', jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"chair1@huit.edu.vn\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login as Track Chair. Token will be auto-saved."
+					},
+					"response": []
+				},
+				{
+					"name": "1.4 Login Author",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set('token', jsonData.access_token);",
+									"    pm.environment.set('authorToken', jsonData.access_token);",
+									"    console.log('Author token saved:', jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"author2@huit.edu.vn\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login as Author (for paper submission)."
+					},
+					"response": []
+				},
+				{
+					"name": "1.5 Login Reviewer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set('token', jsonData.access_token);",
+									"    pm.environment.set('reviewerToken', jsonData.access_token);",
+									"    console.log('Reviewer token saved:', jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"reviewer6@huit.edu.vn\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login as Reviewer (for Phase 5)."
+					},
+					"response": []
+				},
+				{
+					"name": "1.6 Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Get current user profile. Requires authentication."
+					},
+					"response": []
+				},
+				{
+					"name": "1.7 Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"full_name\": \"Updated Name\",\n  \"organization\": \"HUIT - Updated\",\n  \"phone\": \"0901234567\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "profile"]
+						},
+						"description": "Update current user profile."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication & User Management APIs"
+		},
+		{
+			"name": "2. Conferences (7 APIs)",
+			"item": [
+				{
+					"name": "2.1 List Conferences (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conferences?status=OPEN&year=2025&per_page=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["conferences"],
+							"query": [
+								{
+									"key": "status",
+									"value": "OPEN",
+									"description": "Filter by status: OPEN, CLOSED, CANCELLED"
+								},
+								{
+									"key": "year",
+									"value": "2025",
+									"description": "Filter by year"
+								},
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Items per page"
+								}
+							]
+						},
+						"description": "List all conferences. Public access, no auth required."
+					},
+					"response": []
+				},
+				{
+					"name": "2.2 Get Conference Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conferences/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["conferences", "1"]
+						},
+						"description": "Get conference details by ID. Public access."
+					},
+					"response": []
+				},
+				{
+					"name": "2.3 Get Conference Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conferences/1/statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["conferences", "1", "statistics"]
+						},
+						"description": "Get conference statistics (tracks, papers, users). Public access."
+					},
+					"response": []
+				},
+				{
+					"name": "2.4 Create Conference (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"International Conference on AI 2026\",\n  \"year\": 2026,\n  \"start_date\": \"2026-12-01\",\n  \"end_date\": \"2026-12-03\",\n  \"deadline_submission\": \"2026-10-15\",\n  \"deadline_review\": \"2026-11-01\",\n  \"deadline_camera_ready\": \"2026-11-20\",\n  \"level_code\": \"INTERNATIONAL\",\n  \"faculty_id\": 1,\n  \"status\": \"OPEN\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conferences",
+							"host": ["{{baseUrl}}"],
+							"path": ["conferences"]
+						},
+						"description": "Create new conference. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "2.5 Update Conference (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Conference Title\",\n  \"status\": \"CLOSED\",\n  \"deadline_submission\": \"2026-11-01\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conferences/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["conferences", "1"]
+						},
+						"description": "Update conference. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "2.6 Delete Conference (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/conferences/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["conferences", "1"]
+						},
+						"description": "Delete conference (soft delete). Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "2.7 My Conferences (Chair)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{chairToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/my-conferences",
+							"host": ["{{baseUrl}}"],
+							"path": ["my-conferences"]
+						},
+						"description": "Get conferences where user is chair. Requires auth."
+					},
+					"response": []
+				}
+			],
+			"description": "Conference Management APIs"
+		},
+		{
+			"name": "3. Tracks (9 APIs)",
+			"item": [
+				{
+					"name": "3.1 List Tracks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/conferences/1/tracks",
+							"host": ["{{baseUrl}}"],
+							"path": ["conferences", "1", "tracks"]
+						},
+						"description": "List all tracks of a conference."
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 Create Track (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"track_name\": \"Blockchain & Web3\",\n  \"description\": \"Track về công nghệ Blockchain, Web3, và Cryptocurrency\",\n  \"chair_id\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conferences/1/tracks",
+							"host": ["{{baseUrl}}"],
+							"path": ["conferences", "1", "tracks"]
+						},
+						"description": "Create new track in conference. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "3.3 Get Track Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tracks/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["tracks", "1"]
+						},
+						"description": "Get track details with papers count."
+					},
+					"response": []
+				},
+				{
+					"name": "3.4 Update Track (Admin/Chair)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"track_name\": \"AI & Machine Learning - Updated\",\n  \"description\": \"Updated description for AI track\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tracks/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["tracks", "1"]
+						},
+						"description": "Update track. Admin or track chair only."
+					},
+					"response": []
+				},
+				{
+					"name": "3.5 Delete Track (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tracks/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["tracks", "1"]
+						},
+						"description": "Delete track (soft delete). Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "3.6 Get Track Papers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tracks/1/papers",
+							"host": ["{{baseUrl}}"],
+							"path": ["tracks", "1", "papers"]
+						},
+						"description": "Get all papers in a track."
+					},
+					"response": []
+				},
+				{
+					"name": "3.7 Get Track Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tracks/1/statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["tracks", "1", "statistics"]
+						},
+						"description": "Get track statistics (papers by status)."
+					},
+					"response": []
+				},
+				{
+					"name": "3.8 Assign Chair (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"chair_id\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tracks/1/assign-chair",
+							"host": ["{{baseUrl}}"],
+							"path": ["tracks", "1", "assign-chair"]
+						},
+						"description": "Assign or change track chair. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "3.9 My Tracks (Chair)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{chairToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/my-tracks",
+							"host": ["{{baseUrl}}"],
+							"path": ["my-tracks"]
+						},
+						"description": "Get tracks where user is chair."
+					},
+					"response": []
+				}
+			],
+			"description": "Track Management APIs"
+		},
+		{
+			"name": "4. Conference Requests (6 APIs)",
+			"item": [
+				{
+					"name": "4.1 List Requests (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/conference-requests?status=PENDING&per_page=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["conference-requests"],
+							"query": [
+								{
+									"key": "status",
+									"value": "PENDING"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						},
+						"description": "List all conference requests. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 Submit Request (Chair)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{chairToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Hội thảo Trí tuệ Nhân tạo 2026\",\n  \"year\": 2026,\n  \"start_date\": \"2026-12-10\",\n  \"end_date\": \"2026-12-12\",\n  \"deadline_submission\": \"2026-10-20\",\n  \"deadline_review\": \"2026-11-05\",\n  \"deadline_camera_ready\": \"2026-11-25\",\n  \"level_code\": \"INTERNATIONAL\",\n  \"notes\": \"Đề xuất tổ chức hội thảo quốc tế về AI với các chuyên gia hàng đầu.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conference-requests",
+							"host": ["{{baseUrl}}"],
+							"path": ["conference-requests"]
+						},
+						"description": "Submit conference request. Chair/Faculty only."
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 Get Request Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/conference-requests/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["conference-requests", "1"]
+						},
+						"description": "Get conference request details."
+					},
+					"response": []
+				},
+				{
+					"name": "4.4 Approve Request (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notes\": \"Approved. Budget allocated. Good proposal.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conference-requests/1/approve",
+							"host": ["{{baseUrl}}"],
+							"path": ["conference-requests", "1", "approve"]
+						},
+						"description": "Approve conference request and create conference. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "4.5 Reject Request (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notes\": \"Rejected: Insufficient budget for international conference.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conference-requests/1/reject",
+							"host": ["{{baseUrl}}"],
+							"path": ["conference-requests", "1", "reject"]
+						},
+						"description": "Reject conference request. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "4.6 Get Statistics (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/conference-requests/statistics",
+							"host": ["{{baseUrl}}"],
+							"path": ["conference-requests", "statistics"]
+						},
+						"description": "Get request statistics (total, by status). Admin only."
+					},
+					"response": []
+				}
+			],
+			"description": "Conference Request Management APIs"
+		},
+		{
+			"name": "5. Papers (8 APIs) - NEW PHASE 4",
+			"item": [
+				{
+					"name": "5.1 List Papers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers?conference_id=1&track_id=1&status=SUBMITTED&search=AI&per_page=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "1",
+									"description": "Filter by conference"
+								},
+								{
+									"key": "track_id",
+									"value": "1",
+									"description": "Filter by track"
+								},
+								{
+									"key": "status",
+									"value": "SUBMITTED",
+									"description": "Filter by status"
+								},
+								{
+									"key": "search",
+									"value": "AI",
+									"description": "Search in title/abstract"
+								},
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Items per page"
+								}
+							]
+						},
+						"description": "List papers with filters. Requires auth."
+					},
+					"response": []
+				},
+				{
+					"name": "5.2 Submit Paper (Author)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authorToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "conference_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "track_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "title",
+									"value": "Deep Learning for Image Recognition",
+									"type": "text"
+								},
+								{
+									"key": "abstract",
+									"value": "This paper presents a novel approach to image recognition using deep convolutional neural networks with attention mechanisms.",
+									"type": "text"
+								},
+								{
+									"key": "authors[0][user_id]",
+									"value": "3",
+									"type": "text",
+									"description": "Existing user (author2)"
+								},
+								{
+									"key": "authors[0][is_contact]",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "authors[1][full_name]",
+									"value": "Nguyễn Văn B",
+									"type": "text",
+									"description": "New external author"
+								},
+								{
+									"key": "authors[1][email]",
+									"value": "nguyenvanb@example.com",
+									"type": "text"
+								},
+								{
+									"key": "authors[1][organization]",
+									"value": "VNU-HCM",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"description": "Upload PDF/DOC/DOCX (max 10MB)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/papers",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers"]
+						},
+						"description": "Submit new paper with file upload. Author only.\n\n**IMPORTANT:** Use multipart/form-data with file upload.\n\n**Authors:**\n- Existing users: Use `user_id`\n- New external authors: Use `full_name` + `email` (auto-created)"
+					},
+					"response": []
+				},
+				{
+					"name": "5.3 Get Paper Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1"]
+						},
+						"description": "Get paper details with authors, versions, reviews.\n\n**Permission:** Admin, Submitter, Co-authors, Track chair, Assigned reviewers"
+					},
+					"response": []
+				},
+				{
+					"name": "5.4 Update Paper (Submitter)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authorToken}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated: Deep Learning for Image Recognition\",\n  \"abstract\": \"Updated abstract with more details about the methodology and results.\",\n  \"track_id\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/papers/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1"]
+						},
+						"description": "Update paper metadata (title, abstract, track).\n\n**Permission:** Submitter only\n**Allowed when status:** SUBMITTED, REVISION_REQUIRED"
+					},
+					"response": []
+				},
+				{
+					"name": "5.5 Withdraw Paper (Submitter)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authorToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1"]
+						},
+						"description": "Withdraw paper (status → WITHDRAWN).\n\n**Permission:** Submitter only\n**Blocked when status:** ACCEPTED, CAMERA_READY, WITHDRAWN"
+					},
+					"response": []
+				},
+				{
+					"name": "5.6 My Papers (Author)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authorToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/my-papers?status=SUBMITTED&per_page=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["my-papers"],
+							"query": [
+								{
+									"key": "status",
+									"value": "SUBMITTED"
+								},
+								{
+									"key": "per_page",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get papers where user is submitter or co-author."
+					},
+					"response": []
+				},
+				{
+					"name": "5.7 Paper Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers/statistics?conference_id=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "statistics"],
+							"query": [
+								{
+									"key": "conference_id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Get paper statistics (total, by status, by track)."
+					},
+					"response": []
+				},
+				{
+					"name": "5.8 Download Paper",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers/1/download",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1", "download"]
+						},
+						"description": "Download current version of paper.\n\n**Permission:** Admin, Submitter, Co-authors, Track chair, Assigned reviewers\n**Response:** Binary file (PDF/DOC/DOCX)"
+					},
+					"response": []
+				}
+			],
+			"description": "Paper Management APIs - Phase 4\n\n**Features:**\n- Submit papers with file upload (PDF/DOC/DOCX max 10MB)\n- Multi-author support (existing users + external authors)\n- Version control\n- Permission-based access\n- Paper status workflow"
+		},
+		{
+			"name": "6. Paper Versions (5 APIs) - NEW PHASE 4",
+			"item": [
+				{
+					"name": "6.1 List Versions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers/1/versions",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1", "versions"]
+						},
+						"description": "List all versions of a paper.\n\n**Permission:** Admin, Submitter, Co-authors, Track chair, Assigned reviewers"
+					},
+					"response": []
+				},
+				{
+					"name": "6.2 Upload New Version (Submitter)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authorToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"description": "Upload PDF/DOC/DOCX (max 10MB)"
+								},
+								{
+									"key": "version_notes",
+									"value": "Fixed typos and updated results section",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/papers/1/versions",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1", "versions"]
+						},
+						"description": "Upload new version of paper.\n\n**Permission:** Submitter only\n**Allowed when status:** SUBMITTED, REVISION_REQUIRED, REVISED\n**Auto-increments:** version_no\n**Status change:** REVISION_REQUIRED → REVISED"
+					},
+					"response": []
+				},
+				{
+					"name": "6.3 Get Version Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers/1/versions/2",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1", "versions", "2"]
+						},
+						"description": "Get specific version details.\n\n**Permission:** Admin, Submitter, Co-authors, Track chair, Assigned reviewers"
+					},
+					"response": []
+				},
+				{
+					"name": "6.4 Download Version",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers/1/versions/2/download",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1", "versions", "2", "download"]
+						},
+						"description": "Download specific version file.\n\n**Permission:** Admin, Submitter, Co-authors, Track chair, Assigned reviewers\n**Response:** Binary file (PDF/DOC/DOCX)"
+					},
+					"response": []
+				},
+				{
+					"name": "6.5 Compare Versions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/papers/1/versions/compare?version1=1&version2=2",
+							"host": ["{{baseUrl}}"],
+							"path": ["papers", "1", "versions", "compare"],
+							"query": [
+								{
+									"key": "version1",
+									"value": "1",
+									"description": "First version number"
+								},
+								{
+									"key": "version2",
+									"value": "2",
+									"description": "Second version number"
+								}
+							]
+						},
+						"description": "Compare two versions (time diff, size diff).\n\n**Permission:** Admin, Submitter, Co-authors, Track chair"
+					},
+					"response": []
+				}
+			],
+			"description": "Paper Version Control APIs - Phase 4\n\n**Features:**\n- Unlimited version uploads\n- Auto-increment version numbers\n- Version comparison\n- Download specific versions\n- Version notes/changelog"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-add base URL if not set",
+					"if (!pm.environment.get('baseUrl')) {",
+					"    pm.environment.set('baseUrl', 'http://localhost/qly_hthao/qlyhoithao/public/api');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-log response for debugging",
+					"console.log('Status:', pm.response.code);",
+					"console.log('Response:', pm.response.text());"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost/qly_hthao/qlyhoithao/public/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "adminToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "chairToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "authorToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "reviewerToken",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
