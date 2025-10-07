@@ -10,6 +10,7 @@ use App\Http\Controllers\Reviewer\AssignmentController;
 use App\Http\Controllers\Chair\ConferenceController as ChairConferenceController;
 use App\Http\Controllers\Chair\PaperController as ChairPaperController;
 use App\Http\Controllers\Chair\ReviewerController as ChairReviewerController;
+use App\Http\Controllers\Chair\COIController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\ConferenceController as AdminConferenceController;
 use App\Http\Controllers\Admin\ReportController;
@@ -27,6 +28,16 @@ use App\Http\Controllers\Admin\ReportController;
 
 // Public Routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// AJAX Routes for Homepage
+Route::get('/api/search-conferences', [HomeController::class, 'searchConferences'])->name('api.search.conferences');
+Route::get('/api/conference-counts', [HomeController::class, 'getConferenceCounts'])->name('api.conference.counts');
+
+// Notification Routes
+Route::get('/api/notifications', [HomeController::class, 'getNotifications'])->name('api.notifications');
+Route::patch('/api/notifications/{id}/read', [HomeController::class, 'markNotificationAsRead'])->name('api.notifications.read');
+Route::patch('/api/notifications/read-all', [HomeController::class, 'markAllNotificationsAsRead'])->name('api.notifications.read_all');
+Route::post('/api/notifications/sample', [HomeController::class, 'createSampleNotifications'])->name('api.notifications.sample');
 Route::get('/conferences', [HomeController::class, 'conferences'])->name('conferences.index');
 Route::get('/conferences/{id}', [HomeController::class, 'conferenceDetail'])->name('conferences.show');
 Route::get('/news', [HomeController::class, 'news'])->name('news.index');
@@ -49,6 +60,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [AuthController::class, 'showProfile'])->name('profile.show');
     Route::put('/profile', [AuthController::class, 'updateProfile'])->name('profile.update');
     Route::put('/profile/password', [AuthController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/profile/avatar', [AuthController::class, 'updateAvatar'])->name('profile.avatar');
     
     // Dashboard (role-based)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -87,6 +99,14 @@ Route::middleware('auth')->group(function () {
         
         // Paper Download
         Route::get('/papers/{assignmentId}/download', [\App\Http\Controllers\Reviewer\ReviewerController::class, 'downloadPaper'])->name('papers.download');
+        
+        // Phase 8.10: COI Management
+        Route::get('/coi', [\App\Http\Controllers\Reviewer\COIController::class, 'index'])->name('coi.index');
+        Route::get('/coi/create', [\App\Http\Controllers\Reviewer\COIController::class, 'create'])->name('coi.create');
+        Route::post('/coi', [\App\Http\Controllers\Reviewer\COIController::class, 'store'])->name('coi.store');
+        Route::get('/coi/{id}', [\App\Http\Controllers\Reviewer\COIController::class, 'show'])->name('coi.show');
+        Route::delete('/coi/{id}', [\App\Http\Controllers\Reviewer\COIController::class, 'retract'])->name('coi.retract');
+        Route::get('/coi/search-papers', [\App\Http\Controllers\Reviewer\COIController::class, 'searchPapers'])->name('coi.search-papers');
     });
     
     // Chair Routes
@@ -117,8 +137,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/reviewers', [\App\Http\Controllers\Chair\ChairController::class, 'listReviewers'])->name('reviewers.index');
         Route::get('/reviewers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showReviewer'])->name('reviewers.show');
         
-        // TODO: Implement these controllers
-        // Route::get('/coi', [ChairCOIController::class, 'index'])->name('coi.index');
+        // Phase 8.10: COI Management
+        Route::get('/coi', [\App\Http\Controllers\Chair\COIController::class, 'index'])->name('coi.index');
+        Route::get('/coi/{id}', [\App\Http\Controllers\Chair\COIController::class, 'show'])->name('coi.show');
+        Route::get('/coi/{id}/resolve', [\App\Http\Controllers\Chair\COIController::class, 'resolveForm'])->name('coi.resolve-form');
+        Route::post('/coi/{id}/resolve', [\App\Http\Controllers\Chair\COIController::class, 'resolve'])->name('coi.resolve');
+        Route::get('/conferences/{conferenceId}/coi-statistics', [\App\Http\Controllers\Chair\COIController::class, 'statistics'])->name('coi.statistics');
     });
     
     // Admin Routes

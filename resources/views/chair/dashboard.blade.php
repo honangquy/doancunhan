@@ -300,7 +300,7 @@
         <div class="px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <!-- Logo & Title -->
-                <div class="flex items-center space-x-4">
+                <a href="{{ route('home') }}" class="flex items-center space-x-4 hover:opacity-90 transition">
                     <div class="flex-shrink-0 bg-white rounded-lg p-2">
                         <div class="w-8 h-8 flex items-center justify-center">
                             <span class="text-2xl font-black text-orange-600">H</span>
@@ -310,7 +310,7 @@
                         <div class="text-xl font-bold">HUIT Conferences</div>
                         <div class="text-xs text-orange-100">Chair Dashboard</div>
                     </div>
-                </div>
+                </a>
 
                 <!-- Right Side Menu -->
                 <div class="flex items-center space-x-4">
@@ -322,21 +322,59 @@
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     </button>
 
-                    <!-- User Menu -->
-                    <div class="flex items-center space-x-3">
-                        <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->full_name ?? 'C') }}&background=ea580c&color=fff&bold=true" 
-                             alt="User" 
-                             class="w-8 h-8 rounded-full border-2 border-orange-300">
-                        <span class="font-medium hidden md:block">{{ Auth::user()->full_name ?? 'Chair User' }}</span>
-                    </div>
-
-                    <!-- Logout -->
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="px-4 py-2 bg-orange-900 hover:bg-orange-950 rounded-lg text-sm font-medium transition">
-                            Đăng xuất
+                    <!-- User Dropdown Menu -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 hover:bg-orange-700 px-3 py-2 rounded-lg transition">
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->full_name ?? 'C') }}&background=ea580c&color=fff&bold=true" 
+                                 alt="User" 
+                                 class="w-8 h-8 rounded-full border-2 border-orange-300">
+                            <span class="font-medium hidden md:block">{{ Auth::user()->full_name ?? 'Chair User' }}</span>
+                            <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
                         </button>
-                    </form>
+                        
+                        <div x-show="open" 
+                             @click.away="open = false"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl z-50 overflow-hidden"
+                             style="display: none;">
+                            <a href="{{ route('profile.show') }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 transition">
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    <span>Hồ sơ</span>
+                                </div>
+                            </a>
+                            <a href="{{ route('home') }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 transition border-t">
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                    </svg>
+                                    <span>Trang chủ</span>
+                                </div>
+                            </a>
+                            <div class="border-t">
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition">
+                                        <div class="flex items-center space-x-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                            </svg>
+                                            <span>Đăng xuất</span>
+                                        </div>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -382,7 +420,7 @@
                     <span>Phân công phản biện</span>
                 </button>
                 
-                <button @click="alert('Chức năng Kiểm tra COI đang phát triển')" 
+                <button @click="window.location.href='{{ route('chair.coi.index') }}'" 
                         class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>

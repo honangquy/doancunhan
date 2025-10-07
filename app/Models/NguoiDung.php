@@ -22,6 +22,7 @@ class NguoiDung extends Authenticatable implements JWTSubject
         'is_student',
         'faculty_id',
         'organization',
+        'avatar_url',
         'locked',
     ];
 

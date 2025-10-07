@@ -50,7 +50,7 @@
     <nav class="bg-gradient-to-r from-blue-800 via-blue-700 to-blue-600 text-white shadow-xl">
         <div class="px-4">
             <div class="flex items-center justify-between h-16">
-                <a href="{{ route('author.dashboard') }}" class="flex items-center space-x-3 hover:opacity-90 transition">
+                <a href="{{ route('home') }}" class="flex items-center space-x-3 hover:opacity-90 transition">
                     <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md">
                         <span class="text-blue-700 font-bold text-xl">H</span>
                     </div>
@@ -119,8 +119,8 @@
                              x-transition:enter-start="opacity-0 scale-95"
                              x-transition:enter-end="opacity-100 scale-100"
                              class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl z-50">
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Hồ sơ</a>
-                            <a href="{{ route('author.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Trang chủ</a>
+                            <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Hồ sơ</a>
+                            <a href="{{ route('home') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Trang chủ</a>
                             <hr>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
