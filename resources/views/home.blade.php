@@ -60,15 +60,32 @@
     </script>
 </head>
 <body class="bg-gray-50">
+    <!-- Top Header - Not Sticky -->
+    <div class="bg-white border-b border-gray-200">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center space-x-6">
+                <!-- HUIT Logo - Left -->
+                <a href="{{ route('home') }}" class="flex-shrink-0 hover:opacity-90 transition">
+                    <img src="https://huit.edu.vn/Images/Documents/N00CT/logo-huit-web-chinh-moi-mau-xanh-02.svg?h=80" 
+                         alt="HUIT Logo" 
+                         class="h-12 w-auto">
+                </a>
+                <!-- University Name - Center -->
+                <div class="flex-1 flex flex-col items-center text-center space-y-1">
+                    <span class="text-lg md:text-xl font-bold text-blue-600 uppercase tracking-wide">BỘ CÔNG THƯƠNG</span>
+                    <span class="text-xl md:text-2xl lg:text-3xl font-bold text-blue-700 uppercase">TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TP. HỒ CHÍ MINH</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Navigation Bar - Sticky -->
     <nav class="sticky top-0 z-50 bg-gradient-to-r from-blue-800 via-blue-700 to-blue-600 text-white shadow-xl" x-data="{ mobileMenuOpen: false }">
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between h-16">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex items-center space-x-3 hover:opacity-90 transition">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md">
-                        <span class="text-blue-700 font-bold text-xl">H</span>
-                    </div>
+                    <img src="https://foodtech.huit.edu.vn/images_new/logo_en.png" alt="HUIT logo" class="w-10 h-10 bg-white rounded-full object-cover shadow-md" />
                     <div>
                         <div class="font-bold text-lg">HUIT Conferences</div>
                         <div class="text-xs text-blue-200">Hệ thống quản lý hội thảo</div>
@@ -777,13 +794,7 @@
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">Tin tức & Thông báo</h2>
                 <p class="text-gray-600">Cập nhật tin tức mới nhất về hội thảo và sự kiện</p>
             </div>
-            <div class="max-w-4xl mx-auto text-center py-12">
-                <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                </svg>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Section đang được phát triển</h3>
-                <p class="text-gray-600">Nội dung tin tức sẽ được cập nhật sớm.</p>
-            </div>
+            <!-- News content will be added here -->
         </div>
     </section>
 
@@ -794,13 +805,7 @@
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">Quy trình</h2>
                 <p class="text-gray-600">Hướng dẫn quy trình tham gia hội thảo</p>
             </div>
-            <div class="max-w-4xl mx-auto text-center py-12">
-                <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Section đang được phát triển</h3>
-                <p class="text-gray-600">Quy trình chi tiết sẽ được cập nhật sớm.</p>
-            </div>
+            <!-- Process content will be added here -->
         </div>
     </section>
 
@@ -811,13 +816,7 @@
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">Hỗ trợ</h2>
                 <p class="text-gray-600">Liên hệ và hỗ trợ kỹ thuật</p>
             </div>
-            <div class="max-w-4xl mx-auto text-center py-12">
-                <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Section đang được phát triển</h3>
-                <p class="text-gray-600">Thông tin hỗ trợ sẽ được cập nhật sớm.</p>
-            </div>
+            <!-- Support content will be added here -->
         </div>
     </section>
 
@@ -828,13 +827,7 @@
                 <h2 class="text-3xl font-bold text-gray-900 mb-2">Lịch Hội thảo</h2>
                 <p class="text-gray-600">Xem lịch các hội thảo sắp tới</p>
             </div>
-            <div class="max-w-4xl mx-auto text-center py-12">
-                <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Section đang được phát triển</h3>
-                <p class="text-gray-600">Lịch hội thảo sẽ được cập nhật sớm.</p>
-            </div>
+            <!-- Calendar content will be added here -->
         </div>
     </section>
 

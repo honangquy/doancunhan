@@ -45,9 +45,7 @@
         <div class="px-4">
             <div class="flex items-center justify-between h-16">
                 <a href="{{ route('author.dashboard') }}" class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                        <span class="text-blue-700 font-bold text-xl">H</span>
-                    </div>
+                    <img src="https://foodtech.huit.edu.vn/images_new/logo_en.png" alt="HUIT logo" class="w-10 h-10 bg-white rounded-full object-cover shadow-md" />
                     <div>
                         <div class="font-bold text-lg">HUIT Conferences</div>
                         <div class="text-xs text-blue-200">Author Portal</div>

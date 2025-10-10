@@ -13,6 +13,7 @@
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -32,8 +33,13 @@
 </head>
 <body class="h-full bg-white">
     <div class="min-h-screen flex">
-        <!-- Left gradient panel -->
-        <div class="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-b from-blue-400 via-blue-600 to-blue-900">
+       <!-- Left gradient panel -->
+       <div x-data="{ showLeft: false }" x-init="setTimeout(()=> showLeft = true, 120)" x-show="showLeft"
+           x-transition:enter="transition ease-out duration-700"
+           x-transition:enter-start="opacity-0 -translate-x-6"
+           x-transition:enter-end="opacity-100 translate-x-0"
+           style="display: none;"
+           class="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-gradient-to-b from-blue-400 via-blue-600 to-blue-900">
             <div class="absolute inset-0 left-rings pointer-events-none">
                 <svg viewBox="0 0 1200 800" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
                     <defs>
@@ -64,8 +70,12 @@
 
         <!-- Right form panel -->
         <div class="flex-1 flex items-center justify-center px-6 py-12">
-            <div class="w-full max-w-md">
-                <div class="bg-white p-8 rounded-2xl shadow-2xl">
+            <div class="w-full max-w-md" x-data="{ showForm: false }" x-init="setTimeout(()=> showForm = true, 180)" >
+                <div x-show="showForm" x-transition:enter="transition ease-out duration-500"
+                     x-transition:enter-start="opacity-0 translate-y-4"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     style="display: none;"
+                     class="bg-white p-8 rounded-2xl shadow-2xl">
                     @if ($errors->any())
                         <div class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
                             <div class="flex">
@@ -100,8 +110,8 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                     </svg>
                                 </div>
-                                <input id="full_name" name="full_name" type="text" autocomplete="name" required value="{{ old('full_name') }}" placeholder="Full Name"
-                                       class="block w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-accent-orange">
+                    <input id="full_name" name="full_name" type="text" autocomplete="name" required value="{{ old('full_name') }}" placeholder="Họ và tên"
+                        class="block w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-accent-orange transition-shadow duration-200 focus:shadow-md">
                             </div>
                         </div>
 
@@ -114,8 +124,8 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                     </svg>
                                 </div>
-                                <input id="email" name="email" type="email" autocomplete="email" required value="{{ old('email') }}" placeholder="Email Address"
-                                       class="block w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-accent-orange">
+                    <input id="email" name="email" type="email" autocomplete="email" required value="{{ old('email') }}" placeholder="Nhập email"
+                        class="block w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-accent-orange transition-shadow duration-200 focus:shadow-md">
                             </div>
                         </div>
 
@@ -128,7 +138,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                     </svg>
                                 </div>
-                                <input id="password" name="password" type="password" autocomplete="new-password" required placeholder="Password" class="block w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-accent-orange">
+                                <input id="password" name="password" type="password" autocomplete="new-password" required placeholder="Nhập mật khẩu" class="block w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-accent-orange transition-shadow duration-200 focus:shadow-md">
                             </div>
                             <p class="mt-1 text-xs text-gray-500">Tối thiểu 6 ký tự</p>
                         </div>
@@ -157,7 +167,7 @@
                         </div>
 
                         <div>
-                            <button type="submit" class="w-full py-3 rounded-full text-white bg-accent-orange hover:bg-amber-600 shadow-md transition">Đăng ký</button>
+                            <button type="submit" class="w-full py-3 rounded-full text-white bg-accent-orange hover:bg-amber-600 shadow-md hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200">Đăng ký</button>
                         </div>
                     </form>
 

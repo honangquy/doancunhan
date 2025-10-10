@@ -53,10 +53,8 @@
             <div class="flex items-center justify-between h-16">
                 <!-- Logo & Title -->
                 <a href="{{ route('home') }}" class="flex items-center space-x-4 hover:opacity-90 transition">
-                    <div class="flex-shrink-0 bg-white rounded-lg p-2">
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <span class="text-2xl font-black text-green-600">H</span>
-                        </div>
+                    <div class="flex-shrink-0 bg-white rounded-full p-2">
+                        <img src="https://foodtech.huit.edu.vn/images_new/logo_en.png" alt="HUIT logo" class="w-8 h-8 rounded-full object-cover" />
                     </div>
                     <div>
                         <div class="text-xl font-bold">HUIT Conferences</div>

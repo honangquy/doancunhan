@@ -25,6 +25,21 @@ use App\Http\Controllers\Api\AdminController;
 |
 */
 
+Route::get('/', function () {
+    $routeCollection = Illuminate\Support\Facades\Route::getRoutes();
+    $routes = [];
+    foreach ($routeCollection as $route) {
+        if (str_starts_with($route->uri(), 'api/') && $route->uri() !== 'api') {
+            $routes[] = [
+                'method' => implode('|', $route->methods()),
+                'uri' => '/' . $route->uri(),
+                'action' => $route->getActionName(),
+            ];
+        }
+    }
+    return response()->json($routes);
+});
+
 // Public routes
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
