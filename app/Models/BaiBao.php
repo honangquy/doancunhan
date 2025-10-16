@@ -9,7 +9,7 @@ class BaiBao extends Model
 {
     use HasFactory;
 
-    protected $table = 'BaiBao';
+    protected $table = 'baibao';
     protected $primaryKey = 'paper_id';
     public $timestamps = false;
 
