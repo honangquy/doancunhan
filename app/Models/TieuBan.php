@@ -9,7 +9,7 @@ class TieuBan extends Model
 {
     use HasFactory;
 
-    protected $table = 'TieuBan';
+    protected $table = 'tieuban';
     protected $primaryKey = 'track_id';
     public $timestamps = false;
 

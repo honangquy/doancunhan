@@ -11,7 +11,7 @@ class NguoiDung extends Authenticatable implements JWTSubject
 {
     use HasFactory, Notifiable;
 
-    protected $table = 'NguoiDung';
+    protected $table = 'nguoidung';
     protected $primaryKey = 'user_id';
     public $timestamps = false;
 

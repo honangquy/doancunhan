@@ -9,7 +9,7 @@ class Khoa extends Model
 {
     use HasFactory;
 
-    protected $table = 'Khoa';
+    protected $table = 'khoa';
     protected $primaryKey = 'faculty_id';
     public $timestamps = false;
 

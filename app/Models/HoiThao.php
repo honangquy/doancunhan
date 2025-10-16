@@ -9,7 +9,7 @@ class HoiThao extends Model
 {
     use HasFactory;
 
-    protected $table = 'HoiThao';
+    protected $table = 'hoithao';
     protected $primaryKey = 'conference_id';
     public $timestamps = false;
 
@@ -18,6 +18,7 @@ class HoiThao extends Model
         'level_code',
         'faculty_id',
         'title',
+        'description',
         'year',
         'start_date',
         'end_date',
@@ -25,6 +26,16 @@ class HoiThao extends Model
         'deadline_review',
         'deadline_camera_ready',
         'status',
+        // New fields for conference detail page
+        'cfp_url',
+        'submission_guidelines',
+        'detailed_description',
+        'location',
+        'contact_email', 
+        'contact_phone',
+        'chair_name',
+        'chair_email',
+        'keywords'
     ];
 
     protected $casts = [
@@ -72,19 +83,90 @@ class HoiThao extends Model
         return $this->hasOne(YeuCauHoiThao::class, 'conference_id', 'conference_id');
     }
 
+    /**
+     * Get join requests for this conference.
+     */
+    public function joinRequests()
+    {
+        return $this->hasMany(JoinRequest::class, 'conference_id', 'conference_id');
+    }
+
+    /**
+     * Get pending join requests.
+     */
+    public function pendingJoinRequests()
+    {
+        return $this->joinRequests()->where('status', JoinRequest::STATUS_PENDING);
+    }
+
+    /**
+     * Get approved join requests by role.
+     */
+    public function approvedJoinRequests($role = null)
+    {
+        $query = $this->joinRequests()->where('status', JoinRequest::STATUS_APPROVED);
+        
+        if ($role) {
+            $query->where('role', $role);
+        }
+        
+        return $query;
+    }
+
     // Helper methods
     public function isOpen()
     {
-        return $this->status === 'OPEN';
+        return $this->status === 'open' || $this->status === 'OPEN';
+    }
+
+    public function isClosed()
+    {
+        return $this->status === 'closed';
+    }
+
+    public function isFinished()
+    {
+        return $this->status === 'finished';
     }
 
     public function isSubmissionOpen()
     {
-        return $this->deadline_submission >= now();
+        return $this->deadline_submission && $this->deadline_submission >= now()->startOfDay();
     }
 
     public function isReviewOpen()
     {
-        return $this->deadline_review >= now();
+        return $this->deadline_review && $this->deadline_review >= now()->startOfDay();
+    }
+
+    /**
+     * Get the number of days remaining until submission deadline.
+     */
+    public function getDaysUntilSubmission()
+    {
+        if (!$this->deadline_submission) {
+            return null;
+        }
+        
+        $now = now()->startOfDay();
+        $deadline = \Carbon\Carbon::parse($this->deadline_submission)->startOfDay();
+        
+        if ($deadline < $now) {
+            return 0;
+        }
+        
+        return $now->diffInDays($deadline);
+    }
+
+    /**
+     * Get conference statistics.
+     */
+    public function getStats()
+    {
+        return [
+            'papers' => $this->baiBaos()->count(),
+            'reviewers' => $this->approvedJoinRequests(JoinRequest::ROLE_REVIEWER)->count(),
+            'authors' => $this->approvedJoinRequests(JoinRequest::ROLE_AUTHOR)->count()
+        ];
     }
 }

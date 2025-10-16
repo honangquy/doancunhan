@@ -66,7 +66,7 @@
                     </div>
                     <div>
                         <div class="font-bold text-lg">HUIT Conferences</div>
-                        <div class="text-xs text-blue-200">Author Portal</div>
+                        <div class="text-xs text-blue-200">Author Portal</div> 
                     </div>
                 </a>
                 

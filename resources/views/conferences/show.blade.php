@@ -1,391 +1,610 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Chi tiết Hội thảo - HUIT Conferences</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#1e40af',
-                        'primary-dark': '#1e3a8a',
-                        accent: '#f97316',
-                    }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-gray-50">
-    <!-- Navigation Bar -->
-    <nav class="bg-gradient-to-r from-blue-800 via-blue-700 to-blue-600 text-white shadow-xl">
-        <div class="container mx-auto px-4">
-            <div class="flex items-center justify-between h-16">
-                <a href="/" class="flex items-center space-x-3 hover:opacity-90 transition">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md">
-                        <span class="text-blue-700 font-bold text-xl">H</span>
-                    </div>
-                    <div>
-                        <div class="font-bold text-lg">HUIT Conferences</div>
-                        <div class="text-xs text-blue-200">Hệ thống quản lý hội thảo</div>
-                    </div>
-                </a>
-                
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="/" class="hover:text-orange-300 transition-all duration-300 font-medium">Trang chủ</a>
-                    <a href="/conferences" class="hover:text-orange-300 transition-all duration-300 font-medium">Hội thảo</a>
-                    <a href="/news" class="hover:text-orange-300 transition-all duration-300 font-medium">Tin tức</a>
-                    <a href="/process" class="hover:text-orange-300 transition-all duration-300 font-medium">Quy trình</a>
-                    <a href="/support" class="hover:text-orange-300 transition-all duration-300 font-medium">Hỗ trợ</a>
-                </div>
-            </div>
-        </div>
+@extends('layouts.app')
+
+@section('title', ($conference->title ?? 'Chi tiết hội thảo'))
+
+@section('content')
+<div x-data="conferenceDetail()">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center space-x-2 text-sm text-gray-600 mb-6">
+        <a href="{{ route('home') }}" class="hover:text-blue-600">Trang chủ</a>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <a href="{{ route('conferences.index') }}" class="hover:text-blue-600">Hội thảo</a>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        <span class="text-gray-900">{{ $conference->code ?? 'Chi tiết' }}</span>
     </nav>
 
-    <!-- Conference Header -->
-    <section class="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-16">
-        <div class="container mx-auto px-4">
-            <div class="mb-4">
-                <a href="/conferences" class="inline-flex items-center text-blue-100 hover:text-white transition">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                    Quay lại danh sách
-                </a>
-            </div>
-            <div class="flex items-start justify-between">
-                <div class="flex-1">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <span class="px-4 py-1.5 bg-white/20 text-white text-sm font-semibold rounded-xl backdrop-blur-sm">
-                            HUIT-ICI-2025
-                        </span>
-                        <span class="px-4 py-1.5 bg-green-500 text-white text-sm font-semibold rounded-xl shadow-md">
-                            Đang mở
-                        </span>
-                    </div>
-                    <h1 class="text-4xl font-bold mb-4">Hội thảo Khoa học CNTT HUIT 2025</h1>
-                    <p class="text-xl text-blue-100 mb-6">
-                        International Conference on Information and Computer Technology
-                    </p>
-                    <div class="flex flex-wrap items-center gap-6 text-blue-100">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span>25-30/11/2025</span>
+    <!-- Header Section -->
+    <!-- Cover image (if provided) -->
+    @if(isset($conference->cover_url) && $conference->cover_url)
+        <div class="rounded-lg overflow-hidden shadow-md mb-6">
+            <img src="{{ $conference->cover_url }}" alt="{{ $conference->title }} cover" class="w-full h-56 object-cover">
+        </div>
+    @endif
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between">
+            <div class="flex-1">
+                <div class="flex items-center space-x-3 mb-3">
+                    @php
+                        $status = $conference->status ?? 'open';
+                        $statusClass = 'px-3 py-1 text-xs font-medium rounded-full ';
+                        $statusText = '';
+                        
+                        if ($status === 'open') {
+                            $statusClass .= 'bg-green-100 text-green-800';
+                            $statusText = 'Đang mở';
+                        } elseif ($status === 'closed') {
+                            $statusClass .= 'bg-red-100 text-red-800';
+                            $statusText = 'Đã đóng';
+                        } else {
+                            $statusClass .= 'bg-gray-100 text-gray-800';
+                            $statusText = 'Kết thúc';
+                        }
+                    @endphp
+                    <span class="{{ $statusClass }}">{{ $statusText }}</span>
+                    <span class="text-sm text-gray-500">{{ $conference->code ?? 'CONF-2025' }}</span>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ $conference->title ?? 'Tiêu đề hội thảo' }}</h1>
+                <p class="text-gray-600 mb-4">{{ $conference->description ?? 'Mô tả ngắn về hội thảo' }}</p>
+                
+                <!-- Quick Info -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div class="flex items-center space-x-2">
+                        <!-- Calendar Icon (larger) -->
+                        <svg class="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect>
+                            <path d="M16 2v4M8 2v4M3 10h18" stroke-width="1.5"></path>
+                        </svg>
+                        <div>
+                            <div class="text-sm text-gray-500">Ngày tổ chức</div>
+                            <div class="font-medium">
+                                @if(isset($conference->start_date))
+                                    {{ \Carbon\Carbon::parse($conference->start_date)->format('d/m/Y') }}
+                                @else
+                                    TBA
+                                @endif
+                            </div>
                         </div>
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            <span>Khoa CNTT - HUIT, TP.HCM</span>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <!-- Deadline Icon (larger) -->
+                        <svg class="w-7 h-7 text-orange-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="9" stroke-width="1.5"></circle>
+                            <path d="M12 7v6l4 2" stroke-width="1.5"></path>
+                        </svg>
+                        <div>
+                            <div class="text-sm text-gray-500">Hạn nộp bài</div>
+                            <div class="font-medium text-orange-600">
+                                @if(isset($conference->deadline_submission))
+                                    {{ \Carbon\Carbon::parse($conference->deadline_submission)->format('d/m/Y') }}
+                                @else
+                                    TBA
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <!-- Location Icon (larger) -->
+                        <svg class="w-7 h-7 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 21s-6-4.35-6-10a6 6 0 1112 0c0 5.65-6 10-6 10z" stroke-width="1.5"></path>
+                            <circle cx="12" cy="11" r="2" stroke-width="1.5"></circle>
+                        </svg>
+                        <div>
+                            <div class="text-sm text-gray-500">Địa điểm</div>
+                            <div class="font-medium">{{ $conference->location ?? 'Online' }}</div>
                         </div>
                     </div>
                 </div>
-                <div class="hidden lg:block">
-                    <img src="https://via.placeholder.com/300x200/1e40af/ffffff?text=HUIT+ICI+2025" 
-                         alt="Conference" 
-                         class="rounded-2xl shadow-2xl">
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 lg:mt-0 lg:ml-6 flex flex-col space-y-3">
+                <!-- Join Request Button -->
+                @auth
+                    @if(($conference->status ?? 'open') === 'open')
+                        <button @click="openJoinModal = true" 
+                                class="px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                            </svg>
+                            <span>Yêu cầu tham gia</span>
+                        </button>
+                    @else
+                        <div class="px-6 py-3 bg-gray-100 text-gray-500 font-medium rounded-lg text-center">
+                            Hội thảo đã đóng
+                        </div>
+                    @endif
+                @else
+                    <a href="{{ route('login') }}" 
+                       class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                        </svg>
+                        <span>Đăng nhập để tham gia</span>
+                    </a>
+                @endauth
+
+                <!-- CFP Download -->
+                @if(isset($conference->cfp_url) && $conference->cfp_url)
+                    <a href="{{ $conference->cfp_url }}" target="_blank" 
+                       class="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Tải Call for Papers</span>
+                    </a>
+                @endif
+
+                <!-- Social Share -->
+                <div class="flex space-x-2">
+                    <button @click="shareConference('copy')" title="Copy link" 
+                            class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                    </button>
+                    <button @click="shareConference('facebook')" title="Share on Facebook" 
+                            class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
+                        </svg>
+                    </button>
+                    <button @click="shareConference('linkedin')" title="Share on LinkedIn" 
+                            class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Quick Actions -->
-    <section class="py-6 bg-white border-b shadow-sm">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-wrap items-center justify-center gap-4">
-                <a href="#submit" class="inline-flex items-center px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Nộp bài báo
-                </a>
-                <a href="#register" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all duration-300 hover:scale-105 shadow-lg">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $stats['papers'] ?? '0' }}</div>
+                    <div class="text-sm text-gray-500">Bài báo đã nhận</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
-                    Đăng ký tham gia
-                </a>
-                <button class="inline-flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-300">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $stats['reviewers'] ?? '0' }}</div>
+                    <div class="text-sm text-gray-500">Phản biện viên</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-orange-100 rounded-lg">
+                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
-                    Tải tài liệu
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900">{{ $stats['authors'] ?? '0' }}</div>
+                    <div class="text-sm text-gray-500">Tác giả</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold text-gray-900" x-text="timeRemaining">{{ $timeRemaining ?? '--' }}</div>
+                    <div class="text-sm text-gray-500">Ngày còn lại</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-white rounded-lg shadow-md mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 px-6">
+                <button @click="activeTab = 'overview'" 
+                        :class="activeTab === 'overview' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Tổng quan
                 </button>
-            </div>
+                <button @click="activeTab = 'cfp'" 
+                        :class="activeTab === 'cfp' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Call for Papers
+                </button>
+                <button @click="activeTab = 'dates'" 
+                        :class="activeTab === 'dates' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Lịch trình
+                </button>
+                <button @click="activeTab = 'submissions'" 
+                        :class="activeTab === 'submissions' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Nộp bài
+                </button>
+                <button @click="activeTab = 'organizers'" 
+                        :class="activeTab === 'organizers' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    Ban tổ chức
+                </button>
+            </nav>
         </div>
-    </section>
 
-    <!-- Main Content -->
-    <section class="py-12">
-        <div class="container mx-auto px-4">
-            <div class="grid lg:grid-cols-3 gap-8">
-                <!-- Left Column - Main Info -->
-                <div class="lg:col-span-2 space-y-8">
-                    <!-- About -->
-                    <div class="bg-white rounded-2xl shadow-lg p-8">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Giới thiệu</h2>
-                        <div class="prose prose-blue max-w-none text-gray-600">
-                            <p class="mb-4">
-                                Hội thảo Khoa học Công nghệ Thông tin HUIT 2025 là sự kiện khoa học thường niên được tổ chức bởi Khoa Công nghệ Thông tin, Trường Đại học Công nghiệp TP.HCM. Hội thảo tạo ra một diễn đàn học thuật để các nhà nghiên cứu, giảng viên, sinh viên và chuyên gia trong lĩnh vực CNTT trao đổi, chia sẻ những kết quả nghiên cứu mới nhất.
-                            </p>
-                            <p class="mb-4">
-                                Hội thảo năm nay tập trung vào các chủ đề nóng như Trí tuệ nhân tạo, Machine Learning, An toàn thông tin, IoT, Cloud Computing và các công nghệ mới nổi khác.
-                            </p>
+        <div class="p-6">
+            <!-- Overview Tab -->
+            <div x-show="activeTab === 'overview'">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Mô tả hội thảo</h3>
+                        <div class="prose text-gray-600">
+                            @if(isset($conference->detailed_description) && $conference->detailed_description)
+                                {!! $conference->detailed_description !!}
+                            @elseif(isset($conference->description) && $conference->description)
+                                {!! $conference->description !!}
+                            @else
+                                Thông tin chi tiết sẽ được cập nhật sớm.
+                            @endif
                         </div>
                     </div>
-
-                    <!-- Topics -->
-                    <div class="bg-white rounded-2xl shadow-lg p-8">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Chủ đề hội thảo</h2>
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div class="flex items-start space-x-3">
-                                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-800 mb-1">Trí tuệ nhân tạo</h3>
-                                    <p class="text-sm text-gray-600">AI, Machine Learning, Deep Learning</p>
-                                </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Chủ đề & Từ khóa</h3>
+                        @if(isset($conference->keywords) && $conference->keywords)
+                            <div class="flex flex-wrap gap-2">
+                                @foreach(explode(',', $conference->keywords) as $keyword)
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">{{ trim($keyword) }}</span>
+                                @endforeach
                             </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-800 mb-1">An toàn thông tin</h3>
-                                    <p class="text-sm text-gray-600">Cybersecurity, Blockchain, Mã hóa</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-800 mb-1">Internet of Things</h3>
-                                    <p class="text-sm text-gray-600">IoT, Smart Systems, Sensors</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <h3 class="font-semibold text-gray-800 mb-1">Cloud Computing</h3>
-                                    <p class="text-sm text-gray-600">Cloud Services, Big Data, DevOps</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Organizers -->
-                    <div class="bg-white rounded-2xl shadow-lg p-8">
-                        <h2 class="text-2xl font-bold text-gray-800 mb-6">Ban tổ chức</h2>
-                        <div class="space-y-4">
-                            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
-                                <img src="https://ui-avatars.com/api/?name=Nguyen+Van+A&background=1e40af&color=fff&size=64" 
-                                     alt="Chair" 
-                                     class="w-16 h-16 rounded-xl">
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">PGS.TS. Nguyễn Văn A</h3>
-                                    <p class="text-sm text-gray-600">Chủ tịch hội thảo</p>
-                                    <p class="text-sm text-blue-600">nguyenvana@huit.edu.vn</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
-                                <img src="https://ui-avatars.com/api/?name=Tran+Thi+B&background=f97316&color=fff&size=64" 
-                                     alt="Co-Chair" 
-                                     class="w-16 h-16 rounded-xl">
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">TS. Trần Thị B</h3>
-                                    <p class="text-sm text-gray-600">Đồng chủ tịch</p>
-                                    <p class="text-sm text-blue-600">tranthib@huit.edu.vn</p>
-                                </div>
-                            </div>
-                        </div>
+                        @else
+                            <p class="text-gray-500">Chưa có thông tin về chủ đề</p>
+                        @endif
                     </div>
                 </div>
+            </div>
 
-                <!-- Right Column - Sidebar -->
-                <div class="lg:col-span-1 space-y-6">
-                    <!-- Important Dates -->
-                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl shadow-lg p-6">
-                        <h3 class="text-xl font-bold mb-4">Thời gian quan trọng</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-start space-x-3">
-                                <div class="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <!-- CFP Tab -->
+            <div x-show="activeTab === 'cfp'">
+                @if(isset($conference->cfp_url) && $conference->cfp_url)
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-16 w-16 text-red-400 mb-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Call for Papers</h3>
+                        <p class="text-gray-600 mb-4">Tải xuống tài liệu hướng dẫn nộp bài chi tiết</p>
+                        <a href="{{ $conference->cfp_url }}" target="_blank" 
+                           class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Tải PDF
+                        </a>
+                    </div>
+                @else
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Call for Papers</h3>
+                        <p class="text-gray-500">Call for Papers sẽ được cập nhật sớm</p>
+                    </div>
+                @endif
+
+                @if(isset($conference->submission_guidelines) && $conference->submission_guidelines)
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Hướng dẫn nộp bài</h3>
+                        <div class="prose text-gray-600">
+                            {!! $conference->submission_guidelines !!}
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Important Dates Tab -->
+            <div x-show="activeTab === 'dates'">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="font-medium">Hạn nộp bài báo</span>
+                        </div>
+                        <span class="text-orange-600 font-medium">
+                            @if(isset($conference->deadline_submission))
+                                {{ \Carbon\Carbon::parse($conference->deadline_submission)->format('d/m/Y') }}
+                            @else
+                                TBA
+                            @endif
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                            </svg>
+                            <span class="font-medium">Ngày bắt đầu hội thảo</span>
+                        </div>
+                        <span class="text-blue-600 font-medium">
+                            @if(isset($conference->start_date))
+                                {{ \Carbon\Carbon::parse($conference->start_date)->format('d/m/Y') }}
+                            @else
+                                TBA
+                            @endif
+                        </span>
+                    </div>
+
+                    @if(isset($conference->end_date) && $conference->end_date)
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="font-medium">Ngày kết thúc</span>
+                        </div>
+                        <span class="text-green-600 font-medium">{{ \Carbon\Carbon::parse($conference->end_date)->format('d/m/Y') }}</span>
+                    </div>
+                    @endif
+
+                    <!-- Add to Calendar -->
+                    <div class="mt-6 pt-6 border-t">
+                        <button @click="addToCalendar()" 
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Thêm vào lịch
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submissions Tab -->
+            <div x-show="activeTab === 'submissions'">
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Danh sách bài nộp</h3>
+                    <p class="text-gray-500 mb-4">Chỉ hiển thị sau khi hội thảo kết thúc</p>
+                </div>
+            </div>
+
+            <!-- Organizers Tab -->
+            <div x-show="activeTab === 'organizers'">
+                <div class="space-y-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Ban tổ chức</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex items-center space-x-3 p-4 border rounded-lg">
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
                                 </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-semibold">Hạn nộp bài</p>
-                                    <p class="text-2xl font-bold">15/11/2025</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm">Thông báo kết quả</p>
-                                    <p class="text-lg font-semibold">20/11/2025</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm">Diễn ra hội thảo</p>
-                                    <p class="text-lg font-semibold">25-30/11/2025</p>
+                                <div>
+                                    <div class="font-medium">{{ $conference->chair_name ?? 'Chair Name' }}</div>
+                                    <div class="text-sm text-gray-500">Chủ tịch hội thảo</div>
+                                    @if(isset($conference->chair_email) && $conference->chair_email)
+                                        <div class="text-sm text-blue-600">{{ $conference->chair_email }}</div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Statistics -->
-                    <div class="bg-white rounded-2xl shadow-lg p-6">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">Thống kê</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Thông tin liên hệ</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="space-y-2">
+                                @if(isset($conference->contact_email) && $conference->contact_email)
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                         </svg>
+                                        <span>{{ $conference->contact_email }}</span>
                                     </div>
-                                    <span class="text-sm text-gray-600">Bài báo đã nộp</span>
-                                </div>
-                                <span class="text-2xl font-bold text-blue-600">45</span>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-green-50 rounded-xl">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                @endif
+                                @if(isset($conference->contact_phone) && $conference->contact_phone)
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                                         </svg>
+                                        <span>{{ $conference->contact_phone }}</span>
                                     </div>
-                                    <span class="text-sm text-gray-600">Reviewer</span>
-                                </div>
-                                <span class="text-2xl font-bold text-green-600">23</span>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <span class="text-sm text-gray-600">Tác giả</span>
-                                </div>
-                                <span class="text-2xl font-bold text-purple-600">78</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Contact -->
-                    <div class="bg-white rounded-2xl shadow-lg p-6">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">Liên hệ</h3>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex items-start space-x-3">
-                                <svg class="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                </svg>
-                                <div>
-                                    <p class="font-medium text-gray-800">Email</p>
-                                    <a href="mailto:huit-ici-2025@huit.edu.vn" class="text-blue-600 hover:text-blue-700">
-                                        huit-ici-2025@huit.edu.vn
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <svg class="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                                </svg>
-                                <div>
-                                    <p class="font-medium text-gray-800">Điện thoại</p>
-                                    <a href="tel:+842838940390" class="text-blue-600 hover:text-blue-700">
-                                        (028) 3894 0390
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <svg class="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                                <div>
-                                    <p class="font-medium text-gray-800">Địa điểm</p>
-                                    <p class="text-gray-600">
-                                        Khoa CNTT, Trường ĐH Công nghiệp TP.HCM<br>
-                                        140 Lê Trọng Tấn, Q. Tân Phú, TP.HCM
-                                    </p>
-                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-gray-300 py-8 mt-12">
-        <div class="container mx-auto px-4">
-            <div class="grid md:grid-cols-3 gap-8">
-                <div>
-                    <h3 class="text-white font-bold mb-4">HUIT Conferences</h3>
-                    <p class="text-sm">Trường Đại học Công nghiệp TP.HCM</p>
-                    <p class="text-sm">Nền tảng quản lý hội thảo khoa học đa cấp</p>
+    <!-- Join Request Modal -->
+    <div x-show="openJoinModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+         style="display: none;">
+        <div class="bg-white rounded-lg max-w-md w-full p-6"
+             @click.away="openJoinModal = false">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Yêu cầu tham gia hội thảo</h3>
+            
+            <form @submit.prevent="submitJoinRequest()">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Chọn vai trò:</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" x-model="joinRole" value="AUTHOR" class="mr-2">
+                            <span>Tác giả (Author)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" x-model="joinRole" value="REVIEWER" class="mr-2">
+                            <span>Phản biện viên (Reviewer)</span>
+                        </label>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-white font-bold mb-4">Liên kết</h3>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-white">Bảng điều khiển Tác giả</a></li>
-                        <li><a href="#" class="hover:text-white">Bảng điều khiển Reviewer</a></li>
-                        <li><a href="#" class="hover:text-white">Bảng điều khiển tổ chức</a></li>
-                    </ul>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Lời nhắn (tùy chọn):</label>
+                    <textarea x-model="joinMessage" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              rows="3" 
+                              placeholder="Thêm lời nhắn của bạn..."></textarea>
                 </div>
-                <div>
-                    <h3 class="text-white font-bold mb-4">Liên hệ</h3>
-                    <p class="text-sm">Email: khoics@huit.edu.vn</p>
-                    <p class="text-sm">Điện thoại: (028) 38xx xxxx</p>
-                    <p class="text-sm">Địa chỉ: 140 Lê Trọng Tấn, TP.HCM</p>
+
+                <div class="flex space-x-3">
+                    <button type="button" 
+                            @click="openJoinModal = false"
+                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                            :disabled="!joinRole"
+                            :class="!joinRole ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
+                            class="flex-1 px-4 py-2 text-white rounded-md transition-colors">
+                        Gửi yêu cầu
+                    </button>
                 </div>
-            </div>
-            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-sm">
-                <p>© 2025 HUIT - All rights reserved.</p>
-            </div>
+            </form>
         </div>
-    </footer>
-</body>
-</html>
+    </div>
+</div>
+
+@push('scripts')
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>
+    function conferenceDetail() {
+        return {
+            activeTab: 'overview',
+            openJoinModal: false,
+            joinRole: '',
+            joinMessage: '',
+            deadline: '@if(isset($conference->deadline_submission)){{ \Carbon\Carbon::parse($conference->deadline_submission)->format("d/m/Y") }}@else{{ "TBA" }}@endif',
+            timeRemaining: '{{ $timeRemaining ?? "--" }}',
+
+            submitJoinRequest() {
+                if (!this.joinRole) return;
+
+                const conferenceId = '{{ $conference->conference_id ?? 1 }}';
+
+                // Submit form data
+                fetch(`/conferences/${conferenceId}/join-request`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        role: this.joinRole,
+                        message: this.joinMessage
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Yêu cầu tham gia đã được gửi thành công!');
+                        this.openJoinModal = false;
+                        this.joinRole = '';
+                        this.joinMessage = '';
+                    } else {
+                        alert('Có lỗi xảy ra: ' + (data.message || 'Vui lòng thử lại'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi gửi yêu cầu');
+                });
+            },
+
+            shareConference(platform) {
+                const url = window.location.href;
+                const title = document.title;
+
+                switch (platform) {
+                    case 'copy':
+                        navigator.clipboard.writeText(url).then(() => {
+                            alert('Đã sao chép link!');
+                        });
+                        break;
+                    case 'facebook':
+                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                        break;
+                    case 'linkedin':
+                        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+                        break;
+                }
+            },
+
+            addToCalendar() {
+                const startDate = '@if(isset($conference->start_date)){{ \Carbon\Carbon::parse($conference->start_date)->format("Ymd") }}@endif';
+                const endDate = '@if(isset($conference->end_date)){{ \Carbon\Carbon::parse($conference->end_date)->format("Ymd") }}@endif';
+                const title = '{{ $conference->title ?? "Hội thảo" }}';
+                const description = '{{ $conference->description ?? "" }}';
+                const location = '{{ $conference->location ?? "Online" }}';
+
+                if (!startDate) {
+                    alert('Thông tin lịch chưa đầy đủ');
+                    return;
+                }
+
+                const icsContent = [
+                    'BEGIN:VCALENDAR',
+                    'VERSION:2.0',
+                    'PRODID:-//HUIT Conferences//EN',
+                    'BEGIN:VEVENT',
+                    'UID:conf-{{ $conference->conference_id ?? 1 }}@huit.edu.vn',
+                    `DTSTART:${startDate}T090000Z`,
+                    `DTEND:${endDate || startDate}T180000Z`,
+                    `SUMMARY:${title}`,
+                    `DESCRIPTION:${description}`,
+                    `LOCATION:${location}`,
+                    'END:VEVENT',
+                    'END:VCALENDAR'
+                ].join('\r\n');
+
+                const blob = new Blob([icsContent], { type: 'text/calendar' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
+                link.click();
+                window.URL.revokeObjectURL(url);
+            }
+        };
+    }
+</script>
+@endpush
+@endsection

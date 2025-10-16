@@ -9,7 +9,7 @@ class YeuCauHoiThao extends Model
 {
     use HasFactory;
 
-    protected $table = 'YeuCauHoiThao';
+    protected $table = 'yeucauhoithao';
     protected $primaryKey = 'request_id';
     public $timestamps = false;
 

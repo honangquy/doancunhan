@@ -649,9 +649,9 @@
                                 @endif
                             </div>
 
-                            <button class="w-full px-4 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition">
+                            <a href="{{ route('conferences.show', $conference->conference_id) }}" class="block w-full px-4 py-2.5 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition text-center">
                                 Xem chi tiết
-                            </button>
+                            </a>
                         </div>
                     </div>
                 @empty
@@ -787,49 +787,6 @@
         applyFilters();
     </script>
 
-    <!-- News Section Placeholder -->
-    <section id="news" class="py-16 bg-white scroll-mt-16">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">Tin tức & Thông báo</h2>
-                <p class="text-gray-600">Cập nhật tin tức mới nhất về hội thảo và sự kiện</p>
-            </div>
-            <!-- News content will be added here -->
-        </div>
-    </section>
-
-    <!-- Process Section Placeholder -->
-    <section id="process" class="py-16 bg-gray-50 scroll-mt-16">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">Quy trình</h2>
-                <p class="text-gray-600">Hướng dẫn quy trình tham gia hội thảo</p>
-            </div>
-            <!-- Process content will be added here -->
-        </div>
-    </section>
-
-    <!-- Support Section Placeholder -->
-    <section id="support" class="py-16 bg-white scroll-mt-16">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">Hỗ trợ</h2>
-                <p class="text-gray-600">Liên hệ và hỗ trợ kỹ thuật</p>
-            </div>
-            <!-- Support content will be added here -->
-        </div>
-    </section>
-
-    <!-- Calendar Section Placeholder -->
-    <section id="calendar" class="py-16 bg-gray-50 scroll-mt-16">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">Lịch Hội thảo</h2>
-                <p class="text-gray-600">Xem lịch các hội thảo sắp tới</p>
-            </div>
-            <!-- Calendar content will be added here -->
-        </div>
-    </section>
 
     <!-- Footer -->
     <footer class="bg-gray-800 text-gray-300 py-12 mt-16">

@@ -38,8 +38,16 @@ Route::get('/api/notifications', [HomeController::class, 'getNotifications'])->n
 Route::patch('/api/notifications/{id}/read', [HomeController::class, 'markNotificationAsRead'])->name('api.notifications.read');
 Route::patch('/api/notifications/read-all', [HomeController::class, 'markAllNotificationsAsRead'])->name('api.notifications.read_all');
 Route::post('/api/notifications/sample', [HomeController::class, 'createSampleNotifications'])->name('api.notifications.sample');
-Route::get('/conferences', [HomeController::class, 'conferences'])->name('conferences.index');
-Route::get('/conferences/{id}', [HomeController::class, 'conferenceDetail'])->name('conferences.show');
+// Conference Routes (Public)
+Route::get('/conferences', [\App\Http\Controllers\ConferenceController::class, 'index'])->name('conferences.index');
+Route::get('/conferences/{id}', [\App\Http\Controllers\ConferenceController::class, 'show'])->name('conferences.show');
+
+// Conference Join Request Routes (Authenticated)
+Route::middleware('auth')->group(function () {
+    Route::post('/conferences/{id}/join-request', [\App\Http\Controllers\ConferenceController::class, 'submitJoinRequest'])->name('conferences.join-request');
+    Route::get('/conferences/{id}/my-requests', [\App\Http\Controllers\ConferenceController::class, 'getUserJoinRequests'])->name('conferences.my-requests');
+});
+
 Route::get('/news', [HomeController::class, 'news'])->name('news.index');
 Route::get('/process', [HomeController::class, 'process'])->name('process');
 Route::get('/support', [HomeController::class, 'support'])->name('support');
