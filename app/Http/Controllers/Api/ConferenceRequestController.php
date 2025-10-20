@@ -480,15 +480,28 @@ class ConferenceRequestController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'description' => 'required|string|max:2000',
-                'cfp_url' => 'nullable|url|max:500',
-                'submission_guidelines' => 'nullable|string|max:5000',
+                'title' => 'required|string|max:255',
+                'acronym' => 'required|string|max:50',
+                'year' => 'required|integer|min:' . date('Y') . '|max:' . (date('Y') + 5),
+                'conference_name' => 'nullable|string|max:255',
+                'description' => 'required|string|max:500',
+                'detailed_description' => 'required|string|max:2000',
+                'keywords' => 'nullable|string|max:1000',
+                'start_date' => 'required|date|after_or_equal:today',
+                'end_date' => 'required|date|after_or_equal:start_date',
+                'deadline_submission' => 'required|date|before:start_date',
+                'deadline_review' => 'required|date|after:deadline_submission|before:start_date',
+                'deadline_camera_ready' => 'required|date|after:deadline_review|before_or_equal:start_date',
+                'result_announcement_deadline' => 'nullable|date|before_or_equal:start_date',
+                'reviewers_per_paper' => 'required|integer|min:2|max:5',
+                'enable_coi_check' => 'required|boolean',
                 'location' => 'required|string|max:255',
                 'contact_email' => 'required|email|max:255',
                 'contact_phone' => 'nullable|string|max:20',
                 'chair_name' => 'required|string|max:255',
                 'chair_email' => 'required|email|max:255',
-                'keywords' => 'nullable|string|max:1000',
+                'cfp_url' => 'nullable|url|max:500',
+                'submission_guidelines' => 'required|string|max:2000',
             ]);
 
             if ($validator->fails()) {
@@ -508,31 +521,63 @@ class ConferenceRequestController extends Controller
                 if (!$conference) {
                     // Create HoiThao record if it doesn't exist
                     $conference = HoiThao::create([
+                        'conference_request_id' => $conferenceRequest->request_id,
                         'level_code' => $conferenceRequest->level_code,
                         'faculty_id' => $user->faculty_id ?? null,
-                        'title' => $conferenceRequest->title,
-                        'year' => now()->year,
-                        'status' => 'DRAFT',
+                        'title' => $request->title,
+                        'acronym' => $request->acronym,
+                        'year' => $request->year,
+                        'conference_name' => $request->conference_name,
+                        'description' => $request->description,
+                        'detailed_description' => $request->detailed_description,
+                        'keywords' => $request->keywords,
+                        'start_date' => $request->start_date,
+                        'end_date' => $request->end_date,
+                        'deadline_submission' => $request->deadline_submission,
+                        'deadline_review' => $request->deadline_review,
+                        'deadline_camera_ready' => $request->deadline_camera_ready,
+                        'result_announcement_deadline' => $request->result_announcement_deadline,
+                        'reviewers_per_paper' => $request->reviewers_per_paper,
+                        'enable_coi_check' => $request->enable_coi_check,
+                        'location' => $request->location,
+                        'contact_email' => $request->contact_email,
+                        'contact_phone' => $request->contact_phone,
+                        'chair_name' => $request->chair_name,
+                        'chair_email' => $request->chair_email,
+                        'cfp_url' => $request->cfp_url,
+                        'submission_guidelines' => $request->submission_guidelines,
+                        'status' => 'OPEN',
+                        'chair_id' => $user->user_id,
                     ]);
-
-                    // Link conference to request
-                    $conferenceRequest->conference_id = $conference->conference_id;
-                    $conferenceRequest->save();
+                } else {
+                    // Update existing conference with all configuration
+                    $conference->update([
+                        'title' => $request->title,
+                        'acronym' => $request->acronym,
+                        'year' => $request->year,
+                        'conference_name' => $request->conference_name,
+                        'description' => $request->description,
+                        'detailed_description' => $request->detailed_description,
+                        'keywords' => $request->keywords,
+                        'start_date' => $request->start_date,
+                        'end_date' => $request->end_date,
+                        'deadline_submission' => $request->deadline_submission,
+                        'deadline_review' => $request->deadline_review,
+                        'deadline_camera_ready' => $request->deadline_camera_ready,
+                        'result_announcement_deadline' => $request->result_announcement_deadline,
+                        'reviewers_per_paper' => $request->reviewers_per_paper,
+                        'enable_coi_check' => $request->enable_coi_check,
+                        'location' => $request->location,
+                        'contact_email' => $request->contact_email,
+                        'contact_phone' => $request->contact_phone,
+                        'chair_name' => $request->chair_name,
+                        'chair_email' => $request->chair_email,
+                        'cfp_url' => $request->cfp_url,
+                        'submission_guidelines' => $request->submission_guidelines,
+                        'status' => 'OPEN',
+                        'chair_id' => $user->user_id,
+                    ]);
                 }
-
-                // Update conference with configuration
-                $conference->update([
-                    'description' => $request->description,
-                    'cfp_url' => $request->cfp_url,
-                    'submission_guidelines' => $request->submission_guidelines,
-                    'location' => $request->location,
-                    'contact_email' => $request->contact_email,
-                    'contact_phone' => $request->contact_phone,
-                    'chair_name' => $request->chair_name,
-                    'chair_email' => $request->chair_email,
-                    'keywords' => $request->keywords,
-                    'status' => 'OPEN',
-                ]);
 
                 // Update request status to CONFIGURED
                 $conferenceRequest->update([

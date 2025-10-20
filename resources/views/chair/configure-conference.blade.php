@@ -40,25 +40,88 @@
                     </label>
                     <input type="text" 
                            id="conferenceTitle"
+                           name="title"
                            readonly
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
                            placeholder="Sẽ tự động điền từ yêu cầu">
                 </div>
 
+                <!-- Acronym & Year -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="acronym" class="block text-sm font-medium text-gray-700 mb-2">
+                            Tên viết tắt <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="acronym"
+                               name="acronym"
+                               required
+                               placeholder="VD: AICIT 2025"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               maxlength="50">
+                        <p class="text-red-500 text-sm mt-1 hidden" id="acronymError"></p>
+                    </div>
+
+                    <div>
+                        <label for="year" class="block text-sm font-medium text-gray-700 mb-2">
+                            Năm <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" 
+                               id="year"
+                               name="year"
+                               required
+                               min="{{ date('Y') }}"
+                               max="{{ date('Y') + 5 }}"
+                               value="{{ date('Y') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-red-500 text-sm mt-1 hidden" id="yearError"></p>
+                    </div>
+                </div>
+
+                <!-- Conference Name for Display -->
+                <div class="mb-6">
+                    <label for="conference_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Tên hiển thị hội thảo
+                    </label>
+                    <input type="text" 
+                           id="conference_name"
+                           name="conference_name"
+                           placeholder="Tên để hiển thị trên website (có thể khác với tên chính thức)"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           maxlength="255">
+                    <p class="text-gray-500 text-sm mt-1">Tùy chọn: Tên ngắn gọn để hiển thị</p>
+                </div>
+
                 <!-- Description -->
                 <div class="mb-6">
                     <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                        Mô tả Chi tiết <span class="text-red-500">*</span>
+                        Mô tả ngắn gọn <span class="text-red-500">*</span>
                     </label>
                     <textarea id="description" 
                               name="description"
                               required
+                              rows="3"
+                              placeholder="Mô tả tóm tắt về hội thảo (tối đa 500 ký tự)"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              maxlength="500"></textarea>
+                    <p id="descriptionCount" class="text-sm text-gray-500 mt-1">0 / 500</p>
+                    <p class="text-red-500 text-sm mt-1 hidden" id="descriptionError"></p>
+                </div>
+
+                <!-- Detailed Description -->
+                <div class="mb-6">
+                    <label for="detailed_description" class="block text-sm font-medium text-gray-700 mb-2">
+                        Mô tả Chi tiết <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="detailed_description" 
+                              name="detailed_description"
+                              required
                               rows="5"
-                              placeholder="Nhập mô tả chi tiết về hội thảo (tối đa 2000 ký tự)"
+                              placeholder="Nhập mô tả chi tiết về hội thảo, mục tiêu, chương trình dự kiến (tối đa 2000 ký tự)"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                               maxlength="2000"></textarea>
-                    <p id="descriptionCount" class="text-sm text-gray-500 mt-1">0 / 2000</p>
-                    <p class="text-red-500 text-sm mt-1 hidden" id="descriptionError"></p>
+                    <p id="detailedDescriptionCount" class="text-sm text-gray-500 mt-1">0 / 2000</p>
+                    <p class="text-red-500 text-sm mt-1 hidden" id="detailed_descriptionError"></p>
                 </div>
 
                 <!-- Keywords -->
@@ -73,6 +136,143 @@
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                            maxlength="1000">
                     <p class="text-gray-500 text-sm mt-1">Nhập các từ khóa chính của hội thảo</p>
+                </div>
+            </div>
+
+            <!-- Date & Time Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b-2 border-blue-200">
+                    Thời gian tổ chức
+                </h2>
+
+                <!-- Conference Dates -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
+                            Ngày bắt đầu <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" 
+                               id="start_date"
+                               name="start_date"
+                               required
+                               min="{{ date('Y-m-d') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               onchange="updateEndDateMin()">
+                        <p class="text-red-500 text-sm mt-1 hidden" id="start_dateError"></p>
+                    </div>
+
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
+                            Ngày kết thúc <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" 
+                               id="end_date"
+                               name="end_date"
+                               required
+                               min="{{ date('Y-m-d') }}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-red-500 text-sm mt-1 hidden" id="end_dateError"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deadlines Section -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b-2 border-blue-200">
+                    Thời hạn quan trọng
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Submission Deadline -->
+                    <div class="mb-6">
+                        <label for="deadline_submission" class="block text-sm font-medium text-gray-700 mb-2">
+                            Hạn nộp bài <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local" 
+                               id="deadline_submission"
+                               name="deadline_submission"
+                               required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-red-500 text-sm mt-1 hidden" id="deadline_submissionError"></p>
+                    </div>
+
+                    <!-- Review Deadline -->
+                    <div class="mb-6">
+                        <label for="deadline_review" class="block text-sm font-medium text-gray-700 mb-2">
+                            Hạn phản biện <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local" 
+                               id="deadline_review"
+                               name="deadline_review"
+                               required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-red-500 text-sm mt-1 hidden" id="deadline_reviewError"></p>
+                    </div>
+
+                    <!-- Camera Ready Deadline -->
+                    <div class="mb-6">
+                        <label for="deadline_camera_ready" class="block text-sm font-medium text-gray-700 mb-2">
+                            Hạn nộp bản cuối <span class="text-red-500">*</span>
+                        </label>
+                        <input type="datetime-local" 
+                               id="deadline_camera_ready"
+                               name="deadline_camera_ready"
+                               required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-red-500 text-sm mt-1 hidden" id="deadline_camera_readyError"></p>
+                    </div>
+
+                    <!-- Result Announcement Deadline -->
+                    <div class="mb-6">
+                        <label for="result_announcement_deadline" class="block text-sm font-medium text-gray-700 mb-2">
+                            Hạn thông báo kết quả
+                        </label>
+                        <input type="datetime-local" 
+                               id="result_announcement_deadline"
+                               name="result_announcement_deadline"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-gray-500 text-sm mt-1">Thời hạn thông báo kết quả phản biện</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Section -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b-2 border-blue-200">
+                    Cấu hình đánh giá
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Reviewers per Paper -->
+                    <div class="mb-6">
+                        <label for="reviewers_per_paper" class="block text-sm font-medium text-gray-700 mb-2">
+                            Số phản biện mỗi bài <span class="text-red-500">*</span>
+                        </label>
+                        <select id="reviewers_per_paper"
+                                name="reviewers_per_paper"
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="2">2 phản biện</option>
+                            <option value="3" selected>3 phản biện</option>
+                            <option value="4">4 phản biện</option>
+                            <option value="5">5 phản biện</option>
+                        </select>
+                        <p class="text-red-500 text-sm mt-1 hidden" id="reviewers_per_paperError"></p>
+                    </div>
+
+                    <!-- COI Check -->
+                    <div class="mb-6">
+                        <label for="enable_coi_check" class="block text-sm font-medium text-gray-700 mb-2">
+                            Kiểm tra xung đột lợi ích (COI)
+                        </label>
+                        <select id="enable_coi_check"
+                                name="enable_coi_check"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="1" selected>Bật</option>
+                            <option value="0">Tắt</option>
+                        </select>
+                        <p class="text-gray-500 text-sm mt-1">Tự động kiểm tra xung đột lợi ích giữa tác giả và phản biện</p>
+                    </div>
                 </div>
             </div>
 
@@ -187,16 +387,17 @@
                 <!-- Submission Guidelines -->
                 <div class="mb-6">
                     <label for="submissionGuidelines" class="block text-sm font-medium text-gray-700 mb-2">
-                        Hướng dẫn Nộp bài
+                        Hướng dẫn Nộp bài <span class="text-red-500">*</span>
                     </label>
                     <textarea id="submissionGuidelines" 
                               name="submission_guidelines"
+                              required
                               rows="5"
-                              placeholder="Nhập hướng dẫn chi tiết cho quá trình nộp bài viết (tối đa 5000 ký tự)"
+                              placeholder="Nhập hướng dẫn chi tiết cho quá trình nộp bài viết: format file, số trang, template, cách nộp bài... (tối đa 2000 ký tự)"
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              maxlength="5000"></textarea>
-                    <p id="guidelinesCount" class="text-sm text-gray-500 mt-1">0 / 5000</p>
-                    <p class="text-gray-500 text-sm mt-1">Hướng dẫn chi tiết cho người nộp bài (tùy chọn)</p>
+                              maxlength="2000"></textarea>
+                    <p id="guidelinesCount" class="text-sm text-gray-500 mt-1">0 / 2000</p>
+                    <p class="text-red-500 text-sm mt-1 hidden" id="submission_guidelinesError"></p>
                 </div>
             </div>
 
@@ -357,21 +558,31 @@ document.addEventListener('DOMContentLoaded', function() {
         form.addEventListener('submit', (e) => controller.submitForm(e));
     }
 
-    // Description character counter
-    const descArea = document.getElementById('description');
-    if (descArea) {
-        descArea.addEventListener('input', function() {
-            document.getElementById('descriptionCount').textContent = `${this.value.length} / 2000`;
-        });
-    }
+    // Character counters for text areas
+    const textFields = [
+        { id: 'description', countId: 'descriptionCount', max: 500 },
+        { id: 'detailed_description', countId: 'detailedDescriptionCount', max: 2000 },
+        { id: 'submissionGuidelines', countId: 'guidelinesCount', max: 2000 }
+    ];
 
-    // Guidelines character counter
-    const guideArea = document.getElementById('submissionGuidelines');
-    if (guideArea) {
-        guideArea.addEventListener('input', function() {
-            document.getElementById('guidelinesCount').textContent = `${this.value.length} / 5000`;
-        });
-    }
+    textFields.forEach(field => {
+        const element = document.getElementById(field.id);
+        const counter = document.getElementById(field.countId);
+        if (element && counter) {
+            element.addEventListener('input', function() {
+                counter.textContent = `${this.value.length} / ${field.max}`;
+            });
+        }
+    });
 });
+
+// Update end date minimum when start date changes
+function updateEndDateMin() {
+    const startDate = document.getElementById('start_date').value;
+    const endDateField = document.getElementById('end_date');
+    if (startDate && endDateField) {
+        endDateField.min = startDate;
+    }
+}
 </script>
 @endsection

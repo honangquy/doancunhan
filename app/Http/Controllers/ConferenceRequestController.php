@@ -30,10 +30,26 @@ class ConferenceRequestController extends Controller
             // Dynamic validation rules
             $rules = [
                 'title' => 'required|string|max:255',
+                'acronym' => 'required|string|max:50',
+                'year' => 'required|integer|min:' . date('Y') . '|max:' . (date('Y') + 5),
                 'field' => 'required|string|max:255',
                 'level_code' => 'required|in:KHOA,TRUONG',
-                'expected_date' => 'required|date|after_or_equal:today',
-                'objective' => 'required|string|max:500',
+                'description' => 'required|string|max:500',
+                'detailed_description' => 'required|string|max:2000',
+                'submission_guidelines' => 'nullable|string|max:1000',
+                'cfp_url' => 'nullable|url|max:500',
+                'location' => 'required|string|max:255',
+                'keywords' => 'nullable|string|max:255',
+                'start_date' => 'required|date|after_or_equal:today',
+                'end_date' => 'required|date|after_or_equal:start_date',
+                'submission_deadline' => 'required|date|before:start_date',
+                'review_deadline' => 'required|date|after:submission_deadline|before:start_date',
+                'camera_ready_deadline' => 'required|date|after:review_deadline|before_or_equal:start_date',
+                'result_announcement_deadline' => 'nullable|date|before_or_equal:start_date',
+                'reviewers_per_paper' => 'required|integer|min:2|max:5',
+                'enable_coi_check' => 'required|boolean',
+                'contact_email' => 'required|email|max:255',
+                'contact_phone' => 'nullable|string|max:20',
                 'affiliation' => 'nullable|string|max:255',
                 'chair_fullname' => 'required|string|max:255',
                 'chair_email' => 'required|email|max:255',
@@ -58,12 +74,16 @@ class ConferenceRequestController extends Controller
             }
 
             // Simple duplicate submission protection (server-side):
-            // If the same user has created a request with the same title, expected_date and level_code
+            // If the same user has created a request with the same title, start_date and level_code
             // within the last 2 minutes, treat it as a duplicate and reject with 409.
             $duplicateWindowMinutes = 2;
+            $startDateField = $request->start_date ?? $request->expected_date; // fallback
             $recentDuplicate = YeuCauHoiThao::where('user_id', $user->id)
                 ->where('title', $request->title)
-                ->where('expected_date', $request->expected_date)
+                ->where(function($query) use ($startDateField) {
+                    $query->where('start_date', $startDateField)
+                          ->orWhere('expected_date', $startDateField);
+                })
                 ->where('level_code', $request->level_code)
                 ->where('created_at', '>=', now()->subMinutes($duplicateWindowMinutes))
                 ->first();
@@ -85,10 +105,26 @@ class ConferenceRequestController extends Controller
                 $conferenceRequest = YeuCauHoiThao::create([
                     'user_id' => $user->id,
                     'title' => $request->title,
+                    'acronym' => $request->acronym,
+                    'year' => $request->year,
                     'field' => $request->field,
                     'level_code' => $request->level_code,
-                    'expected_date' => $request->expected_date,
-                    'objective' => $request->objective,
+                    'description' => $request->description,
+                    'detailed_description' => $request->detailed_description,
+                    'submission_guidelines' => $request->submission_guidelines,
+                    'cfp_url' => $request->cfp_url,
+                    'location' => $request->location,
+                    'keywords' => $request->keywords,
+                    'start_date' => $request->start_date,
+                    'end_date' => $request->end_date,
+                    'submission_deadline' => $request->submission_deadline,
+                    'review_deadline' => $request->review_deadline,
+                    'camera_ready_deadline' => $request->camera_ready_deadline,
+                    'result_announcement_deadline' => $request->result_announcement_deadline,
+                    'reviewers_per_paper' => $request->reviewers_per_paper,
+                    'enable_coi_check' => $request->enable_coi_check,
+                    'contact_email' => $request->contact_email,
+                    'contact_phone' => $request->contact_phone,
                     'proposal_file' => $filePath,
                     'status' => 'PENDING',
                     'faculty_name' => $request->faculty_name,
