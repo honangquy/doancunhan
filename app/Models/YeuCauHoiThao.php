@@ -14,34 +14,64 @@ class YeuCauHoiThao extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'conference_id',
-        'requester_id',
-        'request_date',
-        'admin_id',
-        'approval_date',
+        'user_id',
+        'title',
+        'description',
+        'field',
+        'level_code',
+        'expected_date',
+        'objective',
+        'proposal_file',
+        'proposal_file_path',
         'status',
-        'notes',
+        'approver_id',
+        'approval_note',
+        'faculty_name',
+        'affiliation',
+        'chair_fullname',
+        'chair_email',
+        'chair_phone',
+        'submitted_at',
+        'created_at',
+        'approved_at',
     ];
 
     protected $casts = [
-        'request_date' => 'datetime',
-        'approval_date' => 'datetime',
+        'expected_date' => 'date',
+        'submitted_at' => 'datetime',
+        'created_at' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     // Relationships
-    public function hoiThao()
+    public function user()
     {
-        return $this->belongsTo(HoiThao::class, 'conference_id', 'conference_id');
+        return $this->belongsTo(NguoiDung::class, 'user_id', 'user_id');
     }
 
     public function requester()
     {
-        return $this->belongsTo(NguoiDung::class, 'requester_id', 'user_id');
+        return $this->belongsTo(NguoiDung::class, 'user_id', 'user_id');
     }
 
-    public function admin()
+    public function approver()
     {
-        return $this->belongsTo(NguoiDung::class, 'admin_id', 'user_id');
+        return $this->belongsTo(NguoiDung::class, 'approver_id', 'user_id');
+    }
+
+    public function hoiThao()
+    {
+        return $this->hasOne(HoiThao::class, 'conference_request_id', 'request_id');
+    }
+
+    public function conference()
+    {
+        return $this->hasOne(HoiThao::class, 'conference_request_id', 'request_id');
+    }
+
+    public function coChairs()
+    {
+        return $this->hasMany(ThemVienBoSung::class, 'request_id', 'request_id');
     }
 
     // Helper methods

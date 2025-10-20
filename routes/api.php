@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\AdminController;
 Route::get('/', function () {
     $routeCollection = Illuminate\Support\Facades\Route::getRoutes();
     $routes = [];
+
     foreach ($routeCollection as $route) {
         if (str_starts_with($route->uri(), 'api/') && $route->uri() !== 'api') {
             $routes[] = [
@@ -50,6 +51,12 @@ Route::prefix('auth')->group(function () {
 Route::get('conferences', [ConferenceController::class, 'index']);
 Route::get('conferences/{id}', [ConferenceController::class, 'show']);
 Route::get('conferences/{id}/statistics', [ConferenceController::class, 'statistics']);
+
+// Public facilities endpoint (for dropdown in forms)
+Route::get('facilities', function () {
+    $facilities = \App\Models\Khoa::select('faculty_id as id', 'faculty_name as name')->get();
+    return response()->json(['facilities' => $facilities]);
+});
 
 // Protected routes
 Route::middleware(['auth:api'])->group(function () {
@@ -84,6 +91,7 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('conference-requests/{id}/approve', [ConferenceRequestController::class, 'approve']);
     Route::post('conference-requests/{id}/reject', [ConferenceRequestController::class, 'reject']);
     Route::post('conference-requests/{id}/cancel', [ConferenceRequestController::class, 'cancel']);
+    Route::put('conference-requests/{id}/configure', [ConferenceRequestController::class, 'configure']);
     Route::get('conference-requests/statistics', [ConferenceRequestController::class, 'statistics']);
 
     // Paper Management (Phase 4)
@@ -149,7 +157,13 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('reports/overview', [AdminController::class, 'systemOverview']); // System overview
     });
 
-    // TODO: Notifications (Phase 7)
+    // Notifications (Phase 7)
+    Route::get('notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+    Route::get('notifications/unread', [\App\Http\Controllers\Api\NotificationController::class, 'unreadCount']);
+    Route::get('notifications/{id}', [\App\Http\Controllers\Api\NotificationController::class, 'show']);
+    Route::patch('notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+    Route::patch('notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+    Route::delete('notifications/{id}', [\App\Http\Controllers\Api\NotificationController::class, 'destroy']);
 });
 
 // Health check
@@ -159,5 +173,83 @@ Route::get('health', function () {
         'message' => 'HUIT Conference API is running',
         'timestamp' => now()->toDateTimeString()
     ]);
+});
+
+// Test route without CSRF for debugging
+Route::post('test-conference-submit', function (Request $request) {
+    \Log::info('API Test route called', [
+        'method' => $request->method(),
+        'data' => $request->all()
+    ]);
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'API route works without CSRF',
+        'data' => $request->all(),
+        'received_files' => $request->hasFile('proposal_file') ? 'Yes' : 'No'
+    ]);
+});
+
+// Real conference request endpoint with proper validation
+Route::post('submit-conference-request', function (Request $request) {
+    try {
+        \Log::info('Conference request API called', $request->all());
+        
+        // Validate request
+        $validator = \Validator::make($request->all(), [
+            'title' => 'required|string|max:500',
+            'objective' => 'required|string',
+            'level_code' => 'required|in:KHOA,TRUONG',
+            'chair_fullname' => 'required|string|max:255',
+            'chair_email' => 'required|email|max:255',
+            'proposal_file' => 'required|file|mimes:pdf|max:10240',
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        
+        // Handle file upload
+        $fileName = null;
+        if ($request->hasFile('proposal_file')) {
+            $file = $request->file('proposal_file');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('conference-requests', $fileName, 'public');
+        }
+        
+        // Create conference request record
+        $conferenceRequest = \App\Models\YeuCauHoiThao::create([
+            'title' => $request->title,
+            'objective' => $request->objective, // Changed from description
+            'level_code' => $request->level_code,
+            'faculty_name' => $request->faculty_name,
+            'affiliation' => $request->affiliation,
+            'chair_fullname' => $request->chair_fullname,
+            'chair_email' => $request->chair_email,
+            'chair_phone' => $request->chair_phone,
+            'proposal_file' => $fileName, // Store filename only
+            'status' => 'PENDING',
+            'created_at' => now(),
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Conference request submitted successfully',
+            'request_id' => $conferenceRequest->request_id,
+        ]);
+        
+    } catch (\Exception $e) {
+        \Log::error('Conference request error: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while processing your request',
+            'error' => $e->getMessage()
+        ], 500);
+    }
 });
 

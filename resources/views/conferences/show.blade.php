@@ -458,47 +458,222 @@
          x-transition:leave-end="opacity-0"
          class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
          style="display: none;">
-        <div class="bg-white rounded-lg max-w-md w-full p-6"
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
              @click.away="openJoinModal = false">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Yêu cầu tham gia hội thảo</h3>
-            
-            <form @submit.prevent="submitJoinRequest()">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Chọn vai trò:</label>
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="radio" x-model="joinRole" value="AUTHOR" class="mr-2">
-                            <span>Tác giả (Author)</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" x-model="joinRole" value="REVIEWER" class="mr-2">
-                            <span>Phản biện viên (Reviewer)</span>
-                        </label>
+             
+            <!-- Step 1: Role Selection -->
+            <div x-show="!joinRole" class="p-6">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4">Chọn vai trò tham gia</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Author Option -->
+                    <div @click="joinRole = 'AUTHOR'" 
+                         class="p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 hover:bg-orange-50 transition-all">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-8 h-8 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                            <h4 class="text-lg font-semibold text-gray-900">Tác giả</h4>
+                        </div>
+                        <p class="text-gray-600 text-sm">Tham gia với vai trò tác giả để nộp bài báo khoa học</p>
+                    </div>
+                    
+                    <!-- Reviewer Option -->
+                    <div @click="joinRole = 'REVIEWER'" 
+                         class="p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 hover:bg-orange-50 transition-all">
+                        <div class="flex items-center mb-3">
+                            <svg class="w-8 h-8 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <h4 class="text-lg font-semibold text-gray-900">Phản biện viên</h4>
+                        </div>
+                        <p class="text-gray-600 text-sm">Tham gia với vai trò phản biện để đánh giá bài báo</p>
                     </div>
                 </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Lời nhắn (tùy chọn):</label>
-                    <textarea x-model="joinMessage" 
-                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                              rows="3" 
-                              placeholder="Thêm lời nhắn của bạn..."></textarea>
-                </div>
-
-                <div class="flex space-x-3">
-                    <button type="button" 
-                            @click="openJoinModal = false"
-                            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                
+                <div class="mt-6 text-center">
+                    <button type="button" @click="openJoinModal = false"
+                            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
                         Hủy
                     </button>
-                    <button type="submit" 
-                            :disabled="!joinRole"
-                            :class="!joinRole ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
-                            class="flex-1 px-4 py-2 text-white rounded-md transition-colors">
-                        Gửi yêu cầu
+                </div>
+            </div>
+
+            <!-- Step 2: Author Form -->
+            <div x-show="joinRole === 'AUTHOR'" class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Đăng ký tham gia - Tác giả</h3>
+                    <button @click="joinRole = ''" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
                     </button>
                 </div>
-            </form>
+                
+                <form @submit.prevent="submitJoinRequest()">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Họ và tên -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Họ và tên <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.full_name" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Email -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
+                            <input type="email" x-model="formData.email_contact" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Quốc gia -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Quốc gia <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.country" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Đơn vị công tác -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Đơn vị công tác <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.organization" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Khoa -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Khoa <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.department" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Lĩnh vực -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Lĩnh vực <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.field_of_study" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Chức danh/Học vị -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Chức danh/Học vị <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.academic_title" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Số điện thoại -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại <span class="text-red-500">*</span></label>
+                            <input type="tel" x-model="formData.phone" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Ghi chú -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Ghi chú</label>
+                            <textarea x-model="formData.notes" rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                      placeholder="Ghi chú thêm (nếu có)..."></textarea>
+                        </div>
+                        
+                        <!-- Cam kết -->
+                        <div class="md:col-span-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" x-model="formData.commitment_confirmed" required class="mr-2">
+                                <span class="text-sm text-gray-700">Tôi cam kết thông tin trên là chính xác và tuân thủ quy định của hội thảo <span class="text-red-500">*</span></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3 mt-6">
+                        <button type="button" @click="openJoinModal = false"
+                                class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                            Hủy
+                        </button>
+                        <button type="submit" :disabled="!formData.commitment_confirmed || isSubmitting"
+                                :class="(!formData.commitment_confirmed || isSubmitting) ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
+                                class="flex-1 px-4 py-2 text-white rounded-md transition-colors">
+                            <span x-show="!isSubmitting">Gửi yêu cầu</span>
+                            <span x-show="isSubmitting">Đang gửi...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 3: Reviewer Form -->
+            <div x-show="joinRole === 'REVIEWER'" class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Đăng ký tham gia - Phản biện viên</h3>
+                    <button @click="joinRole = ''" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form @submit.prevent="submitJoinRequest()">
+                    <div class="space-y-4">
+                        <!-- Email được mời -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email được mời <span class="text-red-500">*</span></label>
+                            <input type="email" x-model="formData.email_contact" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Họ và tên -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Họ và tên <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.full_name" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Đơn vị công tác -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Đơn vị công tác <span class="text-red-500">*</span></label>
+                            <input type="text" x-model="formData.organization" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        
+                        <!-- Từ khóa chuyên môn -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Từ khóa chuyên môn <span class="text-red-500">*</span></label>
+                            <textarea x-model="formData.expertise_keywords" rows="3" required
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                      placeholder="Ví dụ: Machine Learning, Computer Vision, Natural Language Processing..."></textarea>
+                            <p class="text-xs text-gray-500 mt-1">Liệt kê các lĩnh vực chuyên môn của bạn, cách nhau bằng dấu phẩy</p>
+                        </div>
+                        
+                        <!-- Số bài tối đa -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Số bài tối đa có thể nhận <span class="text-red-500">*</span></label>
+                            <input type="number" x-model="formData.max_papers" min="1" max="50" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <p class="text-xs text-gray-500 mt-1">Số lượng bài báo tối đa bạn có thể phản biện trong hội thảo này</p>
+                        </div>
+                        
+                        <!-- Cam kết -->
+                        <div>
+                            <label class="flex items-start">
+                                <input type="checkbox" x-model="formData.commitment_confirmed" required class="mr-2 mt-1">
+                                <span class="text-sm text-gray-700">Tôi cam kết thực hiện đúng quy trình phản biện, đảm bảo tính khách quan và hoàn thành đúng thời hạn <span class="text-red-500">*</span></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3 mt-6">
+                        <button type="button" @click="openJoinModal = false"
+                                class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                            Hủy
+                        </button>
+                        <button type="submit" :disabled="!formData.commitment_confirmed || isSubmitting"
+                                :class="(!formData.commitment_confirmed || isSubmitting) ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
+                                class="flex-1 px-4 py-2 text-white rounded-md transition-colors">
+                            <span x-show="!isSubmitting">Gửi yêu cầu</span>
+                            <span x-show="isSubmitting">Đang gửi...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -511,36 +686,120 @@
             activeTab: 'overview',
             openJoinModal: false,
             joinRole: '',
-            joinMessage: '',
+            isSubmitting: false,
+            formData: {
+                // Common fields
+                full_name: '',
+                email_contact: '',
+                commitment_confirmed: false,
+                
+                // Author specific fields
+                country: '',
+                organization: '',
+                department: '',
+                field_of_study: '',
+                academic_title: '',
+                phone: '',
+                notes: '',
+                
+                // Reviewer specific fields
+                expertise_keywords: '',
+                max_papers: 1
+            },
             deadline: '@if(isset($conference->deadline_submission)){{ \Carbon\Carbon::parse($conference->deadline_submission)->format("d/m/Y") }}@else{{ "TBA" }}@endif',
             timeRemaining: '{{ $timeRemaining ?? "--" }}',
 
-            submitJoinRequest() {
-                if (!this.joinRole) return;
+            resetForm() {
+                this.formData = {
+                    full_name: '',
+                    email_contact: '',
+                    commitment_confirmed: false,
+                    country: '',
+                    organization: '',
+                    department: '',
+                    field_of_study: '',
+                    academic_title: '',
+                    phone: '',
+                    notes: '',
+                    expertise_keywords: '',
+                    max_papers: 1
+                };
+            },
 
+            submitJoinRequest() {
+                if (!this.joinRole || !this.formData.commitment_confirmed) return;
+                
+                this.isSubmitting = true;
                 const conferenceId = '{{ $conference->conference_id ?? 1 }}';
 
+                // Prepare data based on role
+                let submitData = {
+                    role: this.joinRole,
+                    full_name: this.formData.full_name,
+                    email_contact: this.formData.email_contact,
+                    commitment_confirmed: this.formData.commitment_confirmed ? 1 : 0
+                };
+
+                if (this.joinRole === 'AUTHOR') {
+                    submitData = {
+                        ...submitData,
+                        country: this.formData.country,
+                        organization: this.formData.organization,
+                        department: this.formData.department,
+                        field_of_study: this.formData.field_of_study,
+                        academic_title: this.formData.academic_title,
+                        phone: this.formData.phone,
+                        notes: this.formData.notes
+                    };
+                } else if (this.joinRole === 'REVIEWER') {
+                    submitData = {
+                        ...submitData,
+                        organization: this.formData.organization,
+                        expertise_keywords: this.formData.expertise_keywords,
+                        max_papers: this.formData.max_papers
+                    };
+                }
+
                 // Submit form data
-                fetch(`/conferences/${conferenceId}/join-request`, {
+                console.log('Submitting data:', submitData);
+                
+                @guest
+                alert('Bạn cần đăng nhập để gửi yêu cầu tham gia');
+                window.location.href = '/login';
+                return;
+                @endguest
+                
+                fetch(`{{ route('conferences.join-request', ['id' => '__ID__']) }}`.replace('__ID__', conferenceId), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({
-                        role: this.joinRole,
-                        message: this.joinMessage
-                    })
+                    body: JSON.stringify(submitData)
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Response data:', data);
+                    this.isSubmitting = false;
                     if (data.success) {
-                        alert('Yêu cầu tham gia đã được gửi thành công!');
+                        alert('Yêu cầu tham gia đã được gửi thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.');
                         this.openJoinModal = false;
                         this.joinRole = '';
-                        this.joinMessage = '';
+                        this.resetForm();
                     } else {
-                        alert('Có lỗi xảy ra: ' + (data.message || 'Vui lòng thử lại'));
+                        if (data.errors) {
+                            // Display validation errors
+                            let errorMessages = [];
+                            for (const field in data.errors) {
+                                errorMessages.push(...data.errors[field]);
+                            }
+                            alert('Lỗi nhập liệu:\n' + errorMessages.join('\n'));
+                        } else {
+                            alert('Có lỗi xảy ra: ' + (data.message || 'Vui lòng thử lại'));
+                        }
                     }
                 })
                 .catch(error => {

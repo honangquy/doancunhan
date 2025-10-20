@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use App\Models\NguoiDung;
+use App\Models\ActivityLog;
 
 class AuthController extends Controller
 {
@@ -36,9 +38,56 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             
+            $user = Auth::user();
+            
+            // Log successful login
+            ActivityLog::create([
+                'log_type' => 'LOGIN',
+                'user_id' => $user->user_id,
+                'action' => 'Đăng nhập thành công',
+                'description' => 'Người dùng đăng nhập vào hệ thống',
+                'properties' => [
+                    'email' => $user->email,
+                    'user_agent' => $request->userAgent(),
+                    'remember' => $request->boolean('remember'),
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'severity' => 'low'
+            ]);
+            
+            // Auto-verify special accounts before checking verification status
+            $this->autoVerifySpecialAccounts($user);
+            
+            // Refresh user to get updated email_verified_at
+            $user->refresh();
+            
+            // Check if email is verified (after auto-verification)
+            if (!$user->hasVerifiedEmail()) {
+                return redirect()->route('verification.notice')
+                    ->with('warning', 'Bạn cần xác thực email trước khi có thể sử dụng tài khoản.');
+            }
+            
             // Redirect based on user role
             return $this->redirectToDashboard();
         }
+
+        // Log failed login attempt
+        ActivityLog::create([
+            'log_type' => 'AUTH',
+            'user_id' => null, // No user ID since login failed
+            'action' => 'Đăng nhập thất bại',
+            'description' => 'Thông tin đăng nhập không chính xác cho email: ' . $credentials['email'],
+            'properties' => [
+                'email' => $credentials['email'],
+                'user_agent' => $request->userAgent(),
+                'timestamp' => now()->format('Y-m-d H:i:s')
+            ],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'severity' => 'medium'
+        ]);
 
         return back()->withErrors([
             'email' => 'Thông tin đăng nhập không chính xác.',
@@ -51,6 +100,9 @@ class AuthController extends Controller
     protected function redirectToDashboard()
     {
         $user = Auth::user();
+
+        // Auto-verify certain test/admin accounts
+        $this->autoVerifySpecialAccounts($user);
 
         // Check if user has any role assigned
         $hasAnyRole = DB::table('VaiTroNguoiDung')
@@ -91,6 +143,26 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $user = Auth::user();
+        
+        // Log logout before actually logging out
+        if ($user) {
+            ActivityLog::create([
+                'log_type' => 'LOGIN',
+                'user_id' => $user->user_id,
+                'action' => 'Đăng xuất',
+                'description' => 'Người dùng đăng xuất khỏi hệ thống',
+                'properties' => [
+                    'email' => $user->email,
+                    'user_agent' => $request->userAgent(),
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'severity' => 'low'
+            ]);
+        }
+        
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -134,26 +206,46 @@ class AuthController extends Controller
 
         try {
             // Create new user (without role - admin will assign role later)
-            $userId = DB::table('NguoiDung')->insertGetId([
+            // Email verification is required before full account activation
+            $userId = DB::table('nguoidung')->insertGetId([
                 'email' => $validated['email'],
                 'password_hash' => Hash::make($validated['password']),
                 'full_name' => $validated['full_name'],
                 'is_student' => false,
                 'locked' => false,
+                'email_verified_at' => null, // Not verified yet
                 'created_at' => now(),
             ]);
 
-            // DO NOT assign role - user must be approved by admin first
-            // Admin will assign appropriate role (AUTHOR/REVIEWER/CHAIR) after approval
-
-            // Auto login after registration
+            // Get the user instance
             $user = NguoiDung::find($userId);
+            
+            // Log successful registration
+            ActivityLog::create([
+                'log_type' => 'AUTH',
+                'user_id' => $user->user_id,
+                'action' => 'Đăng ký tài khoản',
+                'description' => 'Người dùng đăng ký tài khoản mới: ' . $user->email,
+                'properties' => [
+                    'email' => $user->email,
+                    'full_name' => $user->full_name,
+                    'user_agent' => $request->userAgent(),
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'severity' => 'low'
+            ]);
+            
+            // Login the user but they need to verify email first
             Auth::login($user);
 
-            // Redirect to home with success message
-            // User will have limited access until admin assigns a role
-            return redirect()->route('home')
-                ->with('success', 'Đăng ký thành công! Vui lòng đợi Admin phê duyệt tài khoản của bạn.');
+            // Send email verification notification
+            $user->sendEmailVerificationNotification();
+
+            // Redirect to email verification notice
+            return redirect()->route('verification.notice')
+                ->with('success', 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản của bạn.');
 
         } catch (\Exception $e) {
             // Log the actual error for debugging
@@ -327,6 +419,242 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi cập nhật ảnh đại diện'
             ], 500);
+        }
+    }
+
+    /**
+     * Show email verification notice
+     */
+    public function showVerifyEmailForm()
+    {
+        if (Auth::user()->hasVerifiedEmail()) {
+            return redirect()->route('home')->with('info', 'Email của bạn đã được xác thực.');
+        }
+
+        return view('auth.verify-email', [
+            'title' => 'Xác thực Email - HUIT Conference'
+        ]);
+    }
+
+    /**
+     * Verify email address
+     */
+    public function verifyEmail(Request $request, $id, $hash)
+    {
+        $user = NguoiDung::findOrFail($id);
+
+        // Simple verification without signature check for now
+        if (!hash_equals((string) $hash, sha1($user->email))) {
+            return redirect()->route('login')->with('error', 'Link xác thực không hợp lệ.');
+        }
+
+        // Check if verification link has expired (10 minutes from account creation)
+        if (now()->diffInMinutes($user->created_at) > 10) {
+            return redirect()->route('login')->with('error', 'Link xác thực đã hết hạn. Vui lòng đăng ký lại tài khoản.');
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            // Auto login if not logged in
+            if (!Auth::check()) {
+                Auth::login($user);
+            }
+            return redirect()->route('home')->with('info', 'Email của bạn đã được xác thực.');
+        }
+
+        if ($user->markEmailAsVerified()) {
+            event(new \Illuminate\Auth\Events\Verified($user));
+            
+            // Auto login the user
+            Auth::login($user);
+            
+            return redirect()->route('home')->with('success', 'Email của bạn đã được xác thực thành công! Bạn có thể sử dụng tài khoản ngay bây giờ.');
+        }
+
+        return redirect()->route('login')->with('error', 'Có lỗi xảy ra khi xác thực email.');
+    }
+
+    /**
+     * Auto-verify special accounts (admin, test accounts)
+     */
+    private function autoVerifySpecialAccounts($user)
+    {
+        // List of emails that should be auto-verified
+        $autoVerifyEmails = [
+            'admin@huit.edu.vn',
+            'chair@huit.edu.vn', 
+            'reviewer@huit.edu.vn',
+            'author@huit.edu.vn',
+            'test@huit.edu.vn',
+            'nangquy2004@gmail.com', // Your admin email
+        ];
+
+        // Check if user has admin role
+        $isAdmin = DB::table('VaiTroNguoiDung')
+            ->where('user_id', $user->user_id)
+            ->where('role_code', 'ADMIN')
+            ->exists();
+
+        // Auto-verify if user email is in the list OR user is admin OR email contains 'test'
+        if (in_array($user->email, $autoVerifyEmails) || 
+            $isAdmin || 
+            strpos($user->email, 'test') !== false ||
+            strpos($user->email, 'admin') !== false) {
+            
+            if (!$user->hasVerifiedEmail()) {
+                DB::table('nguoidung')
+                    ->where('user_id', $user->user_id)
+                    ->update(['email_verified_at' => now()]);
+                
+                Log::info("Auto-verified email for special account: " . $user->email);
+            }
+        }
+    }
+
+    /**
+     * Resend email verification notification
+     */
+    public function resendVerificationEmail(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->hasVerifiedEmail()) {
+            return back()->with('info', 'Email của bạn đã được xác thực.');
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return back()->with('success', 'Email xác thực đã được gửi lại!');
+    }
+
+    /**
+     * Show forgot password form
+     */
+    public function showForgotPasswordForm()
+    {
+        return view('auth.forgot-password', [
+            'title' => 'Quên mật khẩu - HUIT Conference'
+        ]);
+    }
+
+    /**
+     * Send password reset link
+     */
+    public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        // Check if user exists
+        $user = DB::table('nguoidung')->where('email', $request->email)->first();
+        if (!$user) {
+            return back()->withErrors(['email' => 'Không tìm thấy tài khoản với email này.']);
+        }
+
+        // Generate reset token
+        $token = \Illuminate\Support\Str::random(60);
+
+        // Store reset token
+        DB::table('password_resets')->updateOrInsert(
+            ['email' => $request->email],
+            [
+                'email' => $request->email,
+                'token' => Hash::make($token),
+                'created_at' => now()
+            ]
+        );
+
+        // Send reset email
+        try {
+            \Mail::send('auth.emails.password-reset', [
+                'user' => $user,
+                'token' => $token,
+                'resetUrl' => route('password.reset', $token)
+            ], function ($message) use ($request) {
+                $message->to($request->email)
+                        ->subject('Đặt lại mật khẩu - HUIT Conference');
+            });
+
+            return back()->with('success', 'Link đặt lại mật khẩu đã được gửi đến email của bạn!');
+        } catch (\Exception $e) {
+            Log::error('Password reset email error: ' . $e->getMessage());
+            return back()->withErrors(['email' => 'Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.']);
+        }
+    }
+
+    /**
+     * Show reset password form
+     */
+    public function showResetPasswordForm($token)
+    {
+        // Find email associated with this token
+        $resets = DB::table('password_resets')->get();
+        $email = null;
+        
+        foreach ($resets as $reset) {
+            if (Hash::check($token, $reset->token)) {
+                $email = $reset->email;
+                break;
+            }
+        }
+
+        // Debug: Check if email was found
+        \Log::info('Reset password form - Token: ' . $token . ', Email found: ' . ($email ?? 'null'));
+
+        return view('auth.reset-password', [
+            'title' => 'Đặt lại mật khẩu - HUIT Conference',
+            'token' => $token,
+            'email' => $email
+        ]);
+    }
+
+    /**
+     * Reset password
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        // Check if reset record exists
+        $reset = DB::table('password_resets')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$reset || !Hash::check($request->token, $reset->token)) {
+            return back()->withErrors(['email' => 'Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.']);
+        }
+
+        // Check if token is not expired (10 minutes)
+        if (now()->diffInMinutes($reset->created_at) > 10) {
+            return back()->withErrors(['email' => 'Token đặt lại mật khẩu đã hết hạn.']);
+        }
+
+        // Check if user exists
+        $user = DB::table('nguoidung')->where('email', $request->email)->first();
+        if (!$user) {
+            return back()->withErrors(['email' => 'Không tìm thấy tài khoản với email này.']);
+        }
+
+        try {
+            // Update password
+            DB::table('nguoidung')
+                ->where('email', $request->email)
+                ->update([
+                    'password_hash' => Hash::make($request->password)
+                ]);
+
+            // Delete reset token
+            DB::table('password_resets')->where('email', $request->email)->delete();
+
+            return redirect()->route('login')->with('success', 'Mật khẩu đã được đặt lại thành công! Bạn có thể đăng nhập với mật khẩu mới.');
+
+        } catch (\Exception $e) {
+            Log::error('Password reset error: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Có lỗi xảy ra khi đặt lại mật khẩu.']);
         }
     }
 }
