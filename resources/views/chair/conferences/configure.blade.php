@@ -54,7 +54,7 @@
         <div class="bg-white shadow rounded-lg p-6">
             <h3 class="text-lg font-medium text-gray-900 mb-6">Thông tin cơ bản</h3>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <label for="conference_name" class="block text-sm font-medium text-gray-700 mb-2">
                         Tên chính thức hội thảo <span class="text-red-500">*</span>
@@ -72,17 +72,239 @@
                 </div>
 
                 <div>
-                    <label for="conference_date" class="block text-sm font-medium text-gray-700 mb-2">
-                        Ngày tổ chức <span class="text-red-500">*</span>
+                    <label for="acronym" class="block text-sm font-medium text-gray-700 mb-2">
+                        Tên viết tắt <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="acronym" 
+                           name="acronym" 
+                           value="{{ old('acronym') }}"
+                           required
+                           maxlength="50"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="VD: AICIT 2025">
+                    @error('acronym')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="year" class="block text-sm font-medium text-gray-700 mb-2">
+                        Năm <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" 
+                           id="year" 
+                           name="year" 
+                           value="{{ old('year', date('Y')) }}"
+                           required
+                           min="{{ date('Y') }}"
+                           max="{{ date('Y') + 5 }}"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('year')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700 mb-2">
+                        Địa điểm <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="location" 
+                           name="location" 
+                           value="{{ old('location') }}"
+                           required
+                           maxlength="255"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="VD: Đại học Công nghiệp Thực phẩm TP.HCM">
+                    @error('location')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày bắt đầu <span class="text-red-500">*</span>
                     </label>
                     <input type="date" 
-                           id="conference_date" 
-                           name="conference_date" 
-                           value="{{ old('conference_date', $request->expected_date) }}"
+                           id="start_date" 
+                           name="start_date" 
+                           value="{{ old('start_date', $request->expected_date) }}"
+                           required
+                           min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                           @change="updateEndDateMin"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('start_date')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày kết thúc <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           id="end_date" 
+                           name="end_date" 
+                           value="{{ old('end_date', $request->expected_date) }}"
                            required
                            min="{{ date('Y-m-d', strtotime('+1 day')) }}"
                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    @error('conference_date')
+                    @error('end_date')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="keywords" class="block text-sm font-medium text-gray-700 mb-2">
+                        Từ khóa
+                    </label>
+                    <input type="text" 
+                           id="keywords" 
+                           name="keywords" 
+                           value="{{ old('keywords') }}"
+                           maxlength="255"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="VD: AI, Machine Learning, Food Technology">
+                    @error('keywords')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                    Mô tả ngắn gọn <span class="text-red-500">*</span>
+                </label>
+                <textarea id="description" 
+                          name="description" 
+                          required
+                          rows="3"
+                          maxlength="500"
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="Mô tả tóm tắt về hội thảo...">{{ old('description', $request->objective) }}</textarea>
+                @error('description')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-6">
+                <label for="detailed_description" class="block text-sm font-medium text-gray-700 mb-2">
+                    Mô tả chi tiết <span class="text-red-500">*</span>
+                </label>
+                <textarea id="detailed_description" 
+                          name="detailed_description" 
+                          required
+                          rows="5"
+                          maxlength="2000"
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="Mô tả chi tiết về mục tiêu, nội dung, chương trình dự kiến của hội thảo...">{{ old('detailed_description') }}</textarea>
+                @error('detailed_description')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="submission_guidelines" class="block text-sm font-medium text-gray-700 mb-2">
+                        Hướng dẫn nộp bài
+                    </label>
+                    <textarea id="submission_guidelines" 
+                              name="submission_guidelines" 
+                              rows="4"
+                              maxlength="1000"
+                              class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              placeholder="Hướng dẫn về format, cách thức nộp bài, yêu cầu kỹ thuật...">{{ old('submission_guidelines') }}</textarea>
+                    @error('submission_guidelines')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="cfp_url" class="block text-sm font-medium text-gray-700 mb-2">
+                        Link Call for Papers (CFP)
+                    </label>
+                    <input type="url" 
+                           id="cfp_url" 
+                           name="cfp_url" 
+                           value="{{ old('cfp_url') }}"
+                           maxlength="500"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="https://...">
+                    @error('cfp_url')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-6">Thông tin liên hệ</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="contact_email" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email liên hệ <span class="text-red-500">*</span>
+                    </label>
+                    <input type="email" 
+                           id="contact_email" 
+                           name="contact_email" 
+                           value="{{ old('contact_email', $request->chair_email) }}"
+                           required
+                           maxlength="255"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('contact_email')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="contact_phone" class="block text-sm font-medium text-gray-700 mb-2">
+                        Số điện thoại liên hệ
+                    </label>
+                    <input type="tel" 
+                           id="contact_phone" 
+                           name="contact_phone" 
+                           value="{{ old('contact_phone', $request->chair_phone) }}"
+                           maxlength="20"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                           placeholder="+84 9xx xxx xxx">
+                    @error('contact_phone')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="chair_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Tên chủ tịch <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="chair_name" 
+                           name="chair_name" 
+                           value="{{ old('chair_name', $request->chair_fullname) }}"
+                           required
+                           maxlength="255"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('chair_name')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="chair_email" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email chủ tịch <span class="text-red-500">*</span>
+                    </label>
+                    <input type="email" 
+                           id="chair_email" 
+                           name="chair_email" 
+                           value="{{ old('chair_email', $request->chair_email) }}"
+                           required
+                           maxlength="255"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('chair_email')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -135,61 +357,58 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label for="submission_deadline" class="block text-sm font-medium text-gray-700 mb-2">
-                        Deadline nộp bài <span class="text-red-500">*</span>
+                    <label for="deadline_submission" class="block text-sm font-medium text-gray-700 mb-2">
+                        Hạn nộp bài <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" 
-                           id="submission_deadline" 
-                           name="submission_deadline" 
-                           value="{{ old('submission_deadline') }}"
+                    <input type="datetime-local" 
+                           id="deadline_submission" 
+                           name="deadline_submission" 
+                           value="{{ old('deadline_submission') }}"
                            required
-                           min="{{ date('Y-m-d', strtotime('+1 day')) }}"
-                           @change="updateDeadlines"
                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    @error('submission_deadline')
+                    @error('deadline_submission')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label for="review_deadline" class="block text-sm font-medium text-gray-700 mb-2">
-                        Deadline phản biện <span class="text-red-500">*</span>
+                    <label for="deadline_review" class="block text-sm font-medium text-gray-700 mb-2">
+                        Hạn phản biện <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" 
-                           id="review_deadline" 
-                           name="review_deadline" 
-                           value="{{ old('review_deadline') }}"
+                    <input type="datetime-local" 
+                           id="deadline_review" 
+                           name="deadline_review" 
+                           value="{{ old('deadline_review') }}"
                            required
                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    @error('review_deadline')
+                    @error('deadline_review')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label for="camera_ready_deadline" class="block text-sm font-medium text-gray-700 mb-2">
-                        Deadline camera-ready <span class="text-red-500">*</span>
+                    <label for="deadline_camera_ready" class="block text-sm font-medium text-gray-700 mb-2">
+                        Hạn nộp bản cuối <span class="text-red-500">*</span>
                     </label>
-                    <input type="date" 
-                           id="camera_ready_deadline" 
-                           name="camera_ready_deadline" 
-                           value="{{ old('camera_ready_deadline') }}"
+                    <input type="datetime-local" 
+                           id="deadline_camera_ready" 
+                           name="deadline_camera_ready" 
+                           value="{{ old('deadline_camera_ready') }}"
                            required
                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    @error('camera_ready_deadline')
+                    @error('deadline_camera_ready')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
                     <label for="result_announcement_deadline" class="block text-sm font-medium text-gray-700 mb-2">
-                        Deadline công bố kết quả <span class="text-red-500">*</span>
+                        Hạn thông báo kết quả
                     </label>
-                    <input type="date" 
+                    <input type="datetime-local" 
                            id="result_announcement_deadline" 
                            name="result_announcement_deadline" 
                            value="{{ old('result_announcement_deadline') }}"
-                           required
                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     @error('result_announcement_deadline')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -335,28 +554,36 @@ function conferenceSetup() {
             container.appendChild(committeeDiv);
         },
 
+        updateEndDateMin() {
+            const startDate = document.getElementById('start_date').value;
+            const endDateField = document.getElementById('end_date');
+            if (startDate && endDateField) {
+                endDateField.min = startDate;
+            }
+        },
+
         updateDeadlines() {
-            const submissionDate = document.getElementById('submission_deadline').value;
+            const submissionDate = document.getElementById('deadline_submission').value;
             if (submissionDate) {
                 const submission = new Date(submissionDate);
                 
                 // Set review deadline to 2 weeks after submission
                 const reviewDate = new Date(submission);
                 reviewDate.setDate(reviewDate.getDate() + 14);
-                document.getElementById('review_deadline').value = reviewDate.toISOString().split('T')[0];
-                document.getElementById('review_deadline').setAttribute('min', submissionDate);
+                document.getElementById('deadline_review').value = reviewDate.toISOString().slice(0, 16);
+                document.getElementById('deadline_review').setAttribute('min', submissionDate);
                 
                 // Set camera ready deadline to 1 week after review
                 const cameraDate = new Date(reviewDate);
                 cameraDate.setDate(cameraDate.getDate() + 7);
-                document.getElementById('camera_ready_deadline').value = cameraDate.toISOString().split('T')[0];
-                document.getElementById('camera_ready_deadline').setAttribute('min', reviewDate.toISOString().split('T')[0]);
+                document.getElementById('deadline_camera_ready').value = cameraDate.toISOString().slice(0, 16);
+                document.getElementById('deadline_camera_ready').setAttribute('min', reviewDate.toISOString().slice(0, 16));
                 
                 // Set result announcement to 3 days after camera ready
                 const resultDate = new Date(cameraDate);
                 resultDate.setDate(resultDate.getDate() + 3);
-                document.getElementById('result_announcement_deadline').value = resultDate.toISOString().split('T')[0];
-                document.getElementById('result_announcement_deadline').setAttribute('min', cameraDate.toISOString().split('T')[0]);
+                document.getElementById('result_announcement_deadline').value = resultDate.toISOString().slice(0, 16);
+                document.getElementById('result_announcement_deadline').setAttribute('min', cameraDate.toISOString().slice(0, 16));
             }
         },
 
