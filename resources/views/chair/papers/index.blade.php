@@ -1,42 +1,13 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Quản lý bài báo - Chair - HUIT Conference</title>
+@extends('layouts.chair')
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+@section('title', 'Quản lý bài báo')
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        primary: '#ea580c',
-                        accent: '#f97316',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
-</head>
-<body class="bg-gray-50 font-sans" x-data="{
+@section('page-title', 'Quản lý bài báo')
+
+@section('page-subtitle', 'Xem và quản lý tất cả bài báo trong hội thảo')
+
+@section('content')
+<div x-data="{
     currentView: 'papers-list',
     selectedPaperId: null,
     paperDetailData: null,
@@ -50,7 +21,7 @@
         this.paperDetailData = null;
         
         try {
-            const response = await fetch(`/qly_hthao/qlyhoithao/public/chair/papers/${paperId}`);
+            const response = await fetch(`/chair/papers/${paperId}`);
             const html = await response.text();
             
             const parser = new DOMParser();
@@ -60,29 +31,24 @@
             if (mainContent) {
                 this.paperDetailData = mainContent.innerHTML;
             } else {
-                const bodyContent = doc.querySelector('body');
-                if (bodyContent) {
-                    this.paperDetailData = bodyContent.innerHTML;
-                } else {
-                    throw new Error('Cannot extract content');
-                }
+                this.paperDetailData = '<div class=\"p-6 text-center text-red-500\">Không thể tải chi tiết bài báo</div>';
             }
         } catch (error) {
-            console.error('Error loading paper detail:', error);
-            this.paperDetailData = `<div class='bg-red-50 border border-red-200 rounded-lg p-6 text-center'><p class='text-red-600 font-medium'>Không thể tải chi tiết bài báo</p><p class='text-red-500 text-sm mt-2'>Vui lòng thử lại sau</p></div>`;
+            console.error('Lỗi khi tải chi tiết bài báo:', error);
+            this.paperDetailData = '<div class=\"p-6 text-center text-red-500\">Có lỗi xảy ra khi tải dữ liệu</div>';
         } finally {
             this.loading = false;
         }
     },
     
-    async viewAssignReviewer(paperId) {
+    async assignReviewer(paperId) {
         this.selectedPaperId = paperId;
         this.currentView = 'assign-reviewer';
         this.loading = true;
         this.assignReviewerData = null;
         
         try {
-            const response = await fetch(`/qly_hthao/qlyhoithao/public/chair/papers/${paperId}/assign`);
+            const response = await fetch(`/chair/papers/${paperId}/assign`);
             const html = await response.text();
             
             const parser = new DOMParser();
@@ -92,16 +58,11 @@
             if (mainContent) {
                 this.assignReviewerData = mainContent.innerHTML;
             } else {
-                const bodyContent = doc.querySelector('body');
-                if (bodyContent) {
-                    this.assignReviewerData = bodyContent.innerHTML;
-                } else {
-                    throw new Error('Cannot extract content');
-                }
+                this.assignReviewerData = '<div class=\"p-6 text-center text-red-500\">Không thể tải form phân công reviewer</div>';
             }
         } catch (error) {
-            console.error('Error loading assign reviewer:', error);
-            this.assignReviewerData = `<div class='bg-red-50 border border-red-200 rounded-lg p-6 text-center'><p class='text-red-600 font-medium'>Không thể tải trang phân công</p><p class='text-red-500 text-sm mt-2'>Vui lòng thử lại sau</p></div>`;
+            console.error('Lỗi khi tải form phân công:', error);
+            this.assignReviewerData = '<div class=\"p-6 text-center text-red-500\">Có lỗi xảy ra khi tải dữ liệu</div>';
         } finally {
             this.loading = false;
         }
@@ -113,329 +74,308 @@
         this.paperDetailData = null;
         this.assignReviewerData = null;
     }
-    }
-}">
-    <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-orange-600 to-orange-700 text-white flex-shrink-0 hidden md:flex flex-col">
-            <!-- Logo -->
-            <div class="p-6 border-b border-orange-500">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                        <span class="text-2xl font-bold text-orange-600">H</span>
-                    </div>
-                    <div>
-                        <h1 class="text-lg font-bold">HUIT Conferences</h1>
-                        <p class="text-xs text-orange-200">Chair Dashboard</p>
-                    </div>
-                </div>
-            </div>
+}" class="space-y-6">
 
-            <!-- Navigation -->
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <a href="/chair/dashboard" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-orange-500 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
+    <!-- Navigation Tabs -->
+    <div class="border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8">
+            <button 
+                @click="currentView = 'papers-list'"
+                :class="currentView === 'papers-list' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors">
+                Danh sách bài báo
+            </button>
+            <button 
+                @click="currentView = 'statistics'"
+                :class="currentView === 'statistics' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors">
+                Thống kê
+            </button>
+        </nav>
+    </div>
 
-                <a href="/chair/papers" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-orange-500 font-semibold transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span>Quản lý bài báo</span>
-                </a>
-
-                <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-orange-500 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    <span>Quản lý reviewer</span>
-                </a>
-
-                <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-orange-500 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>Kiểm tra COI</span>
-                </a>
-            </nav>
-
-            <!-- User Info -->
-            <div class="p-4 border-t border-orange-500">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-orange-400 rounded-full flex items-center justify-center font-bold">
-                        {{ substr(Auth::user()->full_name ?? 'C', 0, 1) }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium truncate">{{ Auth::user()->full_name ?? 'Chair User' }}</p>
-                        <p class="text-xs text-orange-200 truncate">{{ Auth::user()->email ?? '' }}</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Quản lý bài báo</h2>
-                    <p class="text-sm text-gray-600">Xem và quản lý tất cả bài báo trong hội thảo</p>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button class="p-2 hover:bg-gray-100 rounded-lg transition">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                    </button>
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                            <span class="text-orange-600 font-semibold text-sm">{{ substr(Auth::user()->full_name ?? 'C', 0, 1) }}</span>
-                        </div>
-                        <span class="text-sm font-medium text-gray-700">{{ Auth::user()->full_name ?? 'Chair User' }}</span>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Content Area - Papers List -->
-            <main class="flex-1 overflow-y-auto p-6" x-show="currentView === 'papers-list'" x-cloak>
-                <!-- Filters -->
-                <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                    <form method="GET" action="{{ route('chair.papers') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <!-- Search -->
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
-                            <input type="text" name="search" value="{{ request('search') }}" 
-                                   placeholder="Tên bài báo, tác giả..." 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                        </div>
-
-                        <!-- Conference Filter -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Hội thảo</label>
-                            <select name="conference" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
-                                <option value="">Tất cả</option>
-                                @foreach($conferences as $conf)
-                                    <option value="{{ $conf->conference_id }}" {{ request('conference') == $conf->conference_id ? 'selected' : '' }}>
-                                        {{ $conf->title }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <!-- Status Filter -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-                            <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
-                                <option value="">Tất cả</option>
-                                <option value="SUBMITTED" {{ request('status') == 'SUBMITTED' ? 'selected' : '' }}>Đã nộp</option>
-                                <option value="UNDER_REVIEW" {{ request('status') == 'UNDER_REVIEW' ? 'selected' : '' }}>Đang review</option>
-                                <option value="REVIEWED" {{ request('status') == 'REVIEWED' ? 'selected' : '' }}>Đã review</option>
-                                <option value="ACCEPTED" {{ request('status') == 'ACCEPTED' ? 'selected' : '' }}>Chấp nhận</option>
-                                <option value="REJECTED" {{ request('status') == 'REJECTED' ? 'selected' : '' }}>Từ chối</option>
-                            </select>
-                        </div>
-
-                        <!-- Buttons -->
-                        <div class="md:col-span-4 flex items-center space-x-3">
-                            <button type="submit" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium">
-                                <span class="flex items-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                    </svg>
-                                    <span>Tìm kiếm</span>
-                                </span>
-                            </button>
-                            <a href="{{ route('chair.papers') }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium">
-                                Xóa bộ lọc
-                            </a>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Stats Summary -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    @foreach($statusCounts as $status => $count)
-                        <div class="bg-white rounded-xl shadow-md p-4">
-                            <div class="text-sm text-gray-600 mb-1">{{ $status }}</div>
-                            <div class="text-2xl font-bold text-orange-600">{{ $count }}</div>
-                        </div>
-                    @endforeach
-                </div>
-
-                <!-- Papers Table -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tiêu đề</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tác giả</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Hội thảo</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Reviews</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Điểm TB</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Trạng thái</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                @forelse($papers as $paper)
-                                    <tr class="hover:bg-gray-50 transition">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            #{{ $paper->paper_id }}
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-gray-900">{{ Str::limit($paper->title, 60) }}</div>
-                                            <div class="text-xs text-gray-500">Nộp: {{ \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y H:i') }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {{ $paper->author_name }}
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-gray-600">
-                                            {{ Str::limit($paper->conference_name, 30) }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($paper->reviews_total > 0)
-                                                <div class="flex items-center space-x-2">
-                                                    <div class="text-sm">
-                                                        <span class="font-semibold text-blue-600">{{ $paper->reviews_completed }}</span>
-                                                        <span class="text-gray-500">/{{ $paper->reviews_total }}</span>
-                                                    </div>
-                                                    @if($paper->reviews_completed == $paper->reviews_total)
-                                                        <span class="text-green-500">✓</span>
-                                                    @else
-                                                        <span class="text-yellow-500">⏳</span>
-                                                    @endif
-                                                </div>
-                                            @else
-                                                <span class="text-xs text-orange-600 font-medium">⚠ Chưa phân công</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                            @if($paper->avg_score)
-                                                <span class="font-semibold text-green-600">{{ $paper->avg_score }}/10</span>
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @php
-                                                $statusClasses = [
-                                                    'SUBMITTED' => 'bg-yellow-100 text-yellow-800',
-                                                    'UNDER_REVIEW' => 'bg-blue-100 text-blue-800',
-                                                    'REVIEWED' => 'bg-purple-100 text-purple-800',
-                                                    'ACCEPTED' => 'bg-green-100 text-green-800',
-                                                    'REJECTED' => 'bg-red-100 text-red-800',
-                                                ];
-                                                $class = $statusClasses[$paper->status_code] ?? 'bg-gray-100 text-gray-800';
-                                            @endphp
-                                            <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $class }}">
-                                                {{ $paper->status_name }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                            <button @click="viewPaperDetail({{ $paper->paper_id }})" 
-                                                    class="inline-flex items-center px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-medium">
-                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                </svg>
-                                                Chi tiết
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8" class="px-6 py-12 text-center">
-                                            <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            <p class="text-gray-500 font-medium">Không tìm thấy bài báo nào</p>
-                                            <p class="text-sm text-gray-400 mt-1">Thử thay đổi bộ lọc hoặc tìm kiếm</p>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    @if($papers->hasPages())
-                        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm text-gray-600">
-                                    Hiển thị <span class="font-semibold">{{ $papers->firstItem() }}</span> 
-                                    đến <span class="font-semibold">{{ $papers->lastItem() }}</span> 
-                                    trong tổng số <span class="font-semibold">{{ $papers->total() }}</span> bài báo
-                                </div>
-                                <div>
-                                    {{ $papers->links() }}
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </main>
-
-            <!-- Content Area - Paper Detail View -->
-            <main class="flex-1 overflow-y-auto p-6" x-show="currentView === 'paper-detail'" x-cloak>
-                <div class="mb-6 flex items-center justify-between">
-                    <div>
-                        <button @click="backToList()" class="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                            Quay lại danh sách
-                        </button>
-                        <h1 class="text-3xl font-bold text-gray-900">Chi tiết bài báo</h1>
-                        <p class="text-gray-600 mt-1">Thông tin chi tiết và quản lý bài báo</p>
-                    </div>
-                </div>
-
-                <!-- Loading State -->
-                <div x-show="loading" class="flex items-center justify-center h-96">
-                    <div class="text-center">
-                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
-                        <p class="text-gray-600">Đang tải chi tiết bài báo...</p>
-                        <p class="text-sm text-gray-500 mt-2">Vui lòng chờ...</p>
-                    </div>
-                </div>
-
-                <!-- Paper Detail Content -->
-                <div x-show="!loading && paperDetailData" x-html="paperDetailData"></div>
-            </main>
-
-            <!-- Content Area - Assign Reviewer View -->
-            <main class="flex-1 overflow-y-auto p-6" x-show="currentView === 'assign-reviewer'" x-cloak>
-                <div class="mb-6 flex items-center justify-between">
-                    <div>
-                        <button @click="currentView = 'paper-detail'; viewPaperDetail(selectedPaperId)" class="text-sm text-gray-600 hover:text-gray-900 mb-2 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                            Quay lại chi tiết bài báo
-                        </button>
-                        <h1 class="text-3xl font-bold text-gray-900">Phân công phản biện</h1>
-                        <p class="text-gray-600 mt-1">Chọn reviewer để phân công phản biện bài báo</p>
-                    </div>
-                </div>
-
-                <!-- Loading State -->
-                <div x-show="loading" class="flex items-center justify-center h-96">
-                    <div class="text-center">
-                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
-                        <p class="text-gray-600">Đang tải trang phân công...</p>
-                        <p class="text-sm text-gray-500 mt-2">Vui lòng chờ...</p>
-                    </div>
-                </div>
-
-                <!-- Assign Reviewer Content -->
-                <div x-show="!loading && assignReviewerData" x-html="assignReviewerData"></div>
-            </main>
+    <!-- Loading Overlay -->
+    <div x-show="loading" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 flex items-center space-x-4">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
+            <span class="text-gray-700">Đang tải...</span>
         </div>
     </div>
-</body>
-</html>
+
+    <!-- Papers List View -->
+    <div x-show="currentView === 'papers-list'" x-transition class="space-y-6">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Tổng số bài báo</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $papers->total() ?? 0 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Đang chờ duyệt</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $pendingCount ?? 0 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Đã chấp nhận</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $acceptedCount ?? 0 }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500">Đã từ chối</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $rejectedCount ?? 0 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <form method="GET" action="{{ route('chair.papers') }}" class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-64">
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                    <input type="text" 
+                           name="search" 
+                           id="search"
+                           value="{{ request('search') }}"
+                           placeholder="Tìm theo tiêu đề, tác giả, từ khóa..."
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+                
+                <div class="min-w-40">
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                    <select name="status" id="status" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Tất cả</option>
+                        <option value="PENDING" {{ request('status') === 'PENDING' ? 'selected' : '' }}>Đang chờ duyệt</option>
+                        <option value="ACCEPTED" {{ request('status') === 'ACCEPTED' ? 'selected' : '' }}>Đã chấp nhận</option>
+                        <option value="REJECTED" {{ request('status') === 'REJECTED' ? 'selected' : '' }}>Đã từ chối</option>
+                        <option value="UNDER_REVIEW" {{ request('status') === 'UNDER_REVIEW' ? 'selected' : '' }}>Đang phản biện</option>
+                    </select>
+                </div>
+                
+                <div class="min-w-40">
+                    <label for="conference" class="block text-sm font-medium text-gray-700 mb-1">Hội thảo</label>
+                    <select name="conference" id="conference" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <option value="">Tất cả hội thảo</option>
+                        @if(isset($conferences))
+                            @foreach($conferences as $conference)
+                                <option value="{{ $conference->hoi_thao_id }}" {{ request('conference') == $conference->hoi_thao_id ? 'selected' : '' }}>
+                                    {{ $conference->ten_hoi_thao }}
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+                
+                <button type="submit" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    Tìm kiếm
+                </button>
+                
+                @if(request()->hasAny(['search', 'status', 'conference']))
+                    <a href="{{ route('chair.papers') }}" class="text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg border border-gray-300 transition-colors">
+                        Xóa bộ lọc
+                    </a>
+                @endif
+            </form>
+        </div>
+
+        <!-- Papers Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                @if(isset($papers) && $papers->count() > 0)
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bài báo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tác giả</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hội thảo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày nộp</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($papers as $paper)
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 line-clamp-2">{{ $paper->tieu_de ?? 'N/A' }}</h4>
+                                            @if($paper->tu_khoa)
+                                                <p class="text-sm text-gray-500 mt-1">
+                                                    <span class="font-medium">Từ khóa:</span> {{ Str::limit($paper->tu_khoa, 60) }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm">
+                                            <p class="text-gray-900 font-medium">{{ $paper->nguoiDung->ho_ten ?? 'N/A' }}</p>
+                                            <p class="text-gray-500">{{ $paper->nguoiDung->email ?? 'N/A' }}</p>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm text-gray-900">{{ $paper->hoiThao->ten_hoi_thao ?? 'N/A' }}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @php
+                                            $statusClasses = [
+                                                'PENDING' => 'bg-yellow-100 text-yellow-800',
+                                                'UNDER_REVIEW' => 'bg-blue-100 text-blue-800',
+                                                'ACCEPTED' => 'bg-green-100 text-green-800',
+                                                'REJECTED' => 'bg-red-100 text-red-800'
+                                            ];
+                                            $statusLabels = [
+                                                'PENDING' => 'Đang chờ',
+                                                'UNDER_REVIEW' => 'Đang duyệt',
+                                                'ACCEPTED' => 'Đã duyệt',
+                                                'REJECTED' => 'Từ chối'
+                                            ];
+                                            $currentStatus = $paper->trang_thai ?? 'PENDING';
+                                        @endphp
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusClasses[$currentStatus] ?? 'bg-gray-100 text-gray-800' }}">
+                                            {{ $statusLabels[$currentStatus] ?? $currentStatus }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">
+                                        {{ $paper->created_at ? $paper->created_at->format('d/m/Y') : 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <button @click="viewPaperDetail({{ $paper->bai_bao_id }})" 
+                                                    class="text-indigo-600 hover:text-indigo-900 text-sm font-medium transition-colors">
+                                                Xem
+                                            </button>
+                                            
+                                            @if($currentStatus === 'PENDING')
+                                                <button @click="assignReviewer({{ $paper->bai_bao_id }})" 
+                                                        class="text-green-600 hover:text-green-900 text-sm font-medium transition-colors">
+                                                    Phân công
+                                                </button>
+                                            @endif
+                                            
+                                            @if(in_array($currentStatus, ['UNDER_REVIEW', 'PENDING']))
+                                                <a href="{{ route('chair.papers.decision', $paper->bai_bao_id) }}" 
+                                                   class="text-orange-600 hover:text-orange-900 text-sm font-medium transition-colors">
+                                                    Quyết định
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    
+                    <!-- Pagination -->
+                    @if($papers->hasPages())
+                        <div class="px-6 py-3 border-t border-gray-200">
+                            {{ $papers->links() }}
+                        </div>
+                    @endif
+                @else
+                    <div class="p-12 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">Chưa có bài báo</h3>
+                        <p class="mt-2 text-gray-500">Chưa có bài báo nào được nộp vào hội thảo.</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics View -->
+    <div x-show="currentView === 'statistics'" x-transition class="space-y-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Thống kê tổng quan</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Statistics content would go here -->
+                <div class="text-center p-6 bg-gray-50 rounded-lg">
+                    <p class="text-2xl font-bold text-gray-900">{{ $papers->total() ?? 0 }}</p>
+                    <p class="text-sm text-gray-600">Tổng số bài báo</p>
+                </div>
+                <!-- Add more statistics as needed -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Paper Detail View -->
+    <div x-show="currentView === 'paper-detail'" x-transition class="space-y-6">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900">Chi tiết bài báo</h3>
+            <button @click="backToList()" class="text-gray-500 hover:text-gray-700 transition-colors">
+                ← Quay lại danh sách
+            </button>
+        </div>
+        <div class="bg-white rounded-lg shadow">
+            <div x-html="paperDetailData"></div>
+        </div>
+    </div>
+
+    <!-- Assign Reviewer View -->
+    <div x-show="currentView === 'assign-reviewer'" x-transition class="space-y-6">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900">Phân công reviewer</h3>
+            <button @click="backToList()" class="text-gray-500 hover:text-gray-700 transition-colors">
+                ← Quay lại danh sách
+            </button>
+        </div>
+        <div class="bg-white rounded-lg shadow">
+            <div x-html="assignReviewerData"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    [x-cloak] { display: none !important; }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+@endsection

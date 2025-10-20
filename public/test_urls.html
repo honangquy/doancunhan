@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test User Management URLs</title>
+    <meta name="csrf-token" content="test-token">
+</head>
+<body>
+    <h1>Testing User Management URLs</h1>
+    <div id="results"></div>
+
+    <script>
+        // Helper function to get correct base URL
+        function getBaseUrl() {
+            return window.location.origin + '/qly_hthao/qlyhoithao/public';
+        }
+
+        async function testEndpoints() {
+            const results = document.getElementById('results');
+            
+            // Test URLs
+            const urls = [
+                `${getBaseUrl()}/admin/users`,
+                `${getBaseUrl()}/admin/users/1/edit`,
+                `${getBaseUrl()}/admin/users/1/verify-email`,
+            ];
+            
+            results.innerHTML = '<h2>Testing URLs:</h2>';
+            
+            for (let url of urls) {
+                results.innerHTML += `<p>Testing: ${url}</p>`;
+                
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                        }
+                    });
+                    
+                    results.innerHTML += `<p>Status: ${response.status} - ${response.ok ? 'OK' : 'ERROR'}</p>`;
+                } catch (error) {
+                    results.innerHTML += `<p>Error: ${error.message}</p>`;
+                }
+                
+                results.innerHTML += '<hr>';
+            }
+        }
+        
+        // Run test when page loads
+        window.onload = testEndpoints;
+    </script>
+</body>
+</html>

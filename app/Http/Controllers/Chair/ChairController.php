@@ -1148,7 +1148,6 @@ class ChairController extends Controller
                     'decision_date' => now(),
                     'decision_by' => $userId,
                     'revision_deadline' => $validated['decision'] === 'REVISE' ? $validated['deadline_revision'] : null,
-                    'updated_at' => now()
                 ]);
             
             // TODO: Send email notification to author

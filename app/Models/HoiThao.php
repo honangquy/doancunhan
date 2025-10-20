@@ -18,15 +18,31 @@ class HoiThao extends Model
         'level_code',
         'faculty_id',
         'title',
+        'conference_name',
+        'conference_acronym',
         'description',
         'year',
         'start_date',
         'end_date',
+        'conference_date',
         'deadline_submission',
+        'submission_deadline',
         'deadline_review',
+        'review_deadline',
         'deadline_camera_ready',
+        'camera_ready_deadline',
+        'result_announcement_deadline',
+        'reviewers_per_paper',
+        'enable_coi_check',
+        'banner_path',
+        'chair_id',
         'status',
-        // New fields for conference detail page
+        'field',
+        'level',
+        'faculty_name',
+        'created_at',
+        'updated_at',
+        // Existing fields for conference detail page
         'cfp_url',
         'submission_guidelines',
         'detailed_description',
@@ -42,12 +58,36 @@ class HoiThao extends Model
         'year' => 'integer',
         'start_date' => 'date',
         'end_date' => 'date',
+        'conference_date' => 'date',
         'deadline_submission' => 'date',
+        'submission_deadline' => 'date',
         'deadline_review' => 'date',
+        'review_deadline' => 'date',
         'deadline_camera_ready' => 'date',
+        'camera_ready_deadline' => 'date',
+        'result_announcement_deadline' => 'date',
+        'reviewers_per_paper' => 'integer',
+        'enable_coi_check' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     // Relationships
+    public function chair()
+    {
+        return $this->belongsTo(NguoiDung::class, 'chair_id', 'user_id');
+    }
+
+    public function conferenceRequest()
+    {
+        return $this->belongsTo(YeuCauHoiThao::class, 'conference_request_id', 'request_id');
+    }
+
+    public function committees()
+    {
+        return $this->hasMany(TieuBan::class, 'conference_id', 'conference_id');
+    }
+
     public function khoa()
     {
         return $this->belongsTo(Khoa::class, 'faculty_id', 'faculty_id');

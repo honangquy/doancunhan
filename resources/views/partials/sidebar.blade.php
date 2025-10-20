@@ -2,7 +2,7 @@
 <aside class="w-64 bg-white border-r border-gray-200 min-h-screen" x-show="!sidebarOpen" @click.away="sidebarOpen = false">
     <nav class="p-4 space-y-1">
         @php
-            $role = Auth::user()->role ?? 'author';
+            $role = strtolower(Auth::user()->getPrimaryRole());
         @endphp
         
         <!-- Dashboard -->
@@ -107,17 +107,34 @@
             </div>
         </a>
         
-        <a href="{{ route('admin.conferences.index') }}" 
-           class="nav-link {{ request()->routeIs('admin.conferences.*') ? 'nav-link-active' : 'nav-link-inactive' }}">
-            <div class="flex items-center space-x-3">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        <!-- Conference Management Dropdown -->
+        <div x-data="{ open: {{ request()->routeIs('admin.conferences.*') || request()->routeIs('conference-management.*') ? 'true' : 'false' }} }">
+            <button @click="open = !open" 
+                    class="w-full nav-link {{ request()->routeIs('admin.conferences.*') || request()->routeIs('conference-management.*') ? 'nav-link-active' : 'nav-link-inactive' }} flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <span>Quản lý Hội thảo</span>
+                </div>
+                <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
-                <span>Quản lý Hội thảo</span>
+            </button>
+            
+            <div x-show="open" x-transition class="ml-8 mt-2 space-y-1">
+                <a href="{{ route('admin.conferences.index') }}" 
+                   class="block py-2 px-3 text-sm rounded {{ request()->routeIs('admin.conferences.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                    Danh sách hội thảo
+                </a>
+                <a href="{{ route('conference-management.requests') }}" 
+                   class="block py-2 px-3 text-sm rounded {{ request()->routeIs('conference-management.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                    Yêu cầu tạo hội thảo
+                </a>
             </div>
-        </a>
-        
-        <a href="{{ route('admin.reports.index') }}" 
+        </div>
+
+        <a href="{{ route('admin.reports.index') }}"
            class="nav-link {{ request()->routeIs('admin.reports.*') ? 'nav-link-active' : 'nav-link-inactive' }}">
             <div class="flex items-center space-x-3">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,6 +157,28 @@
                 <span>Tìm hội thảo</span>
             </div>
         </a>
+
+        @auth
+        <a href="{{ route('join-requests.index') }}" 
+           class="nav-link {{ request()->routeIs('join-requests.*') ? 'nav-link-active' : 'nav-link-inactive' }}">
+            <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Yêu cầu tham gia</span>
+            </div>
+        </a>
+
+        <a href="{{ route('conference-management.requests') }}" 
+           class="nav-link {{ request()->routeIs('conference-management.*') ? 'nav-link-active' : 'nav-link-inactive' }}">
+            <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                <span>Yêu cầu tạo hội thảo</span>
+            </div>
+        </a>
+        @endauth
         
         <a href="{{ route('support') }}" 
            class="nav-link nav-link-inactive">

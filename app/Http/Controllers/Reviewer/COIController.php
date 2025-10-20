@@ -164,10 +164,7 @@ class COIController extends Controller
                 'coi_code' => $validated['coi_code'],
                 'source_type' => 'DECLARED',
                 'evidence' => $validated['evidence'],
-                'note' => $validated['note'],
-                'detected_at' => Carbon::now(),
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
+                'created_at' => Carbon::now()
             ]);
             
             DB::commit();

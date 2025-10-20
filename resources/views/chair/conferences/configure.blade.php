@@ -1,0 +1,398 @@
+@extends('layouts.chair')
+
+@section('title', 'Cấu hình Hội thảo')
+
+@section('page-title', 'Cấu hình hội thảo')
+
+@section('page-subtitle', 'Thiết lập thông tin chi tiết cho hội thảo "' . $request->title . '"')
+
+@section('content')
+<div class="max-w-4xl mx-auto" x-data="conferenceSetup()">
+    <!-- Breadcrumb -->
+    <div class="mb-6">
+        <nav class="flex items-center space-x-2 text-sm text-gray-500">
+            <a href="{{ route('chair.conferences.index') }}" class="hover:text-gray-700">Quản lý hội thảo</a>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="text-gray-900">Cấu hình hội thảo</span>
+        </nav>
+    </div>
+
+    <!-- Request Info Card -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+        <h3 class="text-lg font-medium text-blue-900 mb-3">Thông tin yêu cầu gốc</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <span class="font-medium text-blue-800">Tên hội thảo:</span>
+                <span class="text-blue-700">{{ $request->title }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-blue-800">Lĩnh vực:</span>
+                <span class="text-blue-700">{{ $request->field }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-blue-800">Cấp độ:</span>
+                <span class="text-blue-700">{{ $request->level_code === 'KHOA' ? 'Cấp Khoa' : 'Cấp Trường' }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-blue-800">Ngày dự kiến:</span>
+                <span class="text-blue-700">{{ $request->expected_date ? \Carbon\Carbon::parse($request->expected_date)->format('d/m/Y') : 'Chưa xác định' }}</span>
+            </div>
+        </div>
+        <div class="mt-3">
+            <span class="font-medium text-blue-800">Mục tiêu:</span>
+            <p class="text-blue-700 mt-1">{{ $request->objective }}</p>
+        </div>
+    </div>
+
+    <!-- Configuration Form -->
+    <form action="{{ route('chair.conferences.store', $request->request_id) }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+        @csrf
+
+        <!-- Basic Conference Info -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-6">Thông tin cơ bản</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="conference_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Tên chính thức hội thảo <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="conference_name" 
+                           name="conference_name" 
+                           value="{{ old('conference_name', $request->title) }}"
+                           required
+                           maxlength="255"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('conference_name')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="conference_date" class="block text-sm font-medium text-gray-700 mb-2">
+                        Ngày tổ chức <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           id="conference_date" 
+                           name="conference_date" 
+                           value="{{ old('conference_date', $request->expected_date) }}"
+                           required
+                           min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('conference_date')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Configuration -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-6">Cấu hình đánh giá</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="reviewers_per_paper" class="block text-sm font-medium text-gray-700 mb-2">
+                        Số reviewer mỗi bài <span class="text-red-500">*</span>
+                    </label>
+                    <select id="reviewers_per_paper" 
+                            name="reviewers_per_paper" 
+                            required
+                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="">Chọn số reviewer</option>
+                        @for($i = 1; $i <= 10; $i++)
+                            <option value="{{ $i }}" {{ old('reviewers_per_paper') == $i ? 'selected' : '' }}>
+                                {{ $i }} reviewer{{ $i > 1 ? 's' : '' }}
+                            </option>
+                        @endfor
+                    </select>
+                    @error('reviewers_per_paper')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="enable_coi_check" class="flex items-center">
+                        <input type="checkbox" 
+                               id="enable_coi_check" 
+                               name="enable_coi_check" 
+                               value="1"
+                               {{ old('enable_coi_check') ? 'checked' : '' }}
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Kích hoạt kiểm tra COI (Conflict of Interest)</span>
+                    </label>
+                    <p class="mt-1 text-xs text-gray-500">Tự động kiểm tra xung đột lợi ích giữa reviewer và tác giả</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deadlines -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-6">Lịch trình</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="submission_deadline" class="block text-sm font-medium text-gray-700 mb-2">
+                        Deadline nộp bài <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           id="submission_deadline" 
+                           name="submission_deadline" 
+                           value="{{ old('submission_deadline') }}"
+                           required
+                           min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                           @change="updateDeadlines"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('submission_deadline')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="review_deadline" class="block text-sm font-medium text-gray-700 mb-2">
+                        Deadline phản biện <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           id="review_deadline" 
+                           name="review_deadline" 
+                           value="{{ old('review_deadline') }}"
+                           required
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('review_deadline')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="camera_ready_deadline" class="block text-sm font-medium text-gray-700 mb-2">
+                        Deadline camera-ready <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           id="camera_ready_deadline" 
+                           name="camera_ready_deadline" 
+                           value="{{ old('camera_ready_deadline') }}"
+                           required
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('camera_ready_deadline')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="result_announcement_deadline" class="block text-sm font-medium text-gray-700 mb-2">
+                        Deadline công bố kết quả <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" 
+                           id="result_announcement_deadline" 
+                           name="result_announcement_deadline" 
+                           value="{{ old('result_announcement_deadline') }}"
+                           required
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    @error('result_announcement_deadline')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+            
+            <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div class="flex">
+                    <svg class="w-5 h-5 text-yellow-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-medium text-yellow-800">Lưu ý về thời hạn</p>
+                        <p class="text-sm text-yellow-700 mt-1">Các deadline phải được thiết lập theo thứ tự: Nộp bài → Phản biện → Chỉnh sửa → Công bố kết quả</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Banner Upload -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-6">Banner hội thảo (tùy chọn)</h3>
+            
+            <div>
+                <label for="banner" class="block text-sm font-medium text-gray-700 mb-2">
+                    Tải lên banner
+                </label>
+                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-blue-400 transition-colors cursor-pointer" 
+                     onclick="document.getElementById('banner').click()">
+                    <div class="space-y-1 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div class="text-sm text-gray-600">
+                            <span class="font-medium text-blue-600 hover:text-blue-500 cursor-pointer">Tải lên banner</span>
+                            <span class="pl-1">hoặc kéo thả file vào đây</span>
+                        </div>
+                        <p class="text-xs text-gray-500">PNG, JPG, GIF tối đa 2MB</p>
+                        <p id="bannerFileName" class="text-sm text-green-600 font-medium hidden"></p>
+                    </div>
+                </div>
+                <input id="banner" 
+                       name="banner" 
+                       type="file" 
+                       accept="image/*"
+                       class="hidden"
+                       @change="handleBannerChange($event)">
+                @error('banner')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+        </div>
+
+        <!-- Committees -->
+        <div class="bg-white shadow rounded-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-medium text-gray-900">Tiểu ban</h3>
+                <button type="button" 
+                        @click="addCommittee()"
+                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Thêm tiểu ban
+                </button>
+            </div>
+            
+            <div id="committeesContainer" class="space-y-4">
+                <!-- Committees will be added here dynamically -->
+            </div>
+            
+            <template x-if="committees.length === 0">
+                <div class="text-center py-6 text-gray-500">
+                    <p>Chưa có tiểu ban nào. Nhấn "Thêm tiểu ban" để tạo tiểu ban mới.</p>
+                </div>
+            </template>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 pt-6">
+            <button type="submit" 
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Gửi cấu hình hội thảo
+            </button>
+            
+            <a href="{{ route('chair.conferences.index') }}" 
+               class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-3 px-6 rounded-lg transition-colors text-center flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Hủy
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+function conferenceSetup() {
+    return {
+        committees: [],
+
+        init() {
+            // Add default committee
+            this.addCommittee();
+        },
+
+        addCommittee() {
+            const id = Date.now();
+            this.committees.push({ id });
+
+            const container = document.getElementById('committeesContainer');
+            const committeeDiv = document.createElement('div');
+            committeeDiv.id = `committee-${id}`;
+            committeeDiv.className = 'bg-gray-50 p-4 rounded-lg border';
+            committeeDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-medium text-gray-800">Tiểu ban ${this.committees.length}</h4>
+                    <button type="button" onclick="removeCommittee(${id})" class="text-red-600 hover:text-red-800 p-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tên tiểu ban *</label>
+                        <input type="text" name="committees[${id}][name]" required 
+                               placeholder="VD: Kỹ thuật phần mềm" 
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mô tả (tùy chọn)</label>
+                        <textarea name="committees[${id}][description]" rows="2"
+                                  placeholder="Mô tả về lĩnh vực và phạm vi của tiểu ban..."
+                                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                    </div>
+                </div>
+            `;
+            container.appendChild(committeeDiv);
+        },
+
+        updateDeadlines() {
+            const submissionDate = document.getElementById('submission_deadline').value;
+            if (submissionDate) {
+                const submission = new Date(submissionDate);
+                
+                // Set review deadline to 2 weeks after submission
+                const reviewDate = new Date(submission);
+                reviewDate.setDate(reviewDate.getDate() + 14);
+                document.getElementById('review_deadline').value = reviewDate.toISOString().split('T')[0];
+                document.getElementById('review_deadline').setAttribute('min', submissionDate);
+                
+                // Set camera ready deadline to 1 week after review
+                const cameraDate = new Date(reviewDate);
+                cameraDate.setDate(cameraDate.getDate() + 7);
+                document.getElementById('camera_ready_deadline').value = cameraDate.toISOString().split('T')[0];
+                document.getElementById('camera_ready_deadline').setAttribute('min', reviewDate.toISOString().split('T')[0]);
+                
+                // Set result announcement to 3 days after camera ready
+                const resultDate = new Date(cameraDate);
+                resultDate.setDate(resultDate.getDate() + 3);
+                document.getElementById('result_announcement_deadline').value = resultDate.toISOString().split('T')[0];
+                document.getElementById('result_announcement_deadline').setAttribute('min', cameraDate.toISOString().split('T')[0]);
+            }
+        },
+
+        handleBannerChange(event) {
+            const file = event.target.files[0];
+            const fileNameElement = document.getElementById('bannerFileName');
+            
+            if (file) {
+                if (file.type.startsWith('image/')) {
+                    fileNameElement.textContent = `File đã chọn: ${file.name}`;
+                    fileNameElement.classList.remove('hidden');
+                } else {
+                    alert('Vui lòng chọn file hình ảnh');
+                    event.target.value = '';
+                    fileNameElement.classList.add('hidden');
+                }
+            }
+        }
+    }
+}
+
+// Global function for removing committees
+function removeCommittee(id) {
+    const element = document.getElementById(`committee-${id}`);
+    if (element) {
+        element.remove();
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.Alpine) {
+        const setup = conferenceSetup();
+        setup.init();
+        window.conferenceSetupController = setup;
+    }
+});
+</script>
+@endsection

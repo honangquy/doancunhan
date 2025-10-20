@@ -13,8 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('hoithao', function (Blueprint $table) {
-            $table->text('description')->nullable()->after('title')->comment('Mô tả ngắn về hội thảo');
+        Schema::table('nguoidung', function (Blueprint $table) {
+            $table->enum('role', ['ADMIN', 'CHAIR', 'REVIEWER', 'AUTHOR'])->default('AUTHOR')->after('email');
         });
     }
 
@@ -25,8 +25,8 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('hoithao', function (Blueprint $table) {
-            $table->dropColumn('description');
+        Schema::table('nguoidung', function (Blueprint $table) {
+            $table->dropColumn('role');
         });
     }
 };

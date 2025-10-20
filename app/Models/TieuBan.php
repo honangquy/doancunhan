@@ -16,7 +16,10 @@ class TieuBan extends Model
     protected $fillable = [
         'conference_id',
         'title',
+        'committee_name',
+        'description',
         'chair_id',
+        'created_at',
     ];
 
     // Relationships
