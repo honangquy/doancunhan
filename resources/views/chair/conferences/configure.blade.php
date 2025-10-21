@@ -8,6 +8,25 @@
 
 @section('content')
 <div class="max-w-4xl mx-auto" x-data="conferenceSetup()">
+    <!-- Error Messages -->
+    @if ($errors->any())
+        <div class="mb-6 bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <h4 class="font-bold">Có lỗi xảy ra:</h4>
+            <ul class="mt-2 list-disc list-inside">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <!-- Success Message -->
+    @if (session('success'))
+        <div class="mb-6 bg-green-50 border border-green-400 text-green-700 px-4 py-3 rounded">
+            {{ session('success') }}
+        </div>
+    @endif
+
     <!-- Breadcrumb -->
     <div class="mb-6">
         <nav class="flex items-center space-x-2 text-sm text-gray-500">
@@ -131,7 +150,7 @@
                     <input type="date" 
                            id="start_date" 
                            name="start_date" 
-                           value="{{ old('start_date', $request->expected_date) }}"
+                           value="{{ old('start_date', $request->expected_date ? date('Y-m-d', strtotime($request->expected_date)) : '') }}"
                            required
                            min="{{ date('Y-m-d', strtotime('+1 day')) }}"
                            @change="updateEndDateMin"
@@ -148,7 +167,7 @@
                     <input type="date" 
                            id="end_date" 
                            name="end_date" 
-                           value="{{ old('end_date', $request->expected_date) }}"
+                           value="{{ old('end_date', $request->expected_date ? date('Y-m-d', strtotime($request->expected_date)) : '') }}"
                            required
                            min="{{ date('Y-m-d', strtotime('+1 day')) }}"
                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
@@ -234,6 +253,21 @@
                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                            placeholder="https://...">
                     @error('cfp_url')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <div>
+                    <label for="cfp_file" class="block text-sm font-medium text-gray-700 mb-2">
+                        File Call for Papers (PDF)
+                    </label>
+                    <input type="file" 
+                           id="cfp_file" 
+                           name="cfp_file" 
+                           accept=".pdf"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <p class="mt-1 text-xs text-gray-500">Chỉ chấp nhận file PDF, tối đa 10MB</p>
+                    @error('cfp_file')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -515,8 +549,8 @@ function conferenceSetup() {
         committees: [],
 
         init() {
-            // Add default committee
-            this.addCommittee();
+            // Don't add default committee automatically
+            // User can add committees manually by clicking "Thêm tiểu ban"
         },
 
         addCommittee() {

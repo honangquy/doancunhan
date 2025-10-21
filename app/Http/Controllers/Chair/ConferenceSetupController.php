@@ -17,19 +17,30 @@ class ConferenceSetupController extends Controller
      */
     public function index()
     {
-        $userId = auth()->user()->user_id;
+        $userEmail = auth()->user()->email;
         
-        // Get approved conference requests for current chair
-        $approvedRequests = YeuCauHoiThao::where('user_id', $userId)
+        // Get approved conference requests for current chair by email
+        $approvedRequests = DB::table('yeucauhoithao')
+            ->where('chair_email', $userEmail)
             ->where('status', 'APPROVED')
-            ->whereDoesntHave('conference') // Not yet configured
-            ->orderBy('approved_at', 'desc')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                      ->from('hoithao')
+                      ->whereColumn('hoithao.title', 'yeucauhoithao.title');
+            })
+            ->orderBy('created_at', 'desc')
             ->get();
             
         // Get already configured conferences
-        $configuredConferences = HoiThao::whereHas('conferenceRequest', function($query) use ($userId) {
-            $query->where('user_id', $userId);
-        })->with('conferenceRequest')->orderBy('conference_id', 'desc')->get();
+        $configuredConferences = DB::table('hoithao')
+            ->join('yeucauhoithao', function($join) use ($userEmail) {
+                $join->on('hoithao.title', '=', 'yeucauhoithao.title')
+                     ->where('yeucauhoithao.chair_email', '=', $userEmail)
+                     ->where('yeucauhoithao.status', '=', 'APPROVED');
+            })
+            ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status')
+            ->orderBy('hoithao.conference_id', 'desc')
+            ->get();
         
         return view('chair.conferences.index', compact('approvedRequests', 'configuredConferences'));
     }
@@ -53,6 +64,14 @@ class ConferenceSetupController extends Controller
      */
     public function store(Request $request, $requestId)
     {
+        // Debug log
+        \Log::info('Conference setup store method called', [
+            'requestId' => $requestId,
+            'userId' => auth()->user()->user_id,
+            'requestData' => $request->all(),
+            'method' => $request->method()
+        ]);
+
         $conferenceRequest = YeuCauHoiThao::where('request_id', $requestId)
             ->where('user_id', auth()->user()->user_id)
             ->where('status', 'APPROVED')
@@ -69,7 +88,7 @@ class ConferenceSetupController extends Controller
             'description' => 'required|string|max:500',
             'detailed_description' => 'required|string|max:2000',
             'submission_guidelines' => 'nullable|string|max:1000',
-            'cfp_url' => 'nullable|url|max:500',
+            'cfp_file' => 'nullable|file|mimes:pdf|max:10240', // 10MB PDF
             
             // Dates
             'start_date' => 'required|date|after:today',
@@ -91,8 +110,9 @@ class ConferenceSetupController extends Controller
             
             // Files and committees
             'banner' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-            'committees' => 'array',
-            'committees.*.name' => 'required|string|max:255',
+            'cfp_file' => 'nullable|file|mimes:pdf|max:10240', // CFP file PDF, max 10MB
+            'committees' => 'nullable|array',
+            'committees.*.name' => 'required_with:committees|string|max:255',
             'committees.*.description' => 'nullable|string|max:500',
         ]);
 
@@ -105,11 +125,16 @@ class ConferenceSetupController extends Controller
                 $bannerPath = $request->file('banner')->store('conference-banners', 'public');
             }
 
+            // Handle CFP file upload
+            $cfpFilePath = null;
+            if ($request->hasFile('cfp_file')) {
+                $cfpFilePath = $request->file('cfp_file')->store('conference-cfp', 'public');
+            }
+
             // Create conference
             $conference = HoiThao::create([
                 // Basic info
                 'title' => $validatedData['conference_name'],
-                'conference_name' => $validatedData['conference_name'],
                 'acronym' => $validatedData['acronym'],
                 'year' => $validatedData['year'],
                 'location' => $validatedData['location'],
@@ -117,7 +142,7 @@ class ConferenceSetupController extends Controller
                 'description' => $validatedData['description'],
                 'detailed_description' => $validatedData['detailed_description'],
                 'submission_guidelines' => $validatedData['submission_guidelines'],
-                'cfp_url' => $validatedData['cfp_url'],
+                'cfp_file_path' => $cfpFilePath,
                 
                 // Dates
                 'start_date' => $validatedData['start_date'],
@@ -130,8 +155,6 @@ class ConferenceSetupController extends Controller
                 // Contact info
                 'contact_email' => $validatedData['contact_email'],
                 'contact_phone' => $validatedData['contact_phone'],
-                'chair_name' => $validatedData['chair_name'],
-                'chair_email' => $validatedData['chair_email'],
                 
                 // Configuration
                 'reviewers_per_paper' => $validatedData['reviewers_per_paper'],
@@ -141,10 +164,10 @@ class ConferenceSetupController extends Controller
                 'banner_path' => $bannerPath,
                 'chair_id' => auth()->user()->user_id,
                 'status' => 'PENDING_ADMIN_APPROVAL', // Needs admin approval to go live
-                'field' => $conferenceRequest->field,
                 'level_code' => $conferenceRequest->level_code,
                 'faculty_id' => $conferenceRequest->faculty_name,
                 'conference_request_id' => $conferenceRequest->request_id,
+                'acronym' => $validatedData['acronym'],
             ]);
 
             // Update conference request with conference_id
@@ -157,9 +180,9 @@ class ConferenceSetupController extends Controller
                 foreach ($validatedData['committees'] as $committee) {
                     TieuBan::create([
                         'conference_id' => $conference->conference_id,
+                        'title' => $committee['name'], // title là required
                         'committee_name' => $committee['name'],
                         'description' => $committee['description'] ?? null,
-                        'created_at' => now(),
                     ]);
                 }
             }
@@ -172,9 +195,20 @@ class ConferenceSetupController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             
-            // Delete uploaded banner if database operation failed
+            // Log exception
+            \Log::error('Conference setup failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'requestId' => $requestId,
+                'userId' => auth()->user()->user_id
+            ]);
+            
+            // Delete uploaded files if database operation failed
             if ($bannerPath) {
                 Storage::disk('public')->delete($bannerPath);
+            }
+            if ($cfpFilePath) {
+                Storage::disk('public')->delete($cfpFilePath);
             }
             
             return back()->withErrors(['error' => 'Có lỗi xảy ra khi cấu hình hội thảo: ' . $e->getMessage()])->withInput();
@@ -186,9 +220,21 @@ class ConferenceSetupController extends Controller
      */
     public function show($conferenceId)
     {
-        $conference = HoiThao::with(['conferenceRequest', 'committees'])
-            ->where('chair_id', auth()->user()->user_id)
-            ->findOrFail($conferenceId);
+        $userEmail = auth()->user()->email;
+        
+        $conference = DB::table('hoithao')
+            ->join('yeucauhoithao', function($join) use ($userEmail) {
+                $join->on('hoithao.title', '=', 'yeucauhoithao.title')
+                     ->where('yeucauhoithao.chair_email', '=', $userEmail)
+                     ->where('yeucauhoithao.status', '=', 'APPROVED');
+            })
+            ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status')
+            ->where('hoithao.conference_id', $conferenceId)
+            ->first();
+            
+        if (!$conference) {
+            return back()->withErrors(['error' => 'Có lỗi xảy ra khi cấu hình hội thảo: Hội thảo không tồn tại hoặc bạn không có quyền truy cập.']);
+        }
             
         return view('chair.conferences.show', compact('conference'));
     }
@@ -198,10 +244,22 @@ class ConferenceSetupController extends Controller
      */
     public function edit($conferenceId)
     {
-        $conference = HoiThao::with(['conferenceRequest', 'committees'])
-            ->where('chair_id', auth()->user()->user_id)
-            ->where('status', '!=', 'ACTIVE') // Can only edit if not active
-            ->findOrFail($conferenceId);
+        $userEmail = auth()->user()->email;
+        
+        $conference = DB::table('hoithao')
+            ->join('yeucauhoithao', function($join) use ($userEmail) {
+                $join->on('hoithao.title', '=', 'yeucauhoithao.title')
+                     ->where('yeucauhoithao.chair_email', '=', $userEmail)
+                     ->where('yeucauhoithao.status', '=', 'APPROVED');
+            })
+            ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status')
+            ->where('hoithao.conference_id', $conferenceId)
+            ->where('hoithao.status', '!=', 'ACTIVE') // Can only edit if not active
+            ->first();
+            
+        if (!$conference) {
+            return back()->withErrors(['error' => 'Không thể chỉnh sửa hội thảo này hoặc hội thảo không tồn tại.']);
+        }
             
         return view('chair.conferences.edit', compact('conference'));
     }
@@ -211,71 +269,55 @@ class ConferenceSetupController extends Controller
      */
     public function update(Request $request, $conferenceId)
     {
-        $conference = HoiThao::where('chair_id', auth()->user()->user_id)
-            ->where('status', '!=', 'ACTIVE') // Can only edit if not active
-            ->findOrFail($conferenceId);
+        $userEmail = auth()->user()->email;
+        
+        // Check if user can edit this conference
+        $canEdit = DB::table('hoithao')
+            ->join('yeucauhoithao', function($join) use ($userEmail) {
+                $join->on('hoithao.title', '=', 'yeucauhoithao.title')
+                     ->where('yeucauhoithao.chair_email', '=', $userEmail)
+                     ->where('yeucauhoithao.status', '=', 'APPROVED');
+            })
+            ->where('hoithao.conference_id', $conferenceId)
+            ->where('hoithao.status', '!=', 'ACTIVE') // Can only edit if not active
+            ->exists();
+            
+        if (!$canEdit) {
+            return back()->withErrors(['error' => 'Không thể chỉnh sửa hội thảo này.']);
+        }
 
         $validatedData = $request->validate([
-            'conference_name' => 'required|string|max:255',
-            'conference_date' => 'required|date|after:today',
-            'reviewers_per_paper' => 'required|integer|min:1|max:10',
+            'description' => 'nullable|string|max:1000',
+            'start_date' => 'required|date|after:today',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'location' => 'nullable|string|max:255',
+            'max_participants' => 'nullable|integer|min:1',
+            'reviewers_per_paper' => 'required|integer|min:2|max:5',
             'submission_deadline' => 'required|date|after:today',
             'review_deadline' => 'required|date|after:submission_deadline',
-            'camera_ready_deadline' => 'required|date|after:review_deadline',
-            'result_announcement_deadline' => 'required|date|after:camera_ready_deadline',
-            'enable_coi_check' => 'boolean',
-            'banner' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-            'committees' => 'array',
-            'committees.*.name' => 'required|string|max:255',
-            'committees.*.description' => 'nullable|string|max:500',
         ]);
 
         DB::beginTransaction();
         
         try {
-            // Handle banner upload
-            if ($request->hasFile('banner')) {
-                // Delete old banner
-                if ($conference->banner_path) {
-                    Storage::disk('public')->delete($conference->banner_path);
-                }
-                $validatedData['banner_path'] = $request->file('banner')->store('conference-banners', 'public');
-            }
-
             // Update conference
-            $conference->update([
-                'conference_name' => $validatedData['conference_name'],
-                'conference_acronym' => $this->generateAcronym($validatedData['conference_name']),
-                'conference_date' => $validatedData['conference_date'],
-                'submission_deadline' => $validatedData['submission_deadline'],
-                'review_deadline' => $validatedData['review_deadline'],
-                'camera_ready_deadline' => $validatedData['camera_ready_deadline'],
-                'result_announcement_deadline' => $validatedData['result_announcement_deadline'],
-                'reviewers_per_paper' => $validatedData['reviewers_per_paper'],
-                'enable_coi_check' => $validatedData['enable_coi_check'] ?? false,
-                'banner_path' => $validatedData['banner_path'] ?? $conference->banner_path,
-                'updated_at' => now(),
-            ]);
-
-            // Update committees
-            if (isset($validatedData['committees'])) {
-                // Delete existing committees
-                $conference->committees()->delete();
-                
-                // Create new committees
-                foreach ($validatedData['committees'] as $committee) {
-                    TieuBan::create([
-                        'conference_id' => $conference->conference_id,
-                        'committee_name' => $committee['name'],
-                        'description' => $committee['description'] ?? null,
-                        'created_at' => now(),
-                    ]);
-                }
-            }
+            DB::table('hoithao')
+                ->where('conference_id', $conferenceId)
+                ->update([
+                    'description' => $validatedData['description'],
+                    'start_date' => $validatedData['start_date'],
+                    'end_date' => $validatedData['end_date'],
+                    'location' => $validatedData['location'],
+                    'max_participants' => $validatedData['max_participants'],
+                    'reviewers_per_paper' => $validatedData['reviewers_per_paper'],
+                    'submission_deadline' => $validatedData['submission_deadline'],
+                    'review_deadline' => $validatedData['review_deadline'],
+                    'updated_at' => now(),
+                ]);
 
             DB::commit();
 
-            return redirect()->route('chair.conferences.show', $conference->conference_id)
+            return redirect()->route('chair.conferences.show', $conferenceId)
                 ->with('success', 'Cấu hình hội thảo đã được cập nhật thành công.');
 
         } catch (\Exception $e) {

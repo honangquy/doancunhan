@@ -57,7 +57,7 @@ class ConferenceRequestController extends Controller
         
         $query = HoiThao::with(['chair', 'conferenceRequest', 'committees'])
             ->whereNotNull('chair_id')
-            ->orderBy('created_at', 'desc');
+            ->orderBy('conference_id', 'desc'); // Sử dụng conference_id thay vì created_at
             
         if ($status !== 'all') {
             $query->where('status', strtoupper($status));
@@ -249,6 +249,13 @@ class ConferenceRequestController extends Controller
      */
     public function approveConference(Request $request, $conferenceId)
     {
+        \Log::info('ApproveConference called', [
+            'conferenceId' => $conferenceId,
+            'request_data' => $request->all(),
+            'method' => $request->method(),
+            'url' => $request->url()
+        ]);
+        
         $conference = HoiThao::findOrFail($conferenceId);
         
         $request->validate([
@@ -262,7 +269,14 @@ class ConferenceRequestController extends Controller
             'admin_approved_at' => now(),
         ]);
         
-        // TODO: Send notification email to chair
+        // Return JSON response for AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Hội thảo đã được kích hoạt và hiển thị trên trang chủ.',
+                'conference' => $conference
+            ]);
+        }
         
         return redirect()->route('admin.configured-conferences.index')
                         ->with('success', 'Hội thảo đã được kích hoạt và hiển thị trên trang chủ.');
@@ -276,17 +290,24 @@ class ConferenceRequestController extends Controller
         $conference = HoiThao::findOrFail($conferenceId);
         
         $request->validate([
-            'admin_note' => 'required|string|max:1000',
+            'reason' => 'required|string|max:1000',
         ]);
         
         $conference->update([
             'status' => 'REJECTED',
             'admin_approver_id' => auth()->user()->user_id,
-            'admin_note' => $request->admin_note,
+            'admin_note' => $request->reason,
             'admin_approved_at' => now(),
         ]);
         
-        // TODO: Send notification email to chair
+        // Return JSON response for AJAX requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Cấu hình hội thảo đã bị từ chối.',
+                'conference' => $conference
+            ]);
+        }
         
         return redirect()->route('admin.configured-conferences.index')
                         ->with('success', 'Cấu hình hội thảo đã bị từ chối.');
@@ -299,11 +320,13 @@ class ConferenceRequestController extends Controller
     {
         $search = $request->get('search');
         $status = $request->get('status', 'all');
+        $year = $request->get('year');
+        $level = $request->get('level');
         
         $query = HoiThao::with(['chair', 'conferenceRequest'])
-            ->orderBy('created_at', 'desc');
+            ->orderBy('conference_id', 'desc');
             
-        // Default to only show ACTIVE conferences, but allow filtering
+        // Status filter
         if ($status === 'all') {
             // Show all conferences
         } elseif ($status === 'active') {
@@ -312,10 +335,22 @@ class ConferenceRequestController extends Controller
             $query->where('status', strtoupper($status));
         }
         
+        // Year filter
+        if ($year) {
+            $query->where('year', $year);
+        }
+        
+        // Level filter
+        if ($level) {
+            $query->where('level_code', $level);
+        }
+        
+        // Search filter
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('conference_name', 'like', "%{$search}%")
+                $q->where('title', 'like', "%{$search}%")
                   ->orWhere('acronym', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
                   ->orWhereHas('chair', function($subQ) use ($search) {
                       $subQ->where('full_name', 'like', "%{$search}%")
                            ->orWhere('email', 'like', "%{$search}%");
@@ -325,6 +360,205 @@ class ConferenceRequestController extends Controller
         
         $conferences = $query->paginate(15);
         
-        return view('admin.conferences.index', compact('conferences', 'search', 'status'));
+        return view('admin.conferences.index', compact('conferences', 'search', 'status', 'year', 'level'));
+    }
+
+    /**
+     * Show conference details for admin
+     */
+    public function showConferenceDetails($id)
+    {
+        $conference = HoiThao::with(['chair', 'conferenceRequest', 'baiBaos', 'tieuBans'])
+            ->findOrFail($id);
+            
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $conference->conference_id,
+                'title' => $conference->title,
+                'acronym' => $conference->acronym,
+                'description' => $conference->description,
+                'status' => $conference->status,
+                'level' => $conference->level_code,
+                'year' => $conference->year,
+                'start_date' => $conference->start_date ? $conference->start_date->format('Y-m-d') : null,
+                'end_date' => $conference->end_date ? $conference->end_date->format('Y-m-d') : null,
+                'location' => $conference->location,
+                'chair' => $conference->chair ? [
+                    'name' => $conference->chair->full_name,
+                    'email' => $conference->chair->email
+                ] : null,
+                'statistics' => [
+                    'papers_count' => $conference->baiBaos()->count(),
+                    'committees_count' => $conference->tieuBans()->count(),
+                ],
+                'dates' => [
+                    'submission_deadline' => $conference->deadline_submission ? $conference->deadline_submission->format('Y-m-d') : null,
+                    'review_deadline' => $conference->deadline_review ? $conference->deadline_review->format('Y-m-d') : null,
+                    'camera_ready_deadline' => $conference->deadline_camera_ready ? $conference->deadline_camera_ready->format('Y-m-d') : null,
+                ]
+            ]
+        ]);
+    }
+
+    /**
+     * Show edit form for conference
+     */
+    public function editConference($id)
+    {
+        $conference = HoiThao::with(['chair', 'conferenceRequest'])->findOrFail($id);
+        
+        return view('admin.conferences.edit', compact('conference'));
+    }
+
+    /**
+     * Update conference
+     */
+    public function updateConference(Request $request, $id)
+    {
+        $conference = HoiThao::findOrFail($id);
+        
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'acronym' => 'nullable|string|max:50',
+            'description' => 'nullable|string',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'deadline_submission' => 'nullable|date',
+            'deadline_review' => 'nullable|date',
+            'deadline_camera_ready' => 'nullable|date',
+            'location' => 'nullable|string|max:255',
+            'level_code' => 'nullable|in:INTERNATIONAL,NATIONAL,REGIONAL,INSTITUTIONAL',
+            'year' => 'nullable|integer|min:2020|max:2030',
+        ]);
+
+        $conference->update([
+            'title' => $request->title,
+            'acronym' => $request->acronym,
+            'description' => $request->description,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'deadline_submission' => $request->deadline_submission,
+            'deadline_review' => $request->deadline_review,
+            'deadline_camera_ready' => $request->deadline_camera_ready,
+            'location' => $request->location,
+            'level_code' => $request->level_code,
+            'year' => $request->year,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật hội thảo thành công!',
+            'data' => $conference
+        ]);
+    }
+
+    /**
+     * Change conference status
+     */
+    public function changeConferenceStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:ACTIVE,PENDING,COMPLETED'
+        ]);
+
+        $conference = HoiThao::findOrFail($id);
+        $conference->update(['status' => $request->status]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã thay đổi trạng thái thành công!',
+            'data' => [
+                'id' => $conference->conference_id,
+                'status' => $conference->status
+            ]
+        ]);
+    }
+
+    /**
+     * Delete conference
+     */
+    public function deleteConference($id)
+    {
+        try {
+            $conference = HoiThao::findOrFail($id);
+            
+            // Check if conference has associated data
+            $hasSubmissions = $conference->baiBaos()->count() > 0;
+            $hasJoinRequests = $conference->joinRequests()->count() > 0;
+            $hasCommittees = $conference->committees()->count() > 0;
+            
+            if ($hasSubmissions || $hasJoinRequests || $hasCommittees) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không thể xóa hội thảo vì đã có bài báo, yêu cầu tham gia hoặc ban tổ chức đăng ký!'
+                ], 422);
+            }
+            
+            $title = $conference->title;
+            $conference->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Đã xóa hội thảo '{$title}' thành công!"
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa hội thảo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk delete conferences
+     */
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:hoithao,conference_id'
+        ]);
+
+        try {
+            $deletedCount = 0;
+            $failedCount = 0;
+            $conferences = HoiThao::whereIn('conference_id', $request->ids)->get();
+            
+            foreach ($conferences as $conference) {
+                // Check if conference has associated data
+                $hasSubmissions = $conference->baiBaos()->count() > 0;
+                $hasJoinRequests = $conference->joinRequests()->count() > 0;
+                $hasCommittees = $conference->committees()->count() > 0;
+                
+                if (!$hasSubmissions && !$hasJoinRequests && !$hasCommittees) {
+                    $conference->delete();
+                    $deletedCount++;
+                } else {
+                    $failedCount++;
+                }
+            }
+
+            $message = "Đã xóa {$deletedCount} hội thảo.";
+            if ($failedCount > 0) {
+                $message .= " {$failedCount} hội thảo không thể xóa vì đã có dữ liệu liên quan.";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'deleted' => $deletedCount,
+                    'failed' => $failedCount
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi xóa hội thảo: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

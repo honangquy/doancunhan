@@ -34,6 +34,7 @@ class YeuCauHoiThao extends Model
         'submitted_at',
         'created_at',
         'approved_at',
+        'conference_id',
     ];
 
     protected $casts = [
@@ -67,6 +68,11 @@ class YeuCauHoiThao extends Model
     public function conference()
     {
         return $this->hasOne(HoiThao::class, 'conference_request_id', 'request_id');
+    }
+
+    public function conferenceById()
+    {
+        return $this->belongsTo(HoiThao::class, 'conference_id', 'conference_id');
     }
 
     public function coChairs()

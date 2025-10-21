@@ -291,19 +291,33 @@
 
             <!-- CFP Tab -->
             <div x-show="activeTab === 'cfp'">
-                @if(isset($conference->cfp_url) && $conference->cfp_url)
+                @if(isset($conference->cfp_file_path) && $conference->cfp_file_path)
                     <div class="text-center py-8">
                         <svg class="mx-auto h-16 w-16 text-red-400 mb-4" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                         </svg>
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Call for Papers</h3>
-                        <p class="text-gray-600 mb-4">Tải xuống tài liệu hướng dẫn nộp bài chi tiết</p>
-                        <a href="{{ $conference->cfp_url }}" target="_blank" 
+                        <p class="text-gray-600 mb-6">Tải xuống tài liệu hướng dẫn nộp bài chi tiết</p>
+                        
+                        <!-- Embedded PDF Viewer -->
+                        <div class="bg-gray-100 rounded-lg p-4 mb-4">
+                            <iframe src="{{ asset('storage/' . $conference->cfp_file_path) }}" 
+                                    width="100%" 
+                                    height="500px" 
+                                    class="border-0 rounded">
+                                <p>Trình duyệt của bạn không hỗ trợ hiển thị PDF. 
+                                   <a href="{{ asset('storage/' . $conference->cfp_file_path) }}" target="_blank" class="text-blue-600 underline">Nhấn vào đây để tải xuống</a>
+                                </p>
+                            </iframe>
+                        </div>
+                        
+                        <!-- Download Button -->
+                        <a href="{{ asset('storage/' . $conference->cfp_file_path) }}" target="_blank" download
                            class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            Tải PDF
+                            Tải xuống PDF
                         </a>
                     </div>
                 @else

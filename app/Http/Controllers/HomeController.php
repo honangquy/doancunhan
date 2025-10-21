@@ -54,6 +54,7 @@ class HomeController extends Controller
                 'h.status',
                 DB::raw('COUNT(b.paper_id) as paper_count')
             )
+            ->where('h.status', 'ACTIVE') // Chỉ tìm kiếm trong các hội thảo đã được duyệt
             ->groupBy('h.conference_id', 'h.title', 'h.start_date', 'h.end_date', 'h.deadline_submission', 'h.year', 'h.status');
             
         // Apply search filter
@@ -154,7 +155,7 @@ class HomeController extends Controller
     private function getStatistics()
     {
         return [
-            'totalConferences' => DB::table('HoiThao')->count(),
+            'totalConferences' => DB::table('HoiThao')->where('status', 'ACTIVE')->count(),
             'totalPapers' => DB::table('BaiBao')->count(),
             'totalAuthors' => DB::table('VaiTroNguoiDung')
                 ->join('LoaiVaiTro', 'VaiTroNguoiDung.role_code', '=', 'LoaiVaiTro.role_code')
@@ -168,6 +169,7 @@ class HomeController extends Controller
                 ->count(),
             'totalReviews' => DB::table('PhanBien')->count(),
             'activeConferences' => DB::table('HoiThao')
+                ->where('status', 'ACTIVE')
                 ->where('start_date', '>', now())
                 ->count()
         ];
@@ -190,6 +192,7 @@ class HomeController extends Controller
                 'h.status',
                 DB::raw('COUNT(b.paper_id) as paper_count')
             )
+            ->where('h.status', 'ACTIVE') // Chỉ hiển thị hội thảo đã được admin duyệt
             ->groupBy('h.conference_id', 'h.title', 'h.start_date', 'h.end_date', 'h.deadline_submission', 'h.year', 'h.status')
             ->orderBy('h.year', 'desc')
             ->orderBy('h.conference_id', 'desc')

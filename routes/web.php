@@ -321,6 +321,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/conferences', [\App\Http\Controllers\Chair\ConferenceSetupController::class, 'index'])->name('conferences.index');
         Route::get('/conferences/configure/{requestId}', [\App\Http\Controllers\Chair\ConferenceSetupController::class, 'configure'])->name('conferences.configure');
         Route::post('/conferences/configure/{requestId}', [\App\Http\Controllers\Chair\ConferenceSetupController::class, 'store'])->name('conferences.store');
+        
+        // Test route for debugging
+        Route::post('/test-conference-debug/{requestId}', function(Request $request, $requestId) {
+            \Log::info('Test route called', [
+                'requestId' => $requestId,
+                'data' => $request->all()
+            ]);
+            return response()->json(['success' => true, 'data' => $request->all()]);
+        })->name('test.conference.debug');
         Route::get('/conferences/{conferenceId}', [\App\Http\Controllers\Chair\ConferenceSetupController::class, 'show'])->name('conferences.show');
         Route::get('/conferences/{conferenceId}/edit', [\App\Http\Controllers\Chair\ConferenceSetupController::class, 'edit'])->name('conferences.edit');
         Route::put('/conferences/{conferenceId}', [\App\Http\Controllers\Chair\ConferenceSetupController::class, 'update'])->name('conferences.update');
@@ -388,6 +397,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Conference Management (All Conferences - Active ones)
         Route::get('/conferences', [AdminConferenceRequestController::class, 'allConferences'])->name('conferences.index');
+        Route::get('/conferences/{id}', [AdminConferenceRequestController::class, 'showConferenceDetails'])->name('conferences.show');
+        Route::get('/conferences/{id}/edit', [AdminConferenceRequestController::class, 'editConference'])->name('conferences.edit');
+        Route::put('/conferences/{id}', [AdminConferenceRequestController::class, 'updateConference'])->name('conferences.update');
+        Route::post('/conferences/{id}/status', [AdminConferenceRequestController::class, 'changeConferenceStatus'])->name('conferences.change-status');
+        Route::delete('/conferences/{id}', [AdminConferenceRequestController::class, 'deleteConference'])->name('conferences.delete');
+        Route::post('/conferences/bulk-delete', [AdminConferenceRequestController::class, 'bulkDelete'])->name('conferences.bulk-delete');
         
         // Reports & Statistics
         Route::get('/reports', [DashboardController::class, 'adminReports'])->name('reports.index');

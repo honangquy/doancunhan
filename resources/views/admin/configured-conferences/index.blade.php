@@ -179,11 +179,11 @@
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
                                         <div>
                                             <span class="font-medium">Chair:</span>
-                                            <span x-text="conference.chair?.name || 'Chưa xác định'"></span>
+                                            <span x-text="conference.chair?.full_name || conference.chair_name || 'Chưa xác định'"></span>
                                         </div>
                                         <div>
                                             <span class="font-medium">Ngày tổ chức:</span>
-                                            <span x-text="formatDate(conference.conference_date)"></span>
+                                            <span x-text="formatDate(conference.start_date) + ' - ' + formatDate(conference.end_date)"></span>
                                         </div>
                                         <div>
                                             <span class="font-medium">Số reviewer/bài:</span>
@@ -191,7 +191,7 @@
                                         </div>
                                         <div>
                                             <span class="font-medium">Deadline nộp bài:</span>
-                                            <span x-text="formatDate(conference.submission_deadline)"></span>
+                                            <span x-text="formatDate(conference.deadline_submission)"></span>
                                         </div>
                                         <div>
                                             <span class="font-medium">COI Check:</span>
@@ -338,7 +338,7 @@
 <script>
 function configuredConferences() {
     return {
-        conferences: @json($conferences),
+        conferences: @json($conferences->items()),
         search: '',
         statusFilter: '',
         levelFilter: '',
@@ -433,7 +433,7 @@ function configuredConferences() {
 
         async confirmApprove() {
             try {
-                const response = await fetch(`{{ route('admin.conference-requests.approve-conference', '') }}/${this.selectedConferenceId}`, {
+                const response = await fetch(`/admin/conference-requests/${this.selectedConferenceId}/approve-conference`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -464,7 +464,7 @@ function configuredConferences() {
             if (!this.rejectReason.trim()) return;
 
             try {
-                const response = await fetch(`{{ route('admin.conference-requests.reject-conference', '') }}/${this.selectedConferenceId}`, {
+                const response = await fetch(`/admin/conference-requests/${this.selectedConferenceId}/reject-conference`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

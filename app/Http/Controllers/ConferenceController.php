@@ -15,13 +15,62 @@ class ConferenceController extends Controller
     /**
      * Display a listing of conferences.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $conferences = HoiThao::with('khoa')
-            ->orderBy('created_at', 'desc')
+        $search = $request->get('search');
+        $status = $request->get('status', 'all');
+        $level = $request->get('level');
+        
+        $query = HoiThao::with('khoa')
+            ->where('status', 'ACTIVE'); // Chỉ hiển thị hội thảo đã được admin duyệt
+            
+        // Search filter
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('keywords', 'like', "%{$search}%");
+            });
+        }
+        
+        // Level filter
+        if ($level) {
+            $query->where('level_code', $level);
+        }
+        
+        // Status filter based on dates
+        if ($status !== 'all') {
+            $now = now();
+            switch ($status) {
+                case 'open':
+                    $query->where('deadline_submission', '>', $now);
+                    break;
+                case 'upcoming':
+                    $query->where('start_date', '>', $now)
+                          ->where('deadline_submission', '<=', $now);
+                    break;
+                case 'ongoing':
+                    $query->where('start_date', '<=', $now)
+                          ->where('end_date', '>=', $now);
+                    break;
+                case 'ended':
+                    $query->where('end_date', '<', $now);
+                    break;
+            }
+        }
+        
+        $conferences = $query->orderBy('year', 'desc')
+            ->orderBy('conference_id', 'desc')
             ->paginate(12);
             
-        return view('conferences.index', compact('conferences'));
+        // Get filter options
+        $levels = HoiThao::where('status', 'ACTIVE')
+            ->distinct()
+            ->pluck('level_code')
+            ->filter()
+            ->sort();
+            
+        return view('conferences.index', compact('conferences', 'levels', 'search', 'status', 'level'));
     }
 
     /**
@@ -30,6 +79,7 @@ class ConferenceController extends Controller
     public function show($id)
     {
         $conference = HoiThao::with(['khoa', 'joinRequests'])
+            ->where('status', 'ACTIVE') // Chỉ hiển thị hội thảo đã được duyệt
             ->findOrFail($id);
             
         // Get conference statistics

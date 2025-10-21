@@ -24,7 +24,7 @@
             <span class="ml-3 text-gray-600">Đang xử lý...</span>
         </div>
 
-        <form id="configureForm" class="bg-white rounded-lg shadow-md p-8" x-data="conferenceForm()">
+        <form id="configureForm" class="bg-white rounded-lg shadow-md p-8" x-data="conferenceForm()" enctype="multipart/form-data">
             @csrf
 
             <!-- Basic Information Section -->
@@ -370,18 +370,17 @@
                     Gọi Bài viết & Hướng dẫn
                 </h2>
 
-                <!-- CFP URL -->
+                <!-- CFP File Upload -->
                 <div class="mb-6">
-                    <label for="cfpUrl" class="block text-sm font-medium text-gray-700 mb-2">
-                        Link CFP (Call for Papers)
+                    <label for="cfpFile" class="block text-sm font-medium text-gray-700 mb-2">
+                        File PDF Call for Papers
                     </label>
-                    <input type="url" 
-                           id="cfpUrl"
-                           name="cfp_url"
-                           placeholder="https://example.com/cfp.pdf"
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           maxlength="500">
-                    <p class="text-gray-500 text-sm mt-1">Link đến file PDF gọi bài viết (tùy chọn)</p>
+                    <input type="file" 
+                           id="cfpFile"
+                           name="cfp_file"
+                           accept=".pdf"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-gray-500 text-sm mt-1">Upload file PDF gọi bài viết (tùy chọn, tối đa 10MB)</p>
                 </div>
 
                 <!-- Submission Guidelines -->

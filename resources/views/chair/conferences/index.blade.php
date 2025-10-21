@@ -123,7 +123,7 @@
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-3">
-                                    <h3 class="text-lg font-medium text-gray-900">{{ $conference->conference_name }}</h3>
+                                    <h3 class="text-lg font-medium text-gray-900">{{ $conference->title }}</h3>
                                     
                                     <!-- Status Badge -->
                                     @if($conference->status === 'PENDING_ADMIN_APPROVAL')
@@ -150,7 +150,7 @@
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                         </svg>
-                                        {{ $conference->conference_date ? \Carbon\Carbon::parse($conference->conference_date)->format('d/m/Y') : 'Chưa xác định' }}
+                                        {{ $conference->start_date ? \Carbon\Carbon::parse($conference->start_date)->format('d/m/Y') : 'Chưa xác định' }}
                                     </div>
                                     <div class="flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,13 +162,13 @@
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                         </svg>
-                                        {{ $conference->committees ? $conference->committees->count() : 0 }} tiểu ban
+                                        {{ $conference->max_participants ?? 'N/A' }} tham gia tối đa
                                     </div>
                                 </div>
 
-                                @if($conference->conferenceRequest && $conference->conferenceRequest->objective)
+                                @if($conference->description)
                                     <div class="mt-2 text-sm text-gray-600">
-                                        {{ Str::limit($conference->conferenceRequest->objective, 150) }}
+                                        {{ Str::limit($conference->description, 150) }}
                                     </div>
                                 @endif
                             </div>

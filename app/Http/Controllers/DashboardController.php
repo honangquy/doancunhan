@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Traits\LogsActivity;
+use App\Models\ActivityLog;
 
 class DashboardController extends Controller
 {
@@ -128,16 +129,26 @@ class DashboardController extends Controller
     {
         // Use authenticated user ID  
         $userId = Auth::id();
+        $userEmail = Auth::user()->email;
         
-        // Get chair's conference (first active conference for now)
-        // TODO: In production, filter by conferences where user is chair
-        $conference = DB::table('HoiThao')
-            ->where('status', 'ACTIVE')
-            ->first();
+        // Get chair's conference requests and approved conferences
+        $conferenceRequests = DB::table('yeucauhoithao')
+            ->where('chair_email', $userEmail)
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        // Get approved conferences that have been created from requests
+        $approvedConferences = DB::table('hoithao')
+            ->join('yeucauhoithao', function($join) use ($userEmail) {
+                $join->on('hoithao.title', '=', 'yeucauhoithao.title')
+                     ->where('yeucauhoithao.chair_email', '=', $userEmail)
+                     ->where('yeucauhoithao.status', '=', 'APPROVED');
+            })
+            ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status')
+            ->get();
         
-        if (!$conference) {
-            $conference = DB::table('HoiThao')->first();
-        }
+        // Get the primary conference for this chair (first approved)
+        $conference = $approvedConferences->first();
         
         $papers = collect();
         $stats = [
@@ -145,7 +156,10 @@ class DashboardController extends Controller
             'accepted' => 0,
             'under_review' => 0,
             'rejected' => 0,
-            'needs_reviewers' => 0
+            'needs_reviewers' => 0,
+            'total_requests' => $conferenceRequests->count(),
+            'approved_conferences' => $approvedConferences->count(),
+            'pending_requests' => $conferenceRequests->where('status', 'PENDING')->count()
         ];
         
         if ($conference) {
@@ -182,7 +196,9 @@ class DashboardController extends Controller
             'title' => 'Chair Dashboard',
             'conference' => $conference,
             'papers' => $papers,
-            'stats' => $stats
+            'stats' => $stats,
+            'conferenceRequests' => $conferenceRequests,
+            'approvedConferences' => $approvedConferences
         ]);
     }
 
@@ -195,7 +211,7 @@ class DashboardController extends Controller
             'total_conferences' => DB::table('hoithao')->count(),
             'active_conferences' => DB::table('hoithao')->where('status', 'ACTIVE')->count(),
             'total_papers' => DB::table('baibao')->count(),
-            'total_reviews' => DB::table('phanbien')->count(),
+            'pending_requests' => DB::table('join_requests')->where('status', 'PENDING')->count(),
         ];
         
         // Get recent papers (simplified for now)
@@ -225,7 +241,7 @@ class DashboardController extends Controller
             'rejected' => DB::table('join_requests')->where('status', 'REJECTED')->count(),
         ];
 
-        // Get pending join requests for review
+        // Get pending join requests for review (yêu cầu tham gia hội thảo)
         $pendingJoinRequests = DB::table('join_requests')
             ->join('nguoidung', 'join_requests.user_id', '=', 'nguoidung.user_id')
             ->join('hoithao', 'join_requests.conference_id', '=', 'hoithao.conference_id')
@@ -242,6 +258,26 @@ class DashboardController extends Controller
             ->orderBy('join_requests.created_at', 'desc')
             ->limit(10)
             ->get();
+
+        // Get recent system logs from ActivityLog
+        $recentLogs = DB::table('activity_logs')
+            ->leftJoin('nguoidung', 'activity_logs.user_id', '=', 'nguoidung.user_id')
+            ->select(
+                'activity_logs.*',
+                'nguoidung.full_name as user_name',
+                'nguoidung.email as user_email'
+            )
+            ->orderBy('activity_logs.created_at', 'desc')
+            ->limit(8)
+            ->get();
+
+        // Get pending conference organization requests (yêu cầu tổ chức hội thảo)
+        $pendingConferenceRequests = DB::table('yeucauhoithao')
+            ->where('status', 'PENDING')
+            ->select('request_id', 'title', 'chair_fullname', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
         
         return view('admin.dashboard', [
             'title' => 'Admin Dashboard',
@@ -249,7 +285,9 @@ class DashboardController extends Controller
             'recentPapers' => $recentPapers,
             'userRoles' => $userRoles,
             'joinRequestStats' => $joinRequestStats,
-            'pendingJoinRequests' => $pendingJoinRequests
+            'pendingJoinRequests' => $pendingJoinRequests,
+            'recentLogs' => $recentLogs,
+            'pendingConferenceRequests' => $pendingConferenceRequests
         ]);
     }
 

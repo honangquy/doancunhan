@@ -123,9 +123,13 @@
             </button>
             
             <div x-show="open" x-transition class="ml-8 mt-2 space-y-1">
+                <a href="{{ route('conferences.index') }}" 
+                   class="block py-2 px-3 text-sm rounded {{ request()->routeIs('conferences.index') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
+                    Danh sách hội thảo (Public)
+                </a>
                 <a href="{{ route('admin.conferences.index') }}" 
                    class="block py-2 px-3 text-sm rounded {{ request()->routeIs('admin.conferences.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
-                    Danh sách hội thảo
+                    Quản lý hội thảo (Admin)
                 </a>
                 <a href="{{ route('conference-management.requests') }}" 
                    class="block py-2 px-3 text-sm rounded {{ request()->routeIs('conference-management.*') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100' }}">
