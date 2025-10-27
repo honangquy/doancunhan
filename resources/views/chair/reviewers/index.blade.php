@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.favicon')
     <title>Quản lý Reviewer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -13,7 +14,7 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">👥 Quản lý Reviewer</h1>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Quản lý Reviewer</h1>
                     <p class="text-gray-600">Xem thông tin, thống kê và hiệu suất của các reviewer</p>
                 </div>
                 <button onclick="window.history.back()" 
@@ -162,7 +163,7 @@
         <!-- Reviewers List -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 class="text-lg font-bold text-gray-900 mb-4">
-                📋 Danh sách Reviewer ({{ $reviewers->count() }})
+                Danh sách Reviewer ({{ $reviewers->count() }})
             </h2>
 
             @if($reviewers->isEmpty())

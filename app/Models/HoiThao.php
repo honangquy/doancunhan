@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class HoiThao extends Model
 {
@@ -143,7 +144,17 @@ class HoiThao extends Model
     // Helper methods
     public function isOpen()
     {
-        return $this->status === 'open' || $this->status === 'OPEN';
+        // Kiểm tra dựa trên deadline submission thực tế thay vì chỉ dựa trên status field
+        if (!$this->deadline_submission) {
+            // Nếu không có deadline, kiểm tra status field
+            return $this->status === 'open' || $this->status === 'OPEN' || $this->status === 'ACTIVE';
+        }
+        
+        $now = Carbon::now();
+        $submissionDeadline = Carbon::parse($this->deadline_submission);
+        
+        // Hội thảo được coi là "mở" nếu còn hạn nộp bài
+        return $now->lt($submissionDeadline);
     }
 
     public function isClosed()

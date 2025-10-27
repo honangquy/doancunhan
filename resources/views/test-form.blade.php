@@ -3,6 +3,7 @@
 <head>
     <title>Test Form</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @include('partials.favicon')
 </head>
 <body>
     <h1>Test Form</h1>

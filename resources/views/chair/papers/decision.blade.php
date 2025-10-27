@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.favicon')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Quyết định - {{ $paper->title }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -209,7 +210,7 @@
             </div>
             @endif
 
-            <h3 class="text-lg font-bold text-gray-900 mb-6">📋 Quyết định của chủ tịch</h3>
+            <h3 class="text-lg font-bold text-gray-900 mb-6">Quyết định của chủ tịch</h3>
 
             <!-- Decision Radio Buttons -->
             <div class="mb-6">

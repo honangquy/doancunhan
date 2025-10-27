@@ -817,7 +817,7 @@
                         </svg>
                         Quay lại chi tiết bài báo
                     </button>
-                    <h1 class="text-3xl font-bold text-gray-900">📋 Tất cả nhận xét</h1>
+                    <h1 class="text-3xl font-bold text-gray-900">Tất cả nhận xét</h1>
                     <p class="text-gray-600 mt-1">Xem và quản lý các nhận xét của reviewer</p>
                 </div>
             </div>
@@ -866,7 +866,7 @@
         <!-- Reviewers Management View -->
         <main class="flex-1 p-6 lg:p-8" x-show="currentView === 'reviewers'" x-cloak>
             <div class="mb-6">
-                <h1 class="text-3xl font-bold text-gray-900">👥 Quản lý Reviewer</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Quản lý Reviewer</h1>
                 <p class="text-gray-600 mt-1">Xem thông tin, thống kê và hiệu suất của các reviewer</p>
             </div>
 

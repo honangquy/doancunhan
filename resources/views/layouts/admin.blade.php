@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin') - {{ config('app.name') }}</title>
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="https://foodtech.huit.edu.vn/images_new/logo_en.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://foodtech.huit.edu.vn/images_new/logo_en.png">
+    <link rel="apple-touch-icon" href="https://foodtech.huit.edu.vn/images_new/logo_en.png">
+    <meta name="msapplication-TileImage" content="https://foodtech.huit.edu.vn/images_new/logo_en.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -208,14 +213,49 @@
                         </a>
                     </li>
                     
-                    <li>
-                        <a href="{{ route('admin.users.index') }}" 
-                           class="flex items-center p-2 rounded-lg {{ request()->routeIs('admin.users.*') ? 'bg-green-50 text-green-700' : 'text-gray-900 hover:bg-gray-100' }}">
+                    <li x-data="{ userMenuOpen: false }">
+                        <button @click="userMenuOpen = !userMenuOpen" 
+                                class="flex items-center w-full p-2 rounded-lg {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.join-requests.*') ? 'bg-green-50 text-green-700' : 'text-gray-900 hover:bg-gray-100' }}">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                             </svg>
                             <span class="ml-3">Quản lý người dùng</span>
-                        </a>
+                            <svg class="w-4 h-4 ml-auto transition-transform duration-200" :class="{ 'rotate-180': userMenuOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <div x-show="userMenuOpen" 
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 transform scale-95"
+                             x-transition:enter-end="opacity-100 transform scale-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 transform scale-100"
+                             x-transition:leave-end="opacity-0 transform scale-95"
+                             class="ml-6 mt-2 space-y-1">
+                            
+                            <a href="{{ route('admin.users.index') }}" 
+                               class="flex items-center p-2 pl-4 rounded-lg text-sm {{ request()->routeIs('admin.users.*') ? 'bg-green-100 text-green-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                Quản lý người dùng
+                            </a>
+                            
+                            <a href="{{ route('admin.join-requests.index') }}" 
+                               class="flex items-center p-2 pl-4 rounded-lg text-sm {{ request()->routeIs('admin.join-requests.*') ? 'bg-green-100 text-green-700' : 'text-gray-700 hover:bg-gray-100' }}">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                                </svg>
+                                Yêu cầu vai trò
+                                @php
+                                    $pendingJoinRequests = \App\Models\JoinRequest::where('status', 'PENDING')->count();
+                                @endphp
+                                @if($pendingJoinRequests > 0)
+                                    <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $pendingJoinRequests }}</span>
+                                @endif
+                            </a>
+                        </div>
                     </li>
                     
                     <li x-data="{ conferenceMenuOpen: false }">

@@ -16,24 +16,24 @@
             <div class="space-y-2">
                 <a href="{{ route('chair.dashboard') }}" 
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-orange-100 hover:bg-orange-200 transition">
-                    <span>✅ Dashboard (route: chair.dashboard)</span>
+                    <span>Dashboard (route: chair.dashboard)</span>
                 </a>
 
                 <a href="{{ route('chair.conferences.index') }}" 
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-orange-100 hover:bg-orange-200 transition">
-                    <span>🎯 Quản lý hội thảo (route: chair.conferences.index)</span>
+                    <span>Quản lý hội thảo (route: chair.conferences.index)</span>
                 </a>
 
                 <div class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-gray-100">
-                    <span>📄 Quản lý bài báo</span>
+                    <span>Quản lý bài báo</span>
                 </div>
 
                 <div class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-gray-100">
-                    <span>👥 Quản lý reviewer</span>
+                    <span>Quản lý reviewer</span>
                 </div>
 
                 <div class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-gray-100">
-                    <span>⚖️ Kiểm tra COI</span>
+                    <span>Kiểm tra COI</span>
                 </div>
             </div>
         </div>

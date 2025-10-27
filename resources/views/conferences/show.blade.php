@@ -30,19 +30,31 @@
             <div class="flex-1">
                 <div class="flex items-center space-x-3 mb-3">
                     @php
-                        $status = $conference->status ?? 'open';
+                        // Logic kiểm tra trạng thái dựa trên ngày
+                        $now = \Carbon\Carbon::now();
+                        $submissionDeadline = isset($conference->deadline_submission) ? \Carbon\Carbon::parse($conference->deadline_submission) : null;
+                        $conferenceEndDate = isset($conference->end_date) ? \Carbon\Carbon::parse($conference->end_date) : null;
+                        
                         $statusClass = 'px-3 py-1 text-xs font-medium rounded-full ';
                         $statusText = '';
                         
-                        if ($status === 'open') {
+                        // Kiểm tra trạng thái thực tế dựa trên ngày
+                        if ($submissionDeadline && $now->lt($submissionDeadline)) {
+                            // Còn hạn nộp bài
                             $statusClass .= 'bg-green-100 text-green-800';
                             $statusText = 'Đang mở';
-                        } elseif ($status === 'closed') {
-                            $statusClass .= 'bg-red-100 text-red-800';
-                            $statusText = 'Đã đóng';
-                        } else {
+                        } elseif ($submissionDeadline && $now->gte($submissionDeadline) && (!$conferenceEndDate || $now->lt($conferenceEndDate))) {
+                            // Hết hạn nộp bài nhưng chưa kết thúc hội thảo
+                            $statusClass .= 'bg-orange-100 text-orange-800';
+                            $statusText = 'Đã đóng nộp bài';
+                        } elseif ($conferenceEndDate && $now->gte($conferenceEndDate)) {
+                            // Hội thảo đã kết thúc
                             $statusClass .= 'bg-gray-100 text-gray-800';
-                            $statusText = 'Kết thúc';
+                            $statusText = 'Đã kết thúc';
+                        } else {
+                            // Trường hợp khác (chưa có thông tin ngày)
+                            $statusClass .= 'bg-blue-100 text-blue-800';
+                            $statusText = 'Sắp diễn ra';
                         }
                     @endphp
                     <span class="{{ $statusClass }}">{{ $statusText }}</span>
@@ -107,7 +119,11 @@
             <div class="mt-6 lg:mt-0 lg:ml-6 flex flex-col space-y-3">
                 <!-- Join Request Button -->
                 @auth
-                    @if(($conference->status ?? 'open') === 'open')
+                    @php
+                        // Kiểm tra xem có thể tham gia không dựa trên deadline submission
+                        $canJoin = $submissionDeadline && $now->lt($submissionDeadline);
+                    @endphp
+                    @if($canJoin)
                         <button @click="openJoinModal = true" 
                                 class="px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +133,11 @@
                         </button>
                     @else
                         <div class="px-6 py-3 bg-gray-100 text-gray-500 font-medium rounded-lg text-center">
-                            Hội thảo đã đóng
+                            @if($submissionDeadline && $now->gte($submissionDeadline))
+                                Đã hết hạn nộp bài
+                            @else
+                                Hội thảo chưa mở
+                            @endif
                         </div>
                     @endif
                 @else
@@ -131,8 +151,24 @@
                 @endauth
 
                 <!-- CFP Download -->
-                @if(isset($conference->cfp_url) && $conference->cfp_url)
-                    <a href="{{ $conference->cfp_url }}" target="_blank" 
+                @php
+                    $hasCFP = false;
+                    $cfpUrl = null;
+                    
+                    if(isset($conference->cfp_url) && $conference->cfp_url) {
+                        $hasCFP = true;
+                        $cfpUrl = $conference->cfp_url;
+                    } elseif(isset($conference->cfp_file_path) && $conference->cfp_file_path) {
+                        $fullPath = storage_path('app/public/' . $conference->cfp_file_path);
+                        if(file_exists($fullPath)) {
+                            $hasCFP = true;
+                            $cfpUrl = asset('storage/' . $conference->cfp_file_path);
+                        }
+                    }
+                @endphp
+                
+                @if($hasCFP && $cfpUrl)
+                    <a href="{{ $cfpUrl }}" target="_blank" 
                        class="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -291,34 +327,69 @@
 
             <!-- CFP Tab -->
             <div x-show="activeTab === 'cfp'">
-                @if(isset($conference->cfp_file_path) && $conference->cfp_file_path)
+                @php
+                    $hasCFPFile = false;
+                    $hasCFPUrl = false;
+                    $cfpFileUrl = null;
+                    $cfpExternalUrl = null;
+                    
+                    // Kiểm tra CFP file upload
+                    if(isset($conference->cfp_file_path) && $conference->cfp_file_path) {
+                        $fullPath = storage_path('app/public/' . $conference->cfp_file_path);
+                        if(file_exists($fullPath)) {
+                            $hasCFPFile = true;
+                            $cfpFileUrl = asset('storage/' . $conference->cfp_file_path);
+                        }
+                    }
+                    
+                    // Kiểm tra CFP external URL
+                    if(isset($conference->cfp_url) && $conference->cfp_url) {
+                        $hasCFPUrl = true;
+                        $cfpExternalUrl = $conference->cfp_url;
+                    }
+                @endphp
+                
+                @if($hasCFPFile || $hasCFPUrl)
                     <div class="text-center py-8">
                         <svg class="mx-auto h-16 w-16 text-red-400 mb-4" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                         </svg>
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">Call for Papers</h3>
-                        <p class="text-gray-600 mb-6">Tải xuống tài liệu hướng dẫn nộp bài chi tiết</p>
+                        <p class="text-gray-600 mb-6">Tài liệu hướng dẫn nộp bài chi tiết</p>
                         
-                        <!-- Embedded PDF Viewer -->
-                        <div class="bg-gray-100 rounded-lg p-4 mb-4">
-                            <iframe src="{{ asset('storage/' . $conference->cfp_file_path) }}" 
-                                    width="100%" 
-                                    height="500px" 
-                                    class="border-0 rounded">
-                                <p>Trình duyệt của bạn không hỗ trợ hiển thị PDF. 
-                                   <a href="{{ asset('storage/' . $conference->cfp_file_path) }}" target="_blank" class="text-blue-600 underline">Nhấn vào đây để tải xuống</a>
-                                </p>
-                            </iframe>
-                        </div>
+                        @if($hasCFPFile)
+                            <!-- Embedded PDF Viewer for uploaded file -->
+                            <div class="bg-gray-100 rounded-lg p-4 mb-4">
+                                <iframe src="{{ $cfpFileUrl }}" 
+                                        width="100%" 
+                                        height="500px" 
+                                        class="border-0 rounded">
+                                    <p>Trình duyệt của bạn không hỗ trợ hiển thị PDF. 
+                                       <a href="{{ $cfpFileUrl }}" target="_blank" class="text-blue-600 underline">Nhấn vào đây để tải xuống</a>
+                                    </p>
+                                </iframe>
+                            </div>
+                            
+                            <!-- Download Button for uploaded file -->
+                            <a href="{{ $cfpFileUrl }}" target="_blank" download
+                               class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors mr-3">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Tải xuống PDF
+                            </a>
+                        @endif
                         
-                        <!-- Download Button -->
-                        <a href="{{ asset('storage/' . $conference->cfp_file_path) }}" target="_blank" download
-                           class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            Tải xuống PDF
-                        </a>
+                        @if($hasCFPUrl)
+                            <!-- External URL link -->
+                            <a href="{{ $cfpExternalUrl }}" target="_blank"
+                               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                Xem Call for Papers
+                            </a>
+                        @endif
                     </div>
                 @else
                     <div class="text-center py-12">
@@ -424,10 +495,34 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <div class="font-medium">{{ $conference->chair_name ?? 'Chair Name' }}</div>
+                                    <div class="font-medium">
+                                        @if(isset($conference->chair) && $conference->chair && $conference->chair->full_name)
+                                            {{ $conference->chair->full_name }}
+                                        @elseif(isset($conference->chair_name) && $conference->chair_name)
+                                            {{ $conference->chair_name }}
+                                        @elseif(isset($conference->conferenceRequest) && $conference->conferenceRequest && $conference->conferenceRequest->chair_name)
+                                            {{ $conference->conferenceRequest->chair_name }}
+                                        @elseif(isset($conference->contact_name) && $conference->contact_name)
+                                            {{ $conference->contact_name }}
+                                        @else
+                                            Chưa cập nhật
+                                        @endif
+                                    </div>
                                     <div class="text-sm text-gray-500">Chủ tịch hội thảo</div>
-                                    @if(isset($conference->chair_email) && $conference->chair_email)
-                                        <div class="text-sm text-blue-600">{{ $conference->chair_email }}</div>
+                                    @php
+                                        $chairEmail = null;
+                                        if(isset($conference->chair) && $conference->chair && $conference->chair->email) {
+                                            $chairEmail = $conference->chair->email;
+                                        } elseif(isset($conference->chair_email) && $conference->chair_email) {
+                                            $chairEmail = $conference->chair_email;
+                                        } elseif(isset($conference->conferenceRequest) && $conference->conferenceRequest && $conference->conferenceRequest->chair_email) {
+                                            $chairEmail = $conference->conferenceRequest->chair_email;
+                                        } elseif(isset($conference->contact_email) && $conference->contact_email) {
+                                            $chairEmail = $conference->contact_email;
+                                        }
+                                    @endphp
+                                    @if($chairEmail)
+                                        <div class="text-sm text-blue-600">{{ $chairEmail }}</div>
                                     @endif
                                 </div>
                             </div>

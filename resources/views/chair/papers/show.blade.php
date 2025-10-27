@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.favicon')
     <title>Chi tiết bài báo - {{ $paper->title }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>

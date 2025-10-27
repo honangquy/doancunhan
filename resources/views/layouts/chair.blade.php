@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.favicon')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Chair Dashboard') - HUIT Conference</title>
 
@@ -163,7 +164,7 @@
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between animate-slideInRight">
+            <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                 <div>
                     <h2 class="text-xl font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h2>
                     <p class="text-sm text-gray-600">@yield('page-subtitle', '')</p>

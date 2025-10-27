@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'HUIT Conference Management')</title>
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="https://foodtech.huit.edu.vn/images_new/logo_en.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://foodtech.huit.edu.vn/images_new/logo_en.png">
+    <link rel="apple-touch-icon" href="https://foodtech.huit.edu.vn/images_new/logo_en.png">
+    <meta name="msapplication-TileImage" content="https://foodtech.huit.edu.vn/images_new/logo_en.png">
     
     <!-- Fonts: use Google Fonts Inter for consistent rendering -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

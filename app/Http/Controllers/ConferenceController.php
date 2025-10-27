@@ -78,7 +78,7 @@ class ConferenceController extends Controller
      */
     public function show($id)
     {
-        $conference = HoiThao::with(['khoa', 'joinRequests'])
+        $conference = HoiThao::with(['khoa', 'joinRequests', 'chair', 'conferenceRequest'])
             ->where('status', 'ACTIVE') // Chỉ hiển thị hội thảo đã được duyệt
             ->findOrFail($id);
             
