@@ -27,3 +27,7 @@ class PaperController extends Controller
         ]);
     }
 }
+
+
+
+

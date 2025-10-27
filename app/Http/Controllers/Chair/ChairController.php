@@ -23,9 +23,9 @@ class ChairController extends Controller
     {
         $userId = Auth::id();
         
-        // Get chair's conferences through VaiTroNguoiDung
-        $conferences = DB::table('HoiThao as ht')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        // Get chair's conferences through vaitronguoidung
+        $conferences = DB::table('hoithao as ht')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('ht.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
@@ -52,14 +52,14 @@ class ChairController extends Controller
         
         if ($conferenceIds->isNotEmpty()) {
             // Total submissions / Total papers (same thing)
-            $totalPapers = DB::table('BaiBao')
+            $totalPapers = DB::table('baibao')
                 ->whereIn('conference_id', $conferenceIds)
                 ->count();
             $stats['total_submissions'] = $totalPapers;
             $stats['total_papers'] = $totalPapers;
             
             // Papers under review (has assignments but not all completed)
-            $underReview = DB::table('BaiBao as bb')
+            $underReview = DB::table('baibao as bb')
                 ->whereIn('bb.conference_id', $conferenceIds)
                 ->where('bb.status_code', 'UNDER_REVIEW')
                 ->count();
@@ -67,20 +67,20 @@ class ChairController extends Controller
             $stats['under_review'] = $underReview;
             
             // Papers fully reviewed (all reviews completed)
-            $stats['papers_reviewed'] = DB::table('BaiBao as bb')
+            $stats['papers_reviewed'] = DB::table('baibao as bb')
                 ->whereIn('bb.conference_id', $conferenceIds)
                 ->where('bb.status_code', 'REVIEWED')
                 ->count();
             
             // Accepted papers
-            $stats['accepted'] = DB::table('BaiBao')
+            $stats['accepted'] = DB::table('baibao')
                 ->whereIn('conference_id', $conferenceIds)
                 ->where('status_code', 'ACCEPTED')
                 ->count();
             
             // Papers needing reviewers (no assignments yet)
-            $needsReviewersCount = DB::table('BaiBao as bb')
-                ->leftJoin('PhanCongPhanBien as pc', 'bb.paper_id', '=', 'pc.paper_id')
+            $needsReviewersCount = DB::table('baibao as bb')
+                ->leftJoin('phancongphanbien as pc', 'bb.paper_id', '=', 'pc.paper_id')
                 ->whereIn('bb.conference_id', $conferenceIds)
                 ->whereIn('bb.status_code', ['SUBMITTED', 'UNDER_REVIEW'])
                 ->select('bb.paper_id')
@@ -91,23 +91,23 @@ class ChairController extends Controller
             $stats['needs_reviewers'] = $needsReviewersCount;
             
             // Pending decisions (papers with REVIEWED status ready for decision)
-            $stats['pending_decisions'] = DB::table('BaiBao')
+            $stats['pending_decisions'] = DB::table('baibao')
                 ->whereIn('conference_id', $conferenceIds)
                 ->where('status_code', 'REVIEWED')
                 ->count();
             
             // Decisions made (ACCEPTED or REJECTED status)
-            $stats['decisions_made'] = DB::table('BaiBao')
+            $stats['decisions_made'] = DB::table('baibao')
                 ->whereIn('conference_id', $conferenceIds)
                 ->whereIn('status_code', ['ACCEPTED', 'REJECTED'])
                 ->count();
         }
         
         // Recent papers (last 10)
-        $recentPapers = DB::table('BaiBao as bb')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->join('NguoiDung as nd', 'bb.submitter_id', '=', 'nd.user_id')
-            ->join('TrangThaiBaiBao as ttbb', 'bb.status_code', '=', 'ttbb.status_code')
+        $recentPapers = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('nguoidung as nd', 'bb.submitter_id', '=', 'nd.user_id')
+            ->join('trangthaibaibao as ttbb', 'bb.status_code', '=', 'ttbb.status_code')
             ->whereIn('bb.conference_id', $conferenceIds)
             ->select(
                 'bb.paper_id',
@@ -124,8 +124,8 @@ class ChairController extends Controller
         
         // Add review counts to recent papers
         foreach ($recentPapers as $paper) {
-            $reviewCounts = DB::table('PhanCongPhanBien as pc')
-                ->leftJoin('PhanBien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
+            $reviewCounts = DB::table('phancongphanbien as pc')
+                ->leftJoin('phanbien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
                 ->where('pc.paper_id', $paper->paper_id)
                 ->selectRaw('
                     COUNT(pc.assignment_id) as total_assigned,
@@ -141,8 +141,8 @@ class ChairController extends Controller
         $pendingActions = [];
         
         // Papers with no reviewers assigned
-        $needsReviewers = DB::table('BaiBao as bb')
-            ->leftJoin('PhanCongPhanBien as pc', 'bb.paper_id', '=', 'pc.paper_id')
+        $needsReviewers = DB::table('baibao as bb')
+            ->leftJoin('phancongphanbien as pc', 'bb.paper_id', '=', 'pc.paper_id')
             ->whereIn('bb.conference_id', $conferenceIds)
             ->whereIn('bb.status_code', ['SUBMITTED', 'UNDER_REVIEW'])
             ->groupBy('bb.paper_id', 'bb.title')
@@ -160,7 +160,7 @@ class ChairController extends Controller
         }
         
         // Papers with all reviews completed but no decision (REVIEWED status)
-        $needsDecision = DB::table('BaiBao as bb')
+        $needsDecision = DB::table('baibao as bb')
             ->whereIn('bb.conference_id', $conferenceIds)
             ->where('bb.status_code', 'REVIEWED')
             ->select('bb.paper_id', 'bb.title')
@@ -190,9 +190,9 @@ class ChairController extends Controller
     {
         $userId = Auth::id();
         
-        // Get chair's conferences through VaiTroNguoiDung
-        $conferences = DB::table('HoiThao as ht')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        // Get chair's conferences through vaitronguoidung
+        $conferences = DB::table('hoithao as ht')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('ht.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
@@ -203,10 +203,10 @@ class ChairController extends Controller
         $conferenceIds = $conferences->pluck('conference_id');
         
         // Build query
-        $query = DB::table('BaiBao as bb')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->join('NguoiDung as nd', 'bb.submitter_id', '=', 'nd.user_id')
-            ->join('TrangThaiBaiBao as ttbb', 'bb.status_code', '=', 'ttbb.status_code')
+        $query = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('nguoidung as nd', 'bb.submitter_id', '=', 'nd.user_id')
+            ->join('trangthaibaibao as ttbb', 'bb.status_code', '=', 'ttbb.status_code')
             ->whereIn('bb.conference_id', $conferenceIds);
         
         // Apply filters
@@ -230,6 +230,7 @@ class ChairController extends Controller
         $papers = $query->select(
                 'bb.paper_id',
                 'bb.title',
+                'bb.keywords',
                 'bb.created_at',
                 'bb.status_code',
                 'ht.title as conference_name',
@@ -243,8 +244,8 @@ class ChairController extends Controller
         // Add review stats to each paper
         foreach ($papers as $paper) {
             // Review counts
-            $reviewCounts = DB::table('PhanCongPhanBien as pc')
-                ->leftJoin('PhanBien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
+            $reviewCounts = DB::table('phancongphanbien as pc')
+                ->leftJoin('phanbien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
                 ->where('pc.paper_id', $paper->paper_id)
                 ->selectRaw('
                     COUNT(pc.assignment_id) as total_assigned,
@@ -259,8 +260,8 @@ class ChairController extends Controller
             
             // Recommendation summary
             if ($paper->reviews_completed > 0) {
-                $recommendations = DB::table('PhanBien as pb')
-                    ->join('PhanCongPhanBien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
+                $recommendations = DB::table('phanbien as pb')
+                    ->join('phancongphanbien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
                     ->where('pc.paper_id', $paper->paper_id)
                     ->select('pb.recommendation_code')
                     ->get()
@@ -273,7 +274,7 @@ class ChairController extends Controller
         }
         
         // Statistics for sidebar
-        $statusCounts = DB::table('BaiBao')
+        $statusCounts = DB::table('baibao')
             ->whereIn('conference_id', $conferenceIds)
             ->select('status_code', DB::raw('COUNT(*) as count'))
             ->groupBy('status_code')
@@ -296,10 +297,10 @@ class ChairController extends Controller
         $userId = Auth::id();
         
         // Get paper details
-        $paper = DB::table('BaiBao as bb')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->join('NguoiDung as nd', 'bb.submitter_id', '=', 'nd.user_id')
-            ->join('TrangThaiBaiBao as ttbb', 'bb.status_code', '=', 'ttbb.status_code')
+        $paper = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('nguoidung as nd', 'bb.submitter_id', '=', 'nd.user_id')
+            ->join('trangthaibaibao as ttbb', 'bb.status_code', '=', 'ttbb.status_code')
             ->where('bb.paper_id', $paperId)
             ->select(
                 'bb.*',
@@ -315,29 +316,28 @@ class ChairController extends Controller
             abort(404, 'Paper not found');
         }
         
-        // Authorization: Check if user is chair of this conference through VaiTroNguoiDung
-        $isChair = DB::table('VaiTroNguoiDung')
+        // Authorization: Check if user has CHAIR role (simplified for now)
+        $isChair = DB::table('vaitronguoidung')
             ->where('user_id', $userId)
-            ->where('conference_id', $paper->conference_id)
             ->where('role_code', 'CHAIR')
             ->exists();
         
         if (!$isChair) {
-            abort(403, 'Unauthorized access to this paper');
+            abort(403, 'Unauthorized access - CHAIR role required');
         }
         
-        // Get all authors (join with NguoiDung for author details)
-        $authors = DB::table('TacGiaBaiBao as ta')
-            ->join('NguoiDung as nd', 'ta.user_id', '=', 'nd.user_id')
+        // Get all authors (join with nguoidung for author details)
+        $authors = DB::table('tacgiabaibao as ta')
+            ->join('nguoidung as nd', 'ta.user_id', '=', 'nd.user_id')
             ->where('ta.paper_id', $paperId)
             ->select('ta.author_order', 'ta.is_contact', 'ta.organization', 'nd.full_name', 'nd.email')
             ->orderBy('ta.author_order')
             ->get();
         
         // Get review assignments with reviewer info
-        $assignments = DB::table('PhanCongPhanBien as pc')
-            ->join('NguoiDung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
-            ->leftJoin('PhanBien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
+        $assignments = DB::table('phancongphanbien as pc')
+            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
+            ->leftJoin('phanbien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
             ->where('pc.paper_id', $paperId)
             ->select(
                 'pc.assignment_id',
@@ -357,9 +357,9 @@ class ChairController extends Controller
             ->get();
         
         // Get completed reviews with full details
-        $reviews = DB::table('PhanBien as pb')
-            ->join('PhanCongPhanBien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
-            ->join('NguoiDung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
+        $reviews = DB::table('phanbien as pb')
+            ->join('phancongphanbien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
+            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
             ->where('pc.paper_id', $paperId)
             ->whereNotNull('pb.submitted_at')
             ->select(
@@ -392,6 +392,87 @@ class ChairController extends Controller
     }
 
     /**
+     * AJAX endpoint for paper details (for embedding in other views)
+     */
+    public function showPaperAjax($paperId)
+    {
+        $userId = Auth::id();
+        
+        // Get paper details
+        $paper = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('nguoidung as nd', 'bb.submitter_id', '=', 'nd.user_id')
+            ->join('trangthaibaibao as ttbb', 'bb.status_code', '=', 'ttbb.status_code')
+            ->where('bb.paper_id', $paperId)
+            ->select(
+                'bb.*',
+                'ht.title as conference_name',
+                'ht.conference_id',
+                'nd.full_name as author_name',
+                'nd.email as author_email',
+                'ttbb.status_name'
+            )
+            ->first();
+        
+        if (!$paper) {
+            return response()->json(['error' => 'Paper not found'], 404);
+        }
+        
+        // Authorization: Check if user has CHAIR role
+        $isChair = DB::table('vaitronguoidung')
+            ->where('user_id', $userId)
+            ->where('role_code', 'CHAIR')
+            ->exists();
+        
+        if (!$isChair) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Get authors
+        $authors = DB::table('tacgiabaibao as tg')
+            ->join('nguoidung as nd', 'tg.user_id', '=', 'nd.user_id')
+            ->where('tg.paper_id', $paperId)
+            ->select('nd.full_name', 'nd.email', 'tg.author_order', 'tg.is_corresponding')
+            ->orderBy('tg.author_order')
+            ->get();
+
+        // Get review assignments and reviews
+        $assignments = DB::table('phancongphanbien as pc')
+            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
+            ->leftJoin('trangthaiphancong as ttpc', 'pc.status_code', '=', 'ttpc.status_code')
+            ->where('pc.paper_id', $paperId)
+            ->select('pc.*', 'nd.full_name as reviewer_name', 'nd.email as reviewer_email', 'ttpc.status_name')
+            ->get();
+
+        $reviews = DB::table('phanbien as pb')
+            ->join('phancongphanbien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
+            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
+            ->where('pc.paper_id', $paperId)
+            ->select('pb.*', 'nd.full_name as reviewer_name')
+            ->orderBy('pb.submitted_at', 'desc')
+            ->get();
+
+        // Calculate review statistics
+        $reviewStats = [
+            'total_assigned' => $assignments->count(),
+            'completed' => $reviews->count(),
+            'pending' => $assignments->where('status_code', 'INVITED')->count(),
+            'accepted' => $assignments->where('status_code', 'ACCEPTED')->count(),
+            'declined' => $assignments->where('status_code', 'DECLINED')->count(),
+            'avg_score' => $reviews->avg('score'),
+            'recommendations' => $reviews->pluck('recommendation_code')->countBy()->all()
+        ];
+
+        return view('chair.papers.show-ajax', [
+            'paper' => $paper,
+            'authors' => $authors,
+            'assignments' => $assignments,
+            'reviews' => $reviews,
+            'reviewStats' => $reviewStats
+        ]);
+    }
+
+    /**
      * Show reviewer assignment form for a paper
      */
     public function assignReviewers($paperId)
@@ -399,9 +480,9 @@ class ChairController extends Controller
         $userId = Auth::id();
         
         // Get paper with conference info, verify chair access
-        $paper = DB::table('BaiBao as bb')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        $paper = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('ht.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
@@ -415,17 +496,17 @@ class ChairController extends Controller
         }
         
         // Get paper authors
-        $authors = DB::table('TacGiaBaiBao')
-            ->join('NguoiDung as nd', 'TacGiaBaiBao.user_id', '=', 'nd.user_id')
-            ->where('TacGiaBaiBao.paper_id', $paperId)
-            ->select('nd.user_id', 'nd.full_name', 'nd.email', 'TacGiaBaiBao.is_contact')
-            ->orderBy('TacGiaBaiBao.author_order')
+        $authors = DB::table('tacgiabaibao')
+            ->join('nguoidung as nd', 'tacgiabaibao.user_id', '=', 'nd.user_id')
+            ->where('tacgiabaibao.paper_id', $paperId)
+            ->select('nd.user_id', 'nd.full_name', 'nd.email', 'tacgiabaibao.is_contact')
+            ->orderBy('tacgiabaibao.author_order')
             ->get();
         
         // Get current assignments
-        $currentAssignments = DB::table('PhanCongPhanBien as pc')
-            ->join('NguoiDung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
-            ->leftJoin('PhanBien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
+        $currentAssignments = DB::table('phancongphanbien as pc')
+            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
+            ->leftJoin('phanbien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
             ->where('pc.paper_id', $paperId)
             ->select(
                 'pc.assignment_id',
@@ -448,8 +529,8 @@ class ChairController extends Controller
         $assignedIds = $currentAssignments->pluck('reviewer_id')->toArray();
         $excludeIds = array_merge($authorIds, $assignedIds);
         
-        $availableReviewers = DB::table('VaiTroNguoiDung as vt')
-            ->join('NguoiDung as nd', 'vt.user_id', '=', 'nd.user_id')
+        $availableReviewers = DB::table('vaitronguoidung as vt')
+            ->join('nguoidung as nd', 'vt.user_id', '=', 'nd.user_id')
             ->where('vt.role_code', 'REVIEWER')
             ->whereNotIn('vt.user_id', $excludeIds)
             ->select(
@@ -462,7 +543,7 @@ class ChairController extends Controller
             ->get();
         
         // Calculate reviewer workload (current assignments)
-        $workload = DB::table('PhanCongPhanBien')
+        $workload = DB::table('phancongphanbien')
             ->select('reviewer_id', DB::raw('COUNT(*) as assignment_count'))
             ->whereIn('status_code', ['INVITED', 'ACCEPTED'])
             ->groupBy('reviewer_id')
@@ -474,7 +555,7 @@ class ChairController extends Controller
         }
         
         // Check COI for all available reviewers
-        $coiList = DB::table('COI')
+        $coiList = DB::table('coi')
             ->where('paper_id', $paperId)
             ->whereIn('reviewer_id', $availableReviewers->pluck('user_id'))
             ->select('reviewer_id', 'coi_code', 'source_type', 'evidence')
@@ -504,7 +585,7 @@ class ChairController extends Controller
         
         // Validate input
         $request->validate([
-            'reviewer_id' => 'required|integer|exists:NguoiDung,user_id',
+            'reviewer_id' => 'required|integer|exists:nguoidung,user_id',
             'deadline' => 'required|date|after:today'
         ]);
         
@@ -513,8 +594,8 @@ class ChairController extends Controller
         
         try {
             // Verify chair access to paper
-            $hasAccess = DB::table('BaiBao as bb')
-                ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+            $hasAccess = DB::table('baibao as bb')
+                ->join('vaitronguoidung as vt', function($join) use ($userId) {
                     $join->on('bb.conference_id', '=', 'vt.conference_id')
                          ->where('vt.user_id', '=', $userId)
                          ->where('vt.role_code', '=', 'CHAIR');
@@ -527,7 +608,7 @@ class ChairController extends Controller
             }
             
             // Check if reviewer is an author (prevent self-review)
-            $isAuthor = DB::table('TacGiaBaiBao')
+            $isAuthor = DB::table('tacgiabaibao')
                 ->where('paper_id', $paperId)
                 ->where('user_id', $reviewerId)
                 ->exists();
@@ -537,7 +618,7 @@ class ChairController extends Controller
             }
             
             // Check for existing assignment (UNIQUE constraint will also catch this)
-            $existingAssignment = DB::table('PhanCongPhanBien')
+            $existingAssignment = DB::table('phancongphanbien')
                 ->where('paper_id', $paperId)
                 ->where('reviewer_id', $reviewerId)
                 ->first();
@@ -547,7 +628,7 @@ class ChairController extends Controller
             }
             
             // Check for COI
-            $coi = DB::table('COI')
+            $coi = DB::table('coi')
                 ->where('paper_id', $paperId)
                 ->where('reviewer_id', $reviewerId)
                 ->first();
@@ -564,7 +645,7 @@ class ChairController extends Controller
             $token = \Illuminate\Support\Str::uuid()->toString();
             
             // Insert assignment
-            $assignmentId = DB::table('PhanCongPhanBien')->insertGetId([
+            $assignmentId = DB::table('phancongphanbien')->insertGetId([
                 'paper_id' => $paperId,
                 'reviewer_id' => $reviewerId,
                 'chair_id' => $userId,
@@ -575,7 +656,7 @@ class ChairController extends Controller
             ]);
             
             // Get reviewer info for response
-            $reviewer = DB::table('NguoiDung')
+            $reviewer = DB::table('nguoidung')
                 ->where('user_id', $reviewerId)
                 ->select('full_name', 'email')
                 ->first();
@@ -608,9 +689,9 @@ class ChairController extends Controller
         
         try {
             // Get assignment info and verify chair access
-            $assignment = DB::table('PhanCongPhanBien as pc')
-                ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
-                ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+            $assignment = DB::table('phancongphanbien as pc')
+                ->join('baibao as bb', 'pc.paper_id', '=', 'bb.paper_id')
+                ->join('vaitronguoidung as vt', function($join) use ($userId) {
                     $join->on('bb.conference_id', '=', 'vt.conference_id')
                          ->where('vt.user_id', '=', $userId)
                          ->where('vt.role_code', '=', 'CHAIR');
@@ -624,7 +705,7 @@ class ChairController extends Controller
             }
             
             // Check if review has been submitted
-            $reviewSubmitted = DB::table('PhanBien')
+            $reviewSubmitted = DB::table('phanbien')
                 ->where('assignment_id', $assignmentId)
                 ->whereNotNull('submitted_at')
                 ->exists();
@@ -634,7 +715,7 @@ class ChairController extends Controller
             }
             
             // Delete the assignment
-            DB::table('PhanCongPhanBien')->where('assignment_id', $assignmentId)->delete();
+            DB::table('phancongphanbien')->where('assignment_id', $assignmentId)->delete();
             
             return response()->json(['success' => true, 'message' => 'Đã xóa phân công thành công']);
             
@@ -654,8 +735,8 @@ class ChairController extends Controller
         $userId = Auth::id();
         
         // Verify chair access
-        $hasAccess = DB::table('BaiBao as bb')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        $hasAccess = DB::table('baibao as bb')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('bb.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
@@ -668,7 +749,7 @@ class ChairController extends Controller
         }
         
         // Check if reviewer is an author
-        $isAuthor = DB::table('TacGiaBaiBao')
+        $isAuthor = DB::table('tacgiabaibao')
             ->where('paper_id', $paperId)
             ->where('user_id', $reviewerId)
             ->exists();
@@ -682,11 +763,11 @@ class ChairController extends Controller
         }
         
         // Check COI table
-        $coi = DB::table('COI')
-            ->join('LoaiCOI as lc', 'COI.coi_code', '=', 'lc.coi_code')
-            ->where('COI.paper_id', $paperId)
-            ->where('COI.reviewer_id', $reviewerId)
-            ->select('COI.*', 'lc.coi_name', 'lc.description')
+        $coi = DB::table('coi')
+            ->join('loaicoi as lc', 'coi.coi_code', '=', 'lc.coi_code')
+            ->where('coi.paper_id', $paperId)
+            ->where('coi.reviewer_id', $reviewerId)
+            ->select('coi.*', 'lc.coi_name', 'lc.description')
             ->first();
         
         if ($coi) {
@@ -711,8 +792,8 @@ class ChairController extends Controller
         $userId = Auth::id();
         
         // Verify chair access
-        $hasAccess = DB::table('BaiBao as bb')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        $hasAccess = DB::table('baibao as bb')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('bb.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
@@ -727,16 +808,16 @@ class ChairController extends Controller
         // TODO: Implement expertise matching in Phase 8.8
         // For now, return available reviewers sorted by workload
         
-        $paper = DB::table('BaiBao')->where('paper_id', $paperId)->first();
+        $paper = DB::table('baibao')->where('paper_id', $paperId)->first();
         
         // Get authors to exclude
-        $authorIds = DB::table('TacGiaBaiBao')
+        $authorIds = DB::table('tacgiabaibao')
             ->where('paper_id', $paperId)
             ->pluck('user_id')
             ->toArray();
         
         // Get already assigned reviewers to exclude
-        $assignedIds = DB::table('PhanCongPhanBien')
+        $assignedIds = DB::table('phancongphanbien')
             ->where('paper_id', $paperId)
             ->pluck('reviewer_id')
             ->toArray();
@@ -744,10 +825,10 @@ class ChairController extends Controller
         $excludeIds = array_merge($authorIds, $assignedIds);
         
         // Get available reviewers with workload
-        $suggestions = DB::table('VaiTroNguoiDung as vt')
-            ->join('NguoiDung as nd', 'vt.user_id', '=', 'nd.user_id')
+        $suggestions = DB::table('vaitronguoidung as vt')
+            ->join('nguoidung as nd', 'vt.user_id', '=', 'nd.user_id')
             ->leftJoin(DB::raw('(SELECT reviewer_id, COUNT(*) as workload 
-                                FROM PhanCongPhanBien 
+                                FROM phancongphanbien 
                                 WHERE status_code IN ("INVITED", "ACCEPTED") 
                                 GROUP BY reviewer_id) as w'), 
                       'vt.user_id', '=', 'w.reviewer_id')
@@ -780,15 +861,15 @@ class ChairController extends Controller
         $userId = Auth::id();
         
         // Get paper with authorization check
-        $paper = DB::table('BaiBao as bb')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        $paper = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('ht.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
             })
-            ->join('NguoiDung as nd', 'bb.submitter_id', '=', 'nd.user_id')
-            ->leftJoin('TrangThaiBaiBao as tt', 'bb.status_code', '=', 'tt.status_code')
+            ->join('nguoidung as nd', 'bb.submitter_id', '=', 'nd.user_id')
+            ->leftJoin('trangthaibaibao as tt', 'bb.status_code', '=', 'tt.status_code')
             ->where('bb.paper_id', $paperId)
             ->select(
                 'bb.*',
@@ -804,9 +885,9 @@ class ChairController extends Controller
         }
         
         // Get all assignments with reviews
-        $assignments = DB::table('PhanCongPhanBien as pc')
-            ->join('NguoiDung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
-            ->leftJoin('PhanBien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
+        $assignments = DB::table('phancongphanbien as pc')
+            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
+            ->leftJoin('phanbien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
             ->where('pc.paper_id', $paperId)
             ->select(
                 'pc.assignment_id',
@@ -917,14 +998,14 @@ class ChairController extends Controller
         $userId = Auth::id();
         
         // Get paper with authorization check
-        $paper = DB::table('BaiBao as bb')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        $paper = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('ht.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
             })
-            ->join('NguoiDung as nd', 'bb.submitter_id', '=', 'nd.user_id')
+            ->join('nguoidung as nd', 'bb.submitter_id', '=', 'nd.user_id')
             ->where('bb.paper_id', $paperId)
             ->select(
                 'bb.*',
@@ -938,9 +1019,9 @@ class ChairController extends Controller
         }
         
         // Get all completed reviews
-        $reviews = DB::table('PhanCongPhanBien as pc')
-            ->join('NguoiDung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
-            ->join('PhanBien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
+        $reviews = DB::table('phancongphanbien as pc')
+            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
+            ->join('phanbien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
             ->where('pc.paper_id', $paperId)
             ->select(
                 'nd.full_name as reviewer_name',
@@ -977,15 +1058,15 @@ class ChairController extends Controller
         $userId = Auth::id();
         
         // Get paper with authorization check
-        $paper = DB::table('BaiBao as bb')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        $paper = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('ht.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
             })
-            ->join('NguoiDung as nd', 'bb.submitter_id', '=', 'nd.user_id')
-            ->leftJoin('TrangThaiBaiBao as tt', 'bb.status_code', '=', 'tt.status_code')
+            ->join('nguoidung as nd', 'bb.submitter_id', '=', 'nd.user_id')
+            ->leftJoin('trangthaibaibao as tt', 'bb.status_code', '=', 'tt.status_code')
             ->where('bb.paper_id', $paperId)
             ->select(
                 'bb.*',
@@ -1002,8 +1083,8 @@ class ChairController extends Controller
         }
         
         // Check if all reviews are completed
-        $pendingReviews = DB::table('PhanCongPhanBien as pc')
-            ->leftJoin('PhanBien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
+        $pendingReviews = DB::table('phancongphanbien as pc')
+            ->leftJoin('phanbien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
             ->where('pc.paper_id', $paperId)
             ->whereNull('pn.review_id')
             ->count();
@@ -1014,9 +1095,9 @@ class ChairController extends Controller
         }
         
         // Get reviews summary
-        $reviewsData = DB::table('PhanCongPhanBien as pc')
-            ->join('PhanBien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
-            ->join('NguoiDung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
+        $reviewsData = DB::table('phancongphanbien as pc')
+            ->join('phanbien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
+            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
             ->where('pc.paper_id', $paperId)
             ->select(
                 'nd.full_name as reviewer_name',
@@ -1060,7 +1141,7 @@ class ChairController extends Controller
         ];
         
         // Check if decision already exists
-        $existingDecision = DB::table('BaiBao')
+        $existingDecision = DB::table('baibao')
             ->where('paper_id', $paperId)
             ->whereNotNull('decision_date')
             ->first();
@@ -1089,9 +1170,9 @@ class ChairController extends Controller
         ]);
         
         // Check authorization
-        $paper = DB::table('BaiBao as bb')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->join('VaiTroNguoiDung as vt', function($join) use ($userId) {
+        $paper = DB::table('baibao as bb')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->join('vaitronguoidung as vt', function($join) use ($userId) {
                 $join->on('ht.conference_id', '=', 'vt.conference_id')
                      ->where('vt.user_id', '=', $userId)
                      ->where('vt.role_code', '=', 'CHAIR');
@@ -1109,7 +1190,7 @@ class ChairController extends Controller
             return back()->withErrors(['deadline_revision' => 'Deadline is required for revision decision'])->withInput();
         }
         
-        // Get status IDs (you may need to adjust these based on your TrangThaiBaiBao table)
+        // Get status IDs (you may need to adjust these based on your trangthaibaibao table)
         $statusMap = [
             'ACCEPT' => 'ACCEPTED',
             'REJECT' => 'REJECTED',
@@ -1118,8 +1199,8 @@ class ChairController extends Controller
         
         $newStatusCode = $statusMap[$validated['decision']];
         
-        // Get status_id from TrangThaiBaiBao table
-        $status = DB::table('TrangThaiBaiBao')
+        // Get status_id from trangthaibaibao table
+        $status = DB::table('trangthaibaibao')
             ->where('status_code', $newStatusCode)
             ->first();
         
@@ -1130,7 +1211,7 @@ class ChairController extends Controller
                 'REJECT' => 'Đã từ chối',
                 'REVISE' => 'Cần sửa lại'
             ];
-            $status = DB::table('TrangThaiBaiBao')
+            $status = DB::table('trangthaibaibao')
                 ->where('status_name_vi', $statusNames[$validated['decision']])
                 ->first();
         }
@@ -1139,7 +1220,7 @@ class ChairController extends Controller
             DB::beginTransaction();
             
             // Update paper with decision
-            DB::table('BaiBao')
+            DB::table('baibao')
                 ->where('paper_id', $paperId)
                 ->update([
                     'status_id' => $status ? $status->status_id : null,
@@ -1185,7 +1266,7 @@ class ChairController extends Controller
     {
         // Authorization check
         $userId = Auth::id();
-        $isChair = DB::table('VaiTroNguoiDung')
+        $isChair = DB::table('vaitronguoidung')
             ->where('user_id', $userId)
             ->where('role_code', 'CHAIR')
             ->exists();
@@ -1196,14 +1277,14 @@ class ChairController extends Controller
         }
 
         // Get conference ID (assuming current user is chair of a conference)
-        $conferenceId = DB::table('VaiTroNguoiDung')
+        $conferenceId = DB::table('vaitronguoidung')
             ->where('user_id', $userId)
             ->where('role_code', 'CHAIR')
             ->value('conference_id');
 
         // Build query for reviewers
-        $query = DB::table('NguoiDung as nd')
-            ->join('VaiTroNguoiDung as vt', 'nd.user_id', '=', 'vt.user_id')
+        $query = DB::table('nguoidung as nd')
+            ->join('vaitronguoidung as vt', 'nd.user_id', '=', 'vt.user_id')
             ->where('vt.role_code', 'REVIEWER')
             ->where('vt.conference_id', $conferenceId)
             ->select('nd.*');
@@ -1232,8 +1313,8 @@ class ChairController extends Controller
         // Calculate statistics for each reviewer
         foreach ($reviewers as $reviewer) {
             // Get assignment statistics
-            $assignments = DB::table('PhanCongPhanBien as pc')
-                ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
+            $assignments = DB::table('phancongphanbien as pc')
+                ->join('baibao as bb', 'pc.paper_id', '=', 'bb.paper_id')
                 ->where('pc.reviewer_id', $reviewer->user_id)
                 ->where('bb.conference_id', $conferenceId)
                 ->select('pc.*', 'bb.created_at')
@@ -1242,9 +1323,9 @@ class ChairController extends Controller
             $reviewer->total_assignments = $assignments->count();
 
             // Get completed reviews
-            $completedReviews = DB::table('PhanBien as pb')
-                ->join('PhanCongPhanBien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
-                ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
+            $completedReviews = DB::table('phanbien as pb')
+                ->join('phancongphanbien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
+                ->join('baibao as bb', 'pc.paper_id', '=', 'bb.paper_id')
                 ->where('pc.reviewer_id', $reviewer->user_id)
                 ->where('bb.conference_id', $conferenceId)
                 ->select('pb.*', 'pc.assigned_at')
@@ -1351,7 +1432,7 @@ class ChairController extends Controller
     {
         // Authorization check
         $userId = Auth::id();
-        $isChair = DB::table('VaiTroNguoiDung')
+        $isChair = DB::table('vaitronguoidung')
             ->where('user_id', $userId)
             ->where('role_code', 'CHAIR')
             ->exists();
@@ -1362,7 +1443,7 @@ class ChairController extends Controller
         }
 
         // Get reviewer info
-        $reviewer = DB::table('NguoiDung')->where('user_id', $reviewerId)->first();
+        $reviewer = DB::table('nguoidung')->where('user_id', $reviewerId)->first();
 
         if (!$reviewer) {
             return redirect()->route('chair.reviewers.index')
@@ -1370,16 +1451,16 @@ class ChairController extends Controller
         }
 
         // Get conference ID
-        $conferenceId = DB::table('VaiTroNguoiDung')
+        $conferenceId = DB::table('vaitronguoidung')
             ->where('user_id', $userId)
             ->where('role_code', 'CHAIR')
             ->value('conference_id');
 
         // Get all assignments for this reviewer
-        $assignments = DB::table('PhanCongPhanBien as pc')
-            ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
-            ->leftJoin('PhanBien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
-            ->leftJoin('TrangThaiBaiBao as tt', 'bb.status_code', '=', 'tt.status_code')
+        $assignments = DB::table('phancongphanbien as pc')
+            ->join('baibao as bb', 'pc.paper_id', '=', 'bb.paper_id')
+            ->leftJoin('phanbien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
+            ->leftJoin('trangthaibaibao as tt', 'bb.status_code', '=', 'tt.status_code')
             ->where('pc.reviewer_id', $reviewerId)
             ->where('bb.conference_id', $conferenceId)
             ->select(
@@ -1448,6 +1529,10 @@ class ChairController extends Controller
         return view('chair.reviewers.show', compact('reviewer', 'stats', 'completedAssignments', 'pendingAssignments'));
     }
 }
+
+
+
+
 
 
 

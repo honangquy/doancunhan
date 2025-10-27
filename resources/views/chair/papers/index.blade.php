@@ -7,74 +7,75 @@
 @section('page-subtitle', 'Xem và quản lý tất cả bài báo trong hội thảo')
 
 @section('content')
-<div x-data="{
-    currentView: 'papers-list',
-    selectedPaperId: null,
-    paperDetailData: null,
-    assignReviewerData: null,
-    loading: false,
-    
-    async viewPaperDetail(paperId) {
-        this.selectedPaperId = paperId;
-        this.currentView = 'paper-detail';
-        this.loading = true;
-        this.paperDetailData = null;
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('papersManager', () => ({
+        currentView: 'papers-list',
+        selectedPaperId: null,
+        paperDetailData: null,
+        assignReviewerData: null,
+        loading: false,
         
-        try {
-            const response = await fetch(`/chair/papers/${paperId}`);
-            const html = await response.text();
+        async viewPaperDetail(paperId) {
+            this.selectedPaperId = paperId;
+            this.currentView = 'paper-detail';
+            this.loading = true;
+            this.paperDetailData = null;
             
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const mainContent = doc.querySelector('main');
-            
-            if (mainContent) {
-                this.paperDetailData = mainContent.innerHTML;
-            } else {
-                this.paperDetailData = '<div class=\"p-6 text-center text-red-500\">Không thể tải chi tiết bài báo</div>';
+            try {
+                const response = await fetch('/chair/papers/' + paperId + '/ajax');
+                
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+                }
+                
+                const html = await response.text();
+                this.paperDetailData = html;
+                
+            } catch (error) {
+                this.paperDetailData = '<div class="p-6 text-center text-red-500">Không thể tải chi tiết bài báo</div>';
+            } finally {
+                this.loading = false;
             }
-        } catch (error) {
-            console.error('Lỗi khi tải chi tiết bài báo:', error);
-            this.paperDetailData = '<div class=\"p-6 text-center text-red-500\">Có lỗi xảy ra khi tải dữ liệu</div>';
-        } finally {
-            this.loading = false;
-        }
-    },
-    
-    async assignReviewer(paperId) {
-        this.selectedPaperId = paperId;
-        this.currentView = 'assign-reviewer';
-        this.loading = true;
-        this.assignReviewerData = null;
+        },
         
-        try {
-            const response = await fetch(`/chair/papers/${paperId}/assign`);
-            const html = await response.text();
+        async assignReviewer(paperId) {
+            this.selectedPaperId = paperId;
+            this.currentView = 'assign-reviewer';
+            this.loading = true;
+            this.assignReviewerData = null;
             
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const mainContent = doc.querySelector('main');
-            
-            if (mainContent) {
-                this.assignReviewerData = mainContent.innerHTML;
-            } else {
-                this.assignReviewerData = '<div class=\"p-6 text-center text-red-500\">Không thể tải form phân công reviewer</div>';
+            try {
+                const response = await fetch('/chair/papers/' + paperId + '/assign');
+                const html = await response.text();
+                
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const mainContent = doc.querySelector('main');
+                
+                if (mainContent) {
+                    this.assignReviewerData = mainContent.innerHTML;
+                } else {
+                    this.assignReviewerData = '<div class="p-6 text-center text-red-500">Không thể tải form phân công reviewer</div>';
+                }
+            } catch (error) {
+                this.assignReviewerData = '<div class="p-6 text-center text-red-500">Không thể tải form phân công reviewer</div>';
+            } finally {
+                this.loading = false;
             }
-        } catch (error) {
-            console.error('Lỗi khi tải form phân công:', error);
-            this.assignReviewerData = '<div class=\"p-6 text-center text-red-500\">Có lỗi xảy ra khi tải dữ liệu</div>';
-        } finally {
-            this.loading = false;
+        },
+        
+        backToList() {
+            this.currentView = 'papers-list';
+            this.selectedPaperId = null;
+            this.paperDetailData = null;
+            this.assignReviewerData = null;
         }
-    },
-    
-    backToList() {
-        this.currentView = 'papers-list';
-        this.selectedPaperId = null;
-        this.paperDetailData = null;
-        this.assignReviewerData = null;
-    }
-}" class="space-y-6">
+    }))
+});
+</script>
+
+<div x-data="papersManager" class="space-y-6">
 
     <!-- Navigation Tabs -->
     <div class="border-b border-gray-200">
@@ -201,8 +202,8 @@
                         <option value="">Tất cả hội thảo</option>
                         @if(isset($conferences))
                             @foreach($conferences as $conference)
-                                <option value="{{ $conference->hoi_thao_id }}" {{ request('conference') == $conference->hoi_thao_id ? 'selected' : '' }}>
-                                    {{ $conference->ten_hoi_thao }}
+                                <option value="{{ $conference->conference_id }}" {{ request('conference') == $conference->conference_id ? 'selected' : '' }}>
+                                    {{ $conference->title }}
                                 </option>
                             @endforeach
                         @endif
@@ -241,22 +242,22 @@
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4">
                                         <div>
-                                            <h4 class="font-medium text-gray-900 line-clamp-2">{{ $paper->tieu_de ?? 'N/A' }}</h4>
-                                            @if($paper->tu_khoa)
+                                            <h4 class="font-medium text-gray-900 line-clamp-2">{{ $paper->title ?? 'N/A' }}</h4>
+                                            @if($paper->keywords)
                                                 <p class="text-sm text-gray-500 mt-1">
-                                                    <span class="font-medium">Từ khóa:</span> {{ Str::limit($paper->tu_khoa, 60) }}
+                                                    <span class="font-medium">Từ khóa:</span> {{ Str::limit($paper->keywords, 60) }}
                                                 </p>
                                             @endif
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm">
-                                            <p class="text-gray-900 font-medium">{{ $paper->nguoiDung->ho_ten ?? 'N/A' }}</p>
-                                            <p class="text-gray-500">{{ $paper->nguoiDung->email ?? 'N/A' }}</p>
+                                            <p class="text-gray-900 font-medium">{{ $paper->author_name ?? 'N/A' }}</p>
+                                            {{-- <p class="text-gray-500">{{ $paper->author_email ?? 'N/A' }}</p> --}}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="text-sm text-gray-900">{{ $paper->hoiThao->ten_hoi_thao ?? 'N/A' }}</span>
+                                        <span class="text-sm text-gray-900">{{ $paper->conference_name ?? 'N/A' }}</span>
                                     </td>
                                     <td class="px-6 py-4">
                                         @php
@@ -272,31 +273,31 @@
                                                 'ACCEPTED' => 'Đã duyệt',
                                                 'REJECTED' => 'Từ chối'
                                             ];
-                                            $currentStatus = $paper->trang_thai ?? 'PENDING';
+                                            $currentStatus = $paper->status_code ?? 'PENDING';
                                         @endphp
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusClasses[$currentStatus] ?? 'bg-gray-100 text-gray-800' }}">
                                             {{ $statusLabels[$currentStatus] ?? $currentStatus }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500">
-                                        {{ $paper->created_at ? $paper->created_at->format('d/m/Y') : 'N/A' }}
+                                        {{ $paper->created_at ? \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y') : 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center space-x-2">
-                                            <button @click="viewPaperDetail({{ $paper->bai_bao_id }})" 
+                                            <button @click="viewPaperDetail({{ $paper->paper_id }})" 
                                                     class="text-indigo-600 hover:text-indigo-900 text-sm font-medium transition-colors">
                                                 Xem
                                             </button>
                                             
                                             @if($currentStatus === 'PENDING')
-                                                <button @click="assignReviewer({{ $paper->bai_bao_id }})" 
+                                                <button @click="assignReviewer({{ $paper->paper_id }})" 
                                                         class="text-green-600 hover:text-green-900 text-sm font-medium transition-colors">
                                                     Phân công
                                                 </button>
                                             @endif
                                             
                                             @if(in_array($currentStatus, ['UNDER_REVIEW', 'PENDING']))
-                                                <a href="{{ route('chair.papers.decision', $paper->bai_bao_id) }}" 
+                                                <a href="{{ route('chair.papers.decision', $paper->paper_id) }}" 
                                                    class="text-orange-600 hover:text-orange-900 text-sm font-medium transition-colors">
                                                     Quyết định
                                                 </a>

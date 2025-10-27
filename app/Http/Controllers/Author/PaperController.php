@@ -23,30 +23,30 @@ class PaperController extends Controller
         $userId = Auth::id();
         
         // Get all papers submitted by this author
-        $papers = DB::table('BaiBao')
-            ->join('HoiThao', 'BaiBao.conference_id', '=', 'HoiThao.conference_id')
-            ->join('TrangThaiBaiBao', 'BaiBao.status_code', '=', 'TrangThaiBaiBao.status_code')
-            ->where('BaiBao.submitter_id', $userId)
+        $papers = DB::table('baibao')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->join('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
+            ->where('baibao.submitter_id', $userId)
             ->select(
-                'BaiBao.paper_id',
-                'BaiBao.title',
-                'BaiBao.created_at',
-                'BaiBao.status_code',
-                'HoiThao.title as conference_title',
-                'HoiThao.conference_id',
-                'TrangThaiBaiBao.status_name'
+                'baibao.paper_id',
+                'baibao.title',
+                'baibao.created_at',
+                'baibao.status_code',
+                'hoithao.title as conference_title',
+                'hoithao.conference_id',
+                'trangthaibaibao.status_name'
             )
-            ->orderBy('BaiBao.created_at', 'desc')
+            ->orderBy('baibao.created_at', 'desc')
             ->paginate(20);
         
         // Get statistics
         $stats = [
-            'total' => DB::table('BaiBao')->where('submitter_id', $userId)->count(),
-            'draft' => DB::table('BaiBao')->where('submitter_id', $userId)->where('status_code', 'DRAFT')->count(),
-            'submitted' => DB::table('BaiBao')->where('submitter_id', $userId)->where('status_code', 'SUBMITTED')->count(),
-            'under_review' => DB::table('BaiBao')->where('submitter_id', $userId)->where('status_code', 'UNDER_REVIEW')->count(),
-            'accepted' => DB::table('BaiBao')->where('submitter_id', $userId)->where('status_code', 'ACCEPTED')->count(),
-            'rejected' => DB::table('BaiBao')->where('submitter_id', $userId)->where('status_code', 'REJECTED')->count(),
+            'total' => DB::table('baibao')->where('submitter_id', $userId)->count(),
+            'draft' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'DRAFT')->count(),
+            'submitted' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'SUBMITTED')->count(),
+            'under_review' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'UNDER_REVIEW')->count(),
+            'accepted' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'ACCEPTED')->count(),
+            'rejected' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'REJECTED')->count(),
         ];
         
         return view('author.papers.index', compact('papers', 'stats'));
@@ -57,12 +57,18 @@ class PaperController extends Controller
      */
     public function create()
     {
-        // Get active conferences with open submissions
-        $conferences = DB::table('HoiThao')
-            ->where('status', 'ACTIVE')
-            ->where('deadline_submission', '>', now())
-            ->select('conference_id', 'title', 'deadline_submission')
-            ->orderBy('deadline_submission', 'asc')
+        $userId = Auth::id();
+        
+        // Get active conferences with open submissions where user has APPROVED join request as AUTHOR
+        $conferences = DB::table('hoithao')
+            ->join('join_requests', 'hoithao.conference_id', '=', 'join_requests.conference_id')
+            ->where('hoithao.status', 'ACTIVE')
+            ->where('hoithao.deadline_submission', '>', now())
+            ->where('join_requests.user_id', $userId)
+            ->where('join_requests.role', 'AUTHOR')
+            ->where('join_requests.status', 'APPROVED')
+            ->select('hoithao.conference_id', 'hoithao.title', 'hoithao.deadline_submission')
+            ->orderBy('hoithao.deadline_submission', 'asc')
             ->get();
         
         return view('author.papers.create', compact('conferences'));
@@ -77,7 +83,7 @@ class PaperController extends Controller
         
         // Validate request
         $validated = $request->validate([
-            'conference_id' => 'required|exists:HoiThao,conference_id',
+            'conference_id' => 'required|exists:hoithao,conference_id',
             'title' => 'required|string|max:500',
             'abstract' => 'required|string',
             'keywords' => 'required|string|max:500',
@@ -89,7 +95,7 @@ class PaperController extends Controller
         ]);
         
         // Check submission deadline
-        $conference = DB::table('HoiThao')
+        $conference = DB::table('hoithao')
             ->where('conference_id', $validated['conference_id'])
             ->first();
         
@@ -97,11 +103,23 @@ class PaperController extends Controller
             return back()->withErrors(['conference_id' => 'Deadline nộp bài đã qua.'])->withInput();
         }
         
+        // Check if user has approved join request as AUTHOR for this conference
+        $joinRequest = DB::table('join_requests')
+            ->where('conference_id', $validated['conference_id'])
+            ->where('user_id', $userId)
+            ->where('role', 'AUTHOR')
+            ->where('status', 'APPROVED')
+            ->first();
+            
+        if (!$joinRequest) {
+            return back()->withErrors(['conference_id' => 'Bạn chưa được phép tham gia hội thảo này với vai trò tác giả.'])->withInput();
+        }
+        
         DB::beginTransaction();
         
         try {
             // Insert paper
-            $paperId = DB::table('BaiBao')->insertGetId([
+            $paperId = DB::table('baibao')->insertGetId([
                 'conference_id' => $validated['conference_id'],
                 'submitter_id' => $userId,
                 'title' => $validated['title'],
@@ -118,13 +136,13 @@ class PaperController extends Controller
                 $path = $file->storeAs('papers/' . $validated['conference_id'], $filename);
                 
                 // Update paper with file path
-                DB::table('BaiBao')
+                DB::table('baibao')
                     ->where('paper_id', $paperId)
                     ->update(['file_path' => $path]);
             }
             
             // Add submitter as first author (contact author by default)
-            DB::table('TacGiaBaiBao')->insert([
+            DB::table('tacgiabaibao')->insert([
                 'paper_id' => $paperId,
                 'user_id' => $userId,
                 'author_order' => 1,
@@ -137,13 +155,13 @@ class PaperController extends Controller
                 foreach ($validated['co_authors'] as $coAuthor) {
                     if (!empty($coAuthor['email']) && !empty($coAuthor['name'])) {
                         // Find or create user
-                        $coAuthorUser = DB::table('NguoiDung')
+                        $coAuthorUser = DB::table('nguoidung')
                             ->where('email', $coAuthor['email'])
                             ->first();
                         
                         if (!$coAuthorUser) {
                             // Create new user for co-author
-                            $coAuthorUserId = DB::table('NguoiDung')->insertGetId([
+                            $coAuthorUserId = DB::table('nguoidung')->insertGetId([
                                 'email' => $coAuthor['email'],
                                 'full_name' => $coAuthor['name'],
                                 'organization' => $coAuthor['organization'] ?? null,
@@ -155,7 +173,7 @@ class PaperController extends Controller
                         }
                         
                         // Add to TacGiaBaiBao
-                        DB::table('TacGiaBaiBao')->insert([
+                        DB::table('tacgiabaibao')->insert([
                             'paper_id' => $paperId,
                             'user_id' => $coAuthorUserId,
                             'author_order' => $order,
@@ -190,16 +208,16 @@ class PaperController extends Controller
         $userId = Auth::id();
         
         // Get paper details
-        $paper = DB::table('BaiBao')
-            ->join('HoiThao', 'BaiBao.conference_id', '=', 'HoiThao.conference_id')
-            ->join('TrangThaiBaiBao', 'BaiBao.status_code', '=', 'TrangThaiBaiBao.status_code')
-            ->where('BaiBao.paper_id', $id)
-            ->where('BaiBao.submitter_id', $userId)
+        $paper = DB::table('baibao')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->join('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
+            ->where('baibao.paper_id', $id)
+            ->where('baibao.submitter_id', $userId)
             ->select(
-                'BaiBao.*',
-                'HoiThao.title as conference_title',
-                'HoiThao.deadline_submission',
-                'TrangThaiBaiBao.status_name'
+                'baibao.*',
+                'hoithao.title as conference_title',
+                'hoithao.deadline_submission',
+                'trangthaibaibao.status_name'
             )
             ->first();
         
@@ -208,22 +226,22 @@ class PaperController extends Controller
         }
         
         // Get authors
-        $authors = DB::table('TacGiaBaiBao')
-            ->join('NguoiDung', 'TacGiaBaiBao.user_id', '=', 'NguoiDung.user_id')
-            ->where('TacGiaBaiBao.paper_id', $id)
+        $authors = DB::table('tacgiabaibao')
+            ->join('nguoidung', 'tacgiabaibao.user_id', '=', 'nguoidung.user_id')
+            ->where('tacgiabaibao.paper_id', $id)
             ->select(
-                'NguoiDung.user_id',
-                'NguoiDung.full_name',
-                'NguoiDung.email',
-                'NguoiDung.organization',
-                'TacGiaBaiBao.author_order',
-                'TacGiaBaiBao.is_contact'
+                'nguoidung.user_id',
+                'nguoidung.full_name',
+                'nguoidung.email',
+                'nguoidung.organization',
+                'tacgiabaibao.author_order',
+                'tacgiabaibao.is_contact'
             )
-            ->orderBy('TacGiaBaiBao.author_order')
+            ->orderBy('tacgiabaibao.author_order')
             ->get();
         
         // Get review assignments
-        $assignments = DB::table('PhanCongPhanBien')
+        $assignments = DB::table('phancongphanbien')
             ->where('paper_id', $id)
             ->select('assignment_id', 'status_code', 'assigned_at', 'deadline')
             ->get();
@@ -231,16 +249,16 @@ class PaperController extends Controller
         // Get reviews (only if paper is under review or later)
         $reviews = [];
         if (in_array($paper->status_code, ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED'])) {
-            $reviews = DB::table('PhanBien')
-                ->join('PhanCongPhanBien', 'PhanBien.assignment_id', '=', 'PhanCongPhanBien.assignment_id')
-                ->where('PhanCongPhanBien.paper_id', $id)
-                ->whereNotNull('PhanBien.submitted_at')
+            $reviews = DB::table('phanbien')
+                ->join('phancongphanbien', 'phanbien.assignment_id', '=', 'phancongphanbien.assignment_id')
+                ->where('phancongphanbien.paper_id', $id)
+                ->whereNotNull('phanbien.submitted_at')
                 ->select(
-                    'PhanBien.review_id',
-                    'PhanBien.score',
-                    'PhanBien.recommendation',
-                    'PhanBien.review_content',
-                    'PhanBien.submitted_at'
+                    'phanbien.review_id',
+                    'phanbien.score',
+                    'phanbien.recommendation',
+                    'phanbien.review_content',
+                    'phanbien.submitted_at'
                 )
                 ->get();
         }
@@ -256,11 +274,11 @@ class PaperController extends Controller
         $userId = Auth::id();
         
         // Get paper
-        $paper = DB::table('BaiBao')
-            ->join('HoiThao', 'BaiBao.conference_id', '=', 'HoiThao.conference_id')
-            ->where('BaiBao.paper_id', $id)
-            ->where('BaiBao.submitter_id', $userId)
-            ->select('BaiBao.*', 'HoiThao.deadline_submission')
+        $paper = DB::table('baibao')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->where('baibao.paper_id', $id)
+            ->where('baibao.submitter_id', $userId)
+            ->select('baibao.*', 'hoithao.deadline_submission')
             ->first();
         
         if (!$paper) {
@@ -282,24 +300,24 @@ class PaperController extends Controller
         }
         
         // Get active conferences
-        $conferences = DB::table('HoiThao')
+        $conferences = DB::table('hoithao')
             ->where('status', 'ACTIVE')
             ->where('deadline_submission', '>', now())
             ->select('conference_id', 'title', 'deadline_submission')
             ->get();
         
         // Get current authors (excluding submitter)
-        $coAuthors = DB::table('TacGiaBaiBao')
-            ->join('NguoiDung', 'TacGiaBaiBao.user_id', '=', 'NguoiDung.user_id')
-            ->where('TacGiaBaiBao.paper_id', $id)
-            ->where('TacGiaBaiBao.user_id', '!=', $userId)
+        $coAuthors = DB::table('tacgiabaibao')
+            ->join('nguoidung', 'tacgiabaibao.user_id', '=', 'nguoidung.user_id')
+            ->where('tacgiabaibao.paper_id', $id)
+            ->where('tacgiabaibao.user_id', '!=', $userId)
             ->select(
-                'NguoiDung.user_id',
-                'NguoiDung.full_name',
-                'TacGiaBaiBao.author_order',
-                'TacGiaBaiBao.is_contact'
+                'nguoidung.user_id',
+                'nguoidung.full_name',
+                'tacgiabaibao.author_order',
+                'tacgiabaibao.is_contact'
             )
-            ->orderBy('TacGiaBaiBao.author_order')
+            ->orderBy('tacgiabaibao.author_order')
             ->get();
         
         return view('author.papers.edit', compact('paper', 'conferences', 'coAuthors'));
@@ -314,7 +332,7 @@ class PaperController extends Controller
         
         // Validate request
         $validated = $request->validate([
-            'conference_id' => 'required|exists:HoiThao,conference_id',
+            'conference_id' => 'required|exists:hoithao,conference_id',
             'title' => 'required|string|max:500',
             'abstract' => 'required|string',
             'keywords' => 'required|string|max:500',
@@ -323,7 +341,7 @@ class PaperController extends Controller
         ]);
         
         // Get paper
-        $paper = DB::table('BaiBao')
+        $paper = DB::table('baibao')
             ->where('paper_id', $id)
             ->where('submitter_id', $userId)
             ->first();
@@ -361,12 +379,12 @@ class PaperController extends Controller
                 $updateData['file_path'] = $path;
             }
             
-            DB::table('BaiBao')
+            DB::table('baibao')
                 ->where('paper_id', $id)
                 ->update($updateData);
             
             // Update co-authors (delete all except submitter, then re-add)
-            DB::table('TacGiaBaiBao')
+            DB::table('tacgiabaibao')
                 ->where('paper_id', $id)
                 ->where('user_id', '!=', $userId)
                 ->delete();
@@ -375,7 +393,7 @@ class PaperController extends Controller
                 $order = 2;
                 foreach ($validated['co_authors'] as $coAuthor) {
                     if (!empty($coAuthor['user_id'])) {
-                        DB::table('TacGiaBaiBao')->insert([
+                        DB::table('tacgiabaibao')->insert([
                             'paper_id' => $id,
                             'user_id' => $coAuthor['user_id'],
                             'author_order' => $order,
@@ -413,7 +431,7 @@ class PaperController extends Controller
         ]);
         
         // Get paper
-        $paper = DB::table('BaiBao')
+        $paper = DB::table('baibao')
             ->where('paper_id', $id)
             ->where('submitter_id', $userId)
             ->first();
@@ -428,7 +446,7 @@ class PaperController extends Controller
         }
         
         // Update status
-        DB::table('BaiBao')
+        DB::table('baibao')
             ->where('paper_id', $id)
             ->update([
                 'status_code' => 'WITHDRAWN',
@@ -447,7 +465,7 @@ class PaperController extends Controller
     {
         $userId = Auth::id();
         
-        $paper = DB::table('BaiBao')
+        $paper = DB::table('baibao')
             ->where('paper_id', $id)
             ->where('submitter_id', $userId)
             ->first();
@@ -463,4 +481,8 @@ class PaperController extends Controller
         return Storage::download($paper->file_path, $paper->title . '.pdf');
     }
 }
+
+
+
+
 

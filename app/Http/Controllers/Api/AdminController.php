@@ -204,7 +204,7 @@ class AdminController extends Controller
             $validator = Validator::make($request->all(), [
                 'action' => 'required|in:assign,revoke',
                 'role_code' => 'required|in:ADMIN,CHAIR,REVIEWER',
-                'conference_id' => 'nullable|exists:HoiThao,conference_id',
+                'conference_id' => 'nullable|exists:hoithao,conference_id',
             ]);
 
             if ($validator->fails()) {
@@ -308,7 +308,7 @@ class AdminController extends Controller
             }
 
             // Get conference
-            $conference = DB::table('HoiThao')->where('conference_id', $id)->first();
+            $conference = DB::table('hoithao')->where('conference_id', $id)->first();
             if (!$conference) {
                 return response()->json([
                     'success' => false,
@@ -317,7 +317,7 @@ class AdminController extends Controller
             }
 
             // Papers statistics
-            $papersStats = DB::table('BaiBao')
+            $papersStats = DB::table('baibao')
                 ->where('conference_id', $id)
                 ->select(
                     DB::raw('COUNT(*) as total_papers'),
@@ -474,37 +474,37 @@ class AdminController extends Controller
             }
 
             // Total counts
-            $totalUsers = DB::table('NguoiDung')->count();
-            $totalConferences = DB::table('HoiThao')->count();
-            $totalPapers = DB::table('BaiBao')->count();
-            $totalReviews = DB::table('PhanBien')->count();
+            $totalUsers = DB::table('nguoidung')->count();
+            $totalConferences = DB::table('hoithao')->count();
+            $totalPapers = DB::table('baibao')->count();
+            $totalReviews = DB::table('phanbien')->count();
 
             // Active conferences
-            $activeConferences = DB::table('HoiThao')
+            $activeConferences = DB::table('hoithao')
                 ->where('status_code', 'ACTIVE')
                 ->count();
 
             // Papers by status
-            $papersByStatus = DB::table('BaiBao')
+            $papersByStatus = DB::table('baibao')
                 ->select('status_code', DB::raw('COUNT(*) as count'))
                 ->groupBy('status_code')
                 ->get();
 
             // Users by role
-            $usersByRole = DB::table('VaiTroNguoiDung')
+            $usersByRole = DB::table('vaitronguoidung')
                 ->select('role_code', DB::raw('COUNT(DISTINCT user_id) as count'))
                 ->groupBy('role_code')
                 ->get();
 
             // Recent activity (last 30 days)
             $recentActivity = [
-                'new_users' => DB::table('NguoiDung')
+                'new_users' => DB::table('nguoidung')
                     ->where('created_at', '>=', now()->subDays(30))
                     ->count(),
-                'new_papers' => DB::table('BaiBao')
+                'new_papers' => DB::table('baibao')
                     ->where('submitted_at', '>=', now()->subDays(30))
                     ->count(),
-                'new_reviews' => DB::table('PhanBien')
+                'new_reviews' => DB::table('phanbien')
                     ->where('submitted_at', '>=', now()->subDays(30))
                     ->count(),
             ];
@@ -526,8 +526,8 @@ class AdminController extends Controller
                 ->get();
 
             // Review completion rate
-            $totalAssignments = DB::table('PhanCongPhanBien')->count();
-            $completedReviews = DB::table('PhanCongPhanBien')
+            $totalAssignments = DB::table('phancongphanbien')->count();
+            $completedReviews = DB::table('phancongphanbien')
                 ->where('status_code', 'REVIEWED')
                 ->count();
             
@@ -539,9 +539,9 @@ class AdminController extends Controller
             $systemHealth = [
                 'total_users' => $totalUsers,
                 'active_conferences' => $activeConferences,
-                'papers_under_review' => DB::table('BaiBao')->where('status_code', 'UNDER_REVIEW')->count(),
-                'pending_assignments' => DB::table('PhanCongPhanBien')->where('status_code', 'INVITED')->count(),
-                'pending_cois' => DB::table('COI')->where('resolution_status', 'PENDING')->count(),
+                'papers_under_review' => DB::table('baibao')->where('status_code', 'UNDER_REVIEW')->count(),
+                'pending_assignments' => DB::table('phancongphanbien')->where('status_code', 'INVITED')->count(),
+                'pending_cois' => DB::table('coi')->where('resolution_status', 'PENDING')->count(),
             ];
 
             return response()->json([
@@ -587,3 +587,7 @@ class AdminController extends Controller
             ->exists();
     }
 }
+
+
+
+

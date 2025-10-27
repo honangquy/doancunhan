@@ -105,7 +105,7 @@ class AuthController extends Controller
         $this->autoVerifySpecialAccounts($user);
 
         // Check if user has any role assigned
-        $hasAnyRole = DB::table('VaiTroNguoiDung')
+        $hasAnyRole = DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->exists();
 
@@ -273,13 +273,13 @@ class AuthController extends Controller
 
         // Get user statistics
         $stats = [
-            'totalPapers' => DB::table('BaiBao')->where('submitter_id', $user->user_id)->count(),
-            'acceptedPapers' => DB::table('BaiBao')->where('submitter_id', $user->user_id)->where('status_code', 'ACCEPTED')->count(),
-            'reviewAssignments' => DB::table('PhanCongPhanBien')->where('reviewer_id', $user->user_id)->count(),
-            'completedReviews' => DB::table('PhanBien')
-                ->join('PhanCongPhanBien', 'PhanBien.assignment_id', '=', 'PhanCongPhanBien.assignment_id')
-                ->where('PhanCongPhanBien.reviewer_id', $user->user_id)
-                ->whereNotNull('PhanBien.submitted_at')
+            'totalPapers' => DB::table('baibao')->where('submitter_id', $user->user_id)->count(),
+            'acceptedPapers' => DB::table('baibao')->where('submitter_id', $user->user_id)->where('status_code', 'ACCEPTED')->count(),
+            'reviewAssignments' => DB::table('phancongphanbien')->where('reviewer_id', $user->user_id)->count(),
+            'completedReviews' => DB::table('phanbien')
+                ->join('phancongphanbien', 'phanbien.assignment_id', '=', 'phancongphanbien.assignment_id')
+                ->where('phancongphanbien.reviewer_id', $user->user_id)
+                ->whereNotNull('phanbien.submitted_at')
                 ->count(),
         ];
 
@@ -306,7 +306,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            DB::table('NguoiDung')
+            DB::table('nguoidung')
                 ->where('user_id', $user->user_id)
                 ->update([
                     'full_name' => $validated['full_name'],
@@ -343,7 +343,7 @@ class AuthController extends Controller
         }
 
         try {
-            DB::table('NguoiDung')
+            DB::table('nguoidung')
                 ->where('user_id', $user->user_id)
                 ->update([
                     'password_hash' => Hash::make($validated['password']),
@@ -397,7 +397,7 @@ class AuthController extends Controller
                     }
                 }
 
-                DB::table('NguoiDung')
+                DB::table('nguoidung')
                     ->where('user_id', $user->user_id)
                     ->update(['avatar_url' => $avatarUrl]);
 
@@ -489,7 +489,7 @@ class AuthController extends Controller
         ];
 
         // Check if user has admin role
-        $isAdmin = DB::table('VaiTroNguoiDung')
+        $isAdmin = DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->where('role_code', 'ADMIN')
             ->exists();
@@ -658,4 +658,8 @@ class AuthController extends Controller
         }
     }
 }
+
+
+
+
 

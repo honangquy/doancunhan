@@ -60,7 +60,7 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Check assignment exists and belongs to this reviewer
-        $assignment = DB::table('PhanCongPhanBien')
+        $assignment = DB::table('phancongphanbien')
             ->where('assignment_id', $id)
             ->where('reviewer_id', $userId)
             ->first();
@@ -77,7 +77,7 @@ class ReviewerController extends Controller
         }
         
         // Update status to ACCEPTED
-        DB::table('PhanCongPhanBien')
+        DB::table('phancongphanbien')
             ->where('assignment_id', $id)
             ->update([
                 'status_code' => 'ACCEPTED',
@@ -95,7 +95,7 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Check assignment exists and belongs to this reviewer
-        $assignment = DB::table('PhanCongPhanBien')
+        $assignment = DB::table('phancongphanbien')
             ->where('assignment_id', $id)
             ->where('reviewer_id', $userId)
             ->first();
@@ -112,7 +112,7 @@ class ReviewerController extends Controller
         }
         
         // Update status to DECLINED
-        DB::table('PhanCongPhanBien')
+        DB::table('phancongphanbien')
             ->where('assignment_id', $id)
             ->update([
                 'status_code' => 'DECLINED',
@@ -200,7 +200,7 @@ class ReviewerController extends Controller
         }
         
         // Check if review already exists
-        $existingReview = DB::table('PhanBien')
+        $existingReview = DB::table('phanbien')
             ->where('assignment_id', $assignmentId)
             ->first();
         
@@ -228,7 +228,7 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         $validated = $request->validate([
-            'assignment_id' => 'required|exists:PhanCongPhanBien,assignment_id',
+            'assignment_id' => 'required|exists:phancongphanbien,assignment_id',
             'score' => 'required|integer|min:1|max:10',
             'recommendation_code' => 'required|in:ACCEPT,MINOR_REVISION,MAJOR_REVISION,REJECT',
             'comment_author' => 'required|string|min:50',
@@ -236,7 +236,7 @@ class ReviewerController extends Controller
         ]);
         
         // Verify assignment belongs to this reviewer
-        $assignment = DB::table('PhanCongPhanBien')
+        $assignment = DB::table('phancongphanbien')
             ->where('assignment_id', $validated['assignment_id'])
             ->where('reviewer_id', $userId)
             ->first();
@@ -253,7 +253,7 @@ class ReviewerController extends Controller
         }
         
         // Check if review already exists
-        $existingReview = DB::table('PhanBien')
+        $existingReview = DB::table('phanbien')
             ->where('assignment_id', $validated['assignment_id'])
             ->first();
         
@@ -265,7 +265,7 @@ class ReviewerController extends Controller
         DB::beginTransaction();
         try {
             // Insert review
-            $reviewId = DB::table('PhanBien')->insertGetId([
+            $reviewId = DB::table('phanbien')->insertGetId([
                 'assignment_id' => $validated['assignment_id'],
                 'recommendation_code' => $validated['recommendation_code'],
                 'score' => $validated['score'],
@@ -275,7 +275,7 @@ class ReviewerController extends Controller
             ]);
             
             // Update assignment status to COMPLETED
-            DB::table('PhanCongPhanBien')
+            DB::table('phancongphanbien')
                 ->where('assignment_id', $validated['assignment_id'])
                 ->update([
                     'status_code' => 'COMPLETED',
@@ -400,7 +400,7 @@ class ReviewerController extends Controller
         DB::beginTransaction();
         try {
             // Update review
-            DB::table('PhanBien')
+            DB::table('phanbien')
                 ->where('review_id', $id)
                 ->update([
                     'recommendation_code' => $validated['recommendation_code'],
@@ -447,3 +447,7 @@ class ReviewerController extends Controller
         return Storage::download($assignment->file_path, $assignment->title . '.pdf');
     }
 }
+
+
+
+

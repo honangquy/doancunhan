@@ -18,7 +18,7 @@ class COIController extends Controller
         $userId = Auth::id();
         
         // Verify reviewer role
-        $isReviewer = DB::table('VaiTroNguoiDung')
+        $isReviewer = DB::table('vaitronguoidung')
             ->where('user_id', $userId)
             ->where('role_code', 'REVIEWER')
             ->exists();
@@ -28,31 +28,31 @@ class COIController extends Controller
         }
         
         // Get all COI declared by this reviewer
-        $declaredCOI = DB::table('COI')
-            ->join('BaiBao', 'COI.paper_id', '=', 'BaiBao.paper_id')
-            ->join('HoiThao', 'BaiBao.conference_id', '=', 'HoiThao.conference_id')
-            ->join('LoaiCOI', 'COI.coi_code', '=', 'LoaiCOI.coi_code')
-            ->leftJoin('XuLyCOI', 'COI.coi_id', '=', 'XuLyCOI.coi_id')
-            ->where('COI.reviewer_id', $userId)
-            ->where('COI.source_type', 'DECLARED')
+        $declaredCOI = DB::table('coi')
+            ->join('baibao', 'coi.paper_id', '=', 'baibao.paper_id')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->join('loaicoi', 'coi.coi_code', '=', 'loaicoi.coi_code')
+            ->leftJoin('XuLyCOI', 'coi.coi_id', '=', 'XuLycoi.coi_id')
+            ->where('coi.reviewer_id', $userId)
+            ->where('coi.source_type', 'DECLARED')
             ->select(
-                'COI.coi_id',
-                'COI.paper_id',
-                'BaiBao.title as paper_title',
-                'BaiBao.status as paper_status',
-                'HoiThao.title as conference_code',
-                'HoiThao.title as conference_title',
-                'LoaiCOI.coi_code',
-                'LoaiCOI.coi_name',
-                'COI.evidence',
-                'COI.note',
-                'COI.detected_at',
-                'COI.created_at',
-                'XuLyCOI.decision_id',
-                'XuLyCOI.decision',
-                'XuLyCOI.decided_at'
+                'coi.coi_id',
+                'coi.paper_id',
+                'baibao.title as paper_title',
+                'baibao.status as paper_status',
+                'hoithao.title as conference_code',
+                'hoithao.title as conference_title',
+                'loaicoi.coi_code',
+                'loaicoi.coi_name',
+                'coi.evidence',
+                'coi.note',
+                'coi.detected_at',
+                'coi.created_at',
+                'XuLycoi.decision_id',
+                'XuLycoi.decision',
+                'XuLycoi.decided_at'
             )
-            ->orderBy('COI.created_at', 'desc')
+            ->orderBy('coi.created_at', 'desc')
             ->get();
         
         // Get statistics
@@ -60,12 +60,12 @@ class COIController extends Controller
             'total' => $declaredCOI->count(),
             'resolved' => $declaredCOI->where('decision_id', '!=', null)->count(),
             'unresolved' => $declaredCOI->where('decision_id', null)->count(),
-            'by_type' => DB::table('COI')
-                ->join('LoaiCOI', 'COI.coi_code', '=', 'LoaiCOI.coi_code')
-                ->where('COI.reviewer_id', $userId)
-                ->where('COI.source_type', 'DECLARED')
-                ->select('LoaiCOI.coi_name', DB::raw('count(*) as count'))
-                ->groupBy('LoaiCOI.coi_name')
+            'by_type' => DB::table('coi')
+                ->join('loaicoi', 'coi.coi_code', '=', 'loaicoi.coi_code')
+                ->where('coi.reviewer_id', $userId)
+                ->where('coi.source_type', 'DECLARED')
+                ->select('loaicoi.coi_name', DB::raw('count(*) as count'))
+                ->groupBy('loaicoi.coi_name')
                 ->get()
         ];
         
@@ -80,7 +80,7 @@ class COIController extends Controller
         $userId = Auth::id();
         
         // Verify reviewer role
-        $isReviewer = DB::table('VaiTroNguoiDung')
+        $isReviewer = DB::table('vaitronguoidung')
             ->where('user_id', $userId)
             ->where('role_code', 'REVIEWER')
             ->exists();
@@ -90,16 +90,16 @@ class COIController extends Controller
         }
         
         // Get COI types
-        $coiTypes = DB::table('LoaiCOI')
+        $coiTypes = DB::table('loaicoi')
             ->orderBy('coi_name')
             ->get();
         
         // Get conferences where reviewer has assignments
-        $conferences = DB::table('HoiThao')
-            ->join('BaiBao', 'HoiThao.conference_id', '=', 'BaiBao.conference_id')
-            ->join('PhanCong', 'BaiBao.paper_id', '=', 'PhanCong.paper_id')
-            ->where('PhanCong.reviewer_id', $userId)
-            ->select('HoiThao.conference_id', 'HoiThao.title as conference_code', 'HoiThao.title')
+        $conferences = DB::table('hoithao')
+            ->join('baibao', 'hoithao.conference_id', '=', 'baibao.conference_id')
+            ->join('phancong', 'baibao.paper_id', '=', 'phancong.paper_id')
+            ->where('phancong.reviewer_id', $userId)
+            ->select('hoithao.conference_id', 'hoithao.title as conference_code', 'hoithao.title')
             ->distinct()
             ->get();
         
@@ -115,8 +115,8 @@ class COIController extends Controller
         
         // Validate input
         $validated = $request->validate([
-            'paper_id' => 'required|exists:BaiBao,paper_id',
-            'coi_code' => 'required|exists:LoaiCOI,coi_code',
+            'paper_id' => 'required|exists:baibao,paper_id',
+            'coi_code' => 'required|exists:loaicoi,coi_code',
             'evidence' => 'required|string|max:1000',
             'note' => 'nullable|string|max:500'
         ], [
@@ -130,7 +130,7 @@ class COIController extends Controller
         ]);
         
         // Check if COI already declared for this paper-reviewer pair
-        $existingCOI = DB::table('COI')
+        $existingCOI = DB::table('coi')
             ->where('paper_id', $validated['paper_id'])
             ->where('reviewer_id', $userId)
             ->where('source_type', 'DECLARED')
@@ -143,7 +143,7 @@ class COIController extends Controller
         }
         
         // Check if reviewer is assigned to this paper
-        $assignment = DB::table('PhanCong')
+        $assignment = DB::table('phancong')
             ->where('paper_id', $validated['paper_id'])
             ->where('reviewer_id', $userId)
             ->first();
@@ -158,7 +158,7 @@ class COIController extends Controller
             DB::beginTransaction();
             
             // Insert COI record
-            $coiId = DB::table('COI')->insertGetId([
+            $coiId = DB::table('coi')->insertGetId([
                 'paper_id' => $validated['paper_id'],
                 'reviewer_id' => $userId,
                 'coi_code' => $validated['coi_code'],
@@ -188,30 +188,30 @@ class COIController extends Controller
         $userId = Auth::id();
         
         // Get COI details
-        $coi = DB::table('COI')
-            ->join('BaiBao', 'COI.paper_id', '=', 'BaiBao.paper_id')
-            ->join('HoiThao', 'BaiBao.conference_id', '=', 'HoiThao.conference_id')
-            ->join('LoaiCOI', 'COI.coi_code', '=', 'LoaiCOI.coi_code')
-            ->leftJoin('XuLyCOI', 'COI.coi_id', '=', 'XuLyCOI.coi_id')
-            ->leftJoin('NguoiDung', 'XuLyCOI.chair_id', '=', 'NguoiDung.user_id')
-            ->where('COI.coi_id', $coiId)
-            ->where('COI.reviewer_id', $userId)
-            ->where('COI.source_type', 'DECLARED')
+        $coi = DB::table('coi')
+            ->join('baibao', 'coi.paper_id', '=', 'baibao.paper_id')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->join('loaicoi', 'coi.coi_code', '=', 'loaicoi.coi_code')
+            ->leftJoin('XuLyCOI', 'coi.coi_id', '=', 'XuLycoi.coi_id')
+            ->leftjoin('nguoidung', 'XuLycoi.chair_id', '=', 'nguoidung.user_id')
+            ->where('coi.coi_id', $coiId)
+            ->where('coi.reviewer_id', $userId)
+            ->where('coi.source_type', 'DECLARED')
             ->select(
-                'COI.*',
-                'BaiBao.title as paper_title',
-                'BaiBao.abstract as paper_abstract',
-                'BaiBao.keywords as paper_keywords',
-                'BaiBao.status as paper_status',
-                'BaiBao.submitted_at',
-                'HoiThao.title as conference_code',
-                'HoiThao.title as conference_title',
-                'LoaiCOI.coi_name',
-                'XuLyCOI.decision_id',
-                'XuLyCOI.decision',
-                'XuLyCOI.note as resolution_note',
-                'XuLyCOI.decided_at',
-                'NguoiDung.full_name as resolved_by_name'
+                'coi.*',
+                'baibao.title as paper_title',
+                'baibao.abstract as paper_abstract',
+                'baibao.keywords as paper_keywords',
+                'baibao.status as paper_status',
+                'baibao.submitted_at',
+                'hoithao.title as conference_code',
+                'hoithao.title as conference_title',
+                'loaicoi.coi_name',
+                'XuLycoi.decision_id',
+                'XuLycoi.decision',
+                'XuLycoi.note as resolution_note',
+                'XuLycoi.decided_at',
+                'nguoidung.full_name as resolved_by_name'
             )
             ->first();
         
@@ -221,7 +221,7 @@ class COIController extends Controller
         }
         
         // Get assignment status
-        $assignment = DB::table('PhanCong')
+        $assignment = DB::table('phancong')
             ->where('paper_id', $coi->paper_id)
             ->where('reviewer_id', $userId)
             ->first();
@@ -239,34 +239,34 @@ class COIController extends Controller
         $search = $request->input('search', '');
         
         // Get papers assigned to this reviewer in the selected conference
-        $query = DB::table('BaiBao')
-            ->join('PhanCong', 'BaiBao.paper_id', '=', 'PhanCong.paper_id')
-            ->leftJoin('COI', function($join) use ($userId) {
-                $join->on('BaiBao.paper_id', '=', 'COI.paper_id')
-                    ->where('COI.reviewer_id', '=', $userId)
-                    ->where('COI.source_type', '=', 'DECLARED');
+        $query = DB::table('baibao')
+            ->join('phancong', 'baibao.paper_id', '=', 'phancong.paper_id')
+            ->leftjoin('coi', function($join) use ($userId) {
+                $join->on('baibao.paper_id', '=', 'coi.paper_id')
+                    ->where('coi.reviewer_id', '=', $userId)
+                    ->where('coi.source_type', '=', 'DECLARED');
             })
-            ->where('PhanCong.reviewer_id', $userId)
-            ->whereNull('COI.coi_id'); // Only papers without declared COI
+            ->where('phancong.reviewer_id', $userId)
+            ->whereNull('coi.coi_id'); // Only papers without declared COI
         
         if ($conferenceId) {
-            $query->where('BaiBao.conference_id', $conferenceId);
+            $query->where('baibao.conference_id', $conferenceId);
         }
         
         if ($search) {
             $query->where(function($q) use ($search) {
-                $q->where('BaiBao.title', 'LIKE', "%{$search}%")
-                  ->orWhere('BaiBao.paper_id', 'LIKE', "%{$search}%");
+                $q->where('baibao.title', 'LIKE', "%{$search}%")
+                  ->orWhere('baibao.paper_id', 'LIKE', "%{$search}%");
             });
         }
         
         $papers = $query->select(
-                'BaiBao.paper_id',
-                'BaiBao.title',
-                'BaiBao.status',
-                'PhanCong.assigned_at'
+                'baibao.paper_id',
+                'baibao.title',
+                'baibao.status',
+                'phancong.assigned_at'
             )
-            ->orderBy('PhanCong.assigned_at', 'desc')
+            ->orderBy('phancong.assigned_at', 'desc')
             ->limit(20)
             ->get();
         
@@ -281,12 +281,12 @@ class COIController extends Controller
         $userId = Auth::id();
         
         // Check if COI exists and belongs to this reviewer
-        $coi = DB::table('COI')
-            ->leftJoin('XuLyCOI', 'COI.coi_id', '=', 'XuLyCOI.coi_id')
-            ->where('COI.coi_id', $coiId)
-            ->where('COI.reviewer_id', $userId)
-            ->where('COI.source_type', 'DECLARED')
-            ->select('COI.*', 'XuLyCOI.decision_id')
+        $coi = DB::table('coi')
+            ->leftJoin('XuLyCOI', 'coi.coi_id', '=', 'XuLycoi.coi_id')
+            ->where('coi.coi_id', $coiId)
+            ->where('coi.reviewer_id', $userId)
+            ->where('coi.source_type', 'DECLARED')
+            ->select('coi.*', 'XuLycoi.decision_id')
             ->first();
         
         if (!$coi) {
@@ -303,7 +303,7 @@ class COIController extends Controller
             DB::beginTransaction();
             
             // Delete COI record
-            DB::table('COI')->where('coi_id', $coiId)->delete();
+            DB::table('coi')->where('coi_id', $coiId)->delete();
             
             DB::commit();
             
@@ -317,3 +317,7 @@ class COIController extends Controller
         }
     }
 }
+
+
+
+

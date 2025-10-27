@@ -137,3 +137,6 @@ class ConferenceManagementController extends Controller
         return redirect()->back()->with('success', 'Đã từ chối yêu cầu hội thảo.');
     }
 }
+
+
+

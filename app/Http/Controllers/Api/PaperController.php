@@ -101,12 +101,12 @@ class PaperController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'conference_id' => 'required|integer|exists:HoiThao,conference_id',
+                'conference_id' => 'required|integer|exists:hoithao,conference_id',
                 'track_id' => 'nullable|integer|exists:TieuBan,track_id',
                 'title' => 'required|string|max:500',
                 'abstract' => 'required|string',
                 'authors' => 'required|array|min:1',
-                'authors.*.user_id' => 'nullable|integer|exists:NguoiDung,user_id',
+                'authors.*.user_id' => 'nullable|integer|exists:nguoidung,user_id',
                 'authors.*.full_name' => 'required_without:authors.*.user_id|string|max:200',
                 'authors.*.email' => 'required_without:authors.*.user_id|email|max:255',
                 'authors.*.organization' => 'nullable|string|max:255',
@@ -194,7 +194,7 @@ class PaperController extends Controller
             foreach ($request->authors as $index => $authorData) {
                 if (isset($authorData['user_id'])) {
                     // Existing user
-                    DB::table('TacGiaBaiBao')->insert([
+                    DB::table('tacgiabaibao')->insert([
                         'paper_id' => $paper->paper_id,
                         'user_id' => $authorData['user_id'],
                         'author_order' => $index + 1,
@@ -212,7 +212,7 @@ class PaperController extends Controller
                         'created_at' => now(),
                     ]);
 
-                    DB::table('TacGiaBaiBao')->insert([
+                    DB::table('tacgiabaibao')->insert([
                         'paper_id' => $paper->paper_id,
                         'user_id' => $newUser->user_id,
                         'author_order' => $index + 1,
@@ -634,9 +634,13 @@ class PaperController extends Controller
     // Helper method to check if user is admin
     private function isAdmin($user)
     {
-        return DB::table('VaiTroNguoiDung')
+        return DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->where('role_code', 'ADMIN')
             ->exists();
     }
 }
+
+
+
+

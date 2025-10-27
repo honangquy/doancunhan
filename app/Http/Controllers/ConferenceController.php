@@ -498,3 +498,7 @@ class ConferenceController extends Controller
         return view('admin.join-requests.index', compact('joinRequests', 'stats'));
     }
 }
+
+
+
+

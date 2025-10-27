@@ -25,8 +25,8 @@ class COIController extends Controller
 
         // Validate input
         $validator = Validator::make($request->all(), [
-            'paper_id' => 'required|integer|exists:BaiBao,paper_id',
-            'coi_code' => 'required|string|exists:LoaiCOI,coi_code',
+            'paper_id' => 'required|integer|exists:baibao,paper_id',
+            'coi_code' => 'required|string|exists:loaicoi,coi_code',
             'evidence' => 'nullable|string|max:500',
         ]);
 
@@ -260,8 +260,8 @@ class COIController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'paper_id' => 'nullable|integer|exists:BaiBao,paper_id',
-            'conference_id' => 'nullable|integer|exists:HoiThao,conference_id',
+            'paper_id' => 'nullable|integer|exists:baibao,paper_id',
+            'conference_id' => 'nullable|integer|exists:hoithao,conference_id',
         ]);
 
         if ($validator->fails()) {
@@ -482,7 +482,7 @@ class COIController extends Controller
         $totalCOIs = $query->count();
 
         // COIs by source type
-        $bySourceType = DB::table('COI')
+        $bySourceType = DB::table('coi')
             ->select('source_type', DB::raw('COUNT(*) as count'))
             ->groupBy('source_type')
             ->get();
@@ -549,7 +549,7 @@ class COIController extends Controller
     // Helper methods
     private function isAdmin($user)
     {
-        return DB::table('VaiTroNguoiDung')
+        return DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->where('role_code', 'ADMIN')
             ->exists();
@@ -561,3 +561,7 @@ class COIController extends Controller
         return $track && $track->chair_id == $user->user_id;
     }
 }
+
+
+
+

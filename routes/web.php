@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
@@ -341,6 +342,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Paper Management
         Route::get('/papers', [\App\Http\Controllers\Chair\ChairController::class, 'papers'])->name('papers');
         Route::get('/papers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showPaper'])->name('papers.show');
+        Route::get('/papers/{id}/ajax', [\App\Http\Controllers\Chair\ChairController::class, 'showPaperAjax'])->name('papers.ajax');
         
         // Reviewer Assignment
         Route::get('/papers/{id}/assign', [\App\Http\Controllers\Chair\ChairController::class, 'assignReviewers'])->name('papers.assign');

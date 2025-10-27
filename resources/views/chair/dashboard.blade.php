@@ -147,12 +147,12 @@
                         <tbody class="divide-y divide-gray-200">
                             @forelse($recentPapers ?? [] as $paper)
                             <tr class="hover:bg-gray-50 transition">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $paper->bai_bao_id ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $paper->paper_id ?? 'N/A' }}</td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ Str::limit($paper->tieu_de ?? 'N/A', 50) }}</div>
-                                    <div class="text-xs text-gray-500">Nộp: {{ $paper->created_at ? $paper->created_at->format('d/m/Y') : 'N/A' }}</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ Str::limit($paper->title ?? 'N/A', 50) }}</div>
+                                    <div class="text-xs text-gray-500">Nộp: {{ $paper->created_at ? \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y') : 'N/A' }}</div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600">{{ $paper->nguoiDung->ho_ten ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-600">{{ $paper->author_name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm">
                                         @if(isset($paper->reviews_total) && $paper->reviews_total > 0)
@@ -176,7 +176,7 @@
                                             'ACCEPTED' => ['label' => 'Chấp nhận', 'class' => 'bg-green-100 text-green-800'],
                                             'REJECTED' => ['label' => 'Từ chối', 'class' => 'bg-red-100 text-red-800'],
                                         ];
-                                        $currentStatus = $paper->trang_thai ?? 'PENDING';
+                                        $currentStatus = $paper->status_code ?? 'PENDING';
                                         $status = $statusConfig[$currentStatus] ?? ['label' => $currentStatus, 'class' => 'bg-gray-100 text-gray-800'];
                                     @endphp
                                     <span class="px-2 py-1 text-xs font-medium rounded-full {{ $status['class'] }}">
@@ -184,7 +184,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <a href="{{ route('chair.papers.show', $paper->bai_bao_id) }}" class="text-orange-600 hover:text-orange-700 font-medium hover:underline">Chi tiết →</a>
+                                    <a href="{{ route('chair.papers.show', $paper->paper_id) }}" class="text-orange-600 hover:text-orange-700 font-medium hover:underline">Chi tiết →</a>
                                 </td>
                             </tr>
                             @empty
@@ -217,10 +217,10 @@
                         @forelse($conferences ?? [] as $conference)
                         <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div>
-                                <h4 class="font-medium text-gray-900">{{ $conference->ten_hoi_thao ?? 'N/A' }}</h4>
+                                <h4 class="font-medium text-gray-900">{{ $conference->title ?? 'N/A' }}</h4>
                                 <p class="text-sm text-gray-500">{{ $conference->papers_count ?? 0 }} bài báo</p>
                             </div>
-                            <a href="{{ route('chair.conferences.show', $conference->hoi_thao_id) }}" class="text-orange-600 hover:text-orange-700 text-sm font-medium">
+                            <a href="{{ route('chair.conferences.show', $conference->conference_id) }}" class="text-orange-600 hover:text-orange-700 text-sm font-medium">
                                 Xem →
                             </a>
                         </div>

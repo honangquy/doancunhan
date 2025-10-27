@@ -48,22 +48,22 @@ class DashboardController extends Controller
         $userId = Auth::id();
         
         // Get user's papers with related data
-        $papers = DB::table('BaiBao')
+        $papers = DB::table('baibao')
             ->where('submitter_id', $userId)
-            ->join('TrangThaiBaiBao', 'BaiBao.status_code', '=', 'TrangThaiBaiBao.status_code')
-            ->join('HoiThao', 'BaiBao.conference_id', '=', 'HoiThao.conference_id')
-            ->join('NguoiDung', 'BaiBao.submitter_id', '=', 'NguoiDung.user_id')
+            ->join('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->join('nguoidung', 'baibao.submitter_id', '=', 'nguoidung.user_id')
             ->select(
-                'BaiBao.paper_id',
-                'BaiBao.title',
-                'BaiBao.status_code',
-                'BaiBao.created_at',
-                'TrangThaiBaiBao.status_name',
-                'HoiThao.title as conference_name',
-                'HoiThao.conference_id',
-                'NguoiDung.full_name as author_name'
+                'baibao.paper_id',
+                'baibao.title',
+                'baibao.status_code',
+                'baibao.created_at',
+                'trangthaibaibao.status_name',
+                'hoithao.title as conference_name',
+                'hoithao.conference_id',
+                'nguoidung.full_name as author_name'
             )
-            ->orderBy('BaiBao.created_at', 'desc')
+            ->orderBy('baibao.created_at', 'desc')
             ->get();
         
         // Calculate statistics
@@ -87,27 +87,27 @@ class DashboardController extends Controller
         $userId = Auth::id();
         
         // Get reviewer's assignments with paper and review data
-        $assignments = DB::table('PhanCongPhanBien')
+        $assignments = DB::table('phancongphanbien')
             ->where('reviewer_id', $userId)
-            ->join('BaiBao', 'PhanCongPhanBien.paper_id', '=', 'BaiBao.paper_id')
-            ->join('HoiThao', 'BaiBao.conference_id', '=', 'HoiThao.conference_id')
-            ->join('NguoiDung as Submitter', 'BaiBao.submitter_id', '=', 'Submitter.user_id')
-            ->leftJoin('PhanBien', 'PhanCongPhanBien.assignment_id', '=', 'PhanBien.assignment_id')
-            ->leftJoin('LoaiKhuyenNghi', 'PhanBien.recommendation_code', '=', 'LoaiKhuyenNghi.recommendation_code')
+            ->join('baibao', 'phancongphanbien.paper_id', '=', 'baibao.paper_id')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->join('NguoiDung as Submitter', 'baibao.submitter_id', '=', 'Submitter.user_id')
+            ->leftjoin('phanbien', 'phancongphanbien.assignment_id', '=', 'phanbien.assignment_id')
+            ->leftJoin('LoaiKhuyenNghi', 'phanbien.recommendation_code', '=', 'LoaiKhuyenNghi.recommendation_code')
             ->select(
-                'PhanCongPhanBien.assignment_id',
-                'PhanCongPhanBien.status_code as assignment_status',
-                'PhanCongPhanBien.deadline',
-                'BaiBao.paper_id',
-                'BaiBao.title as paper_title',
-                'HoiThao.title as conference_name',
+                'phancongphanbien.assignment_id',
+                'phancongphanbien.status_code as assignment_status',
+                'phancongphanbien.deadline',
+                'baibao.paper_id',
+                'baibao.title as paper_title',
+                'hoithao.title as conference_name',
                 'Submitter.full_name as author_name',
-                'PhanBien.review_id',
-                'PhanBien.recommendation_code',
+                'phanbien.review_id',
+                'phanbien.recommendation_code',
                 'LoaiKhuyenNghi.recommendation_name',
-                'PhanBien.score'
+                'phanbien.score'
             )
-            ->orderBy('PhanCongPhanBien.deadline', 'asc')
+            ->orderBy('phancongphanbien.deadline', 'asc')
             ->get();
         
         // Calculate statistics
@@ -164,22 +164,22 @@ class DashboardController extends Controller
         
         if ($conference) {
             // Get papers for this conference
-            $papers = DB::table('BaiBao')
+            $papers = DB::table('baibao')
                 ->where('conference_id', $conference->conference_id)
-                ->join('TrangThaiBaiBao', 'BaiBao.status_code', '=', 'TrangThaiBaiBao.status_code')
-                ->join('NguoiDung', 'BaiBao.submitter_id', '=', 'NguoiDung.user_id')
+                ->join('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
+                ->join('nguoidung', 'baibao.submitter_id', '=', 'nguoidung.user_id')
                 ->leftJoin(DB::raw('(SELECT paper_id, COUNT(*) as reviewer_count FROM PhanCongPhanBien GROUP BY paper_id) as ReviewerCounts'), 
-                    'BaiBao.paper_id', '=', 'ReviewerCounts.paper_id')
+                    'baibao.paper_id', '=', 'ReviewerCounts.paper_id')
                 ->select(
-                    'BaiBao.paper_id',
-                    'BaiBao.title',
-                    'BaiBao.status_code',
-                    'BaiBao.created_at',
-                    'TrangThaiBaiBao.status_name',
-                    'NguoiDung.full_name as author_name',
+                    'baibao.paper_id',
+                    'baibao.title',
+                    'baibao.status_code',
+                    'baibao.created_at',
+                    'trangthaibaibao.status_name',
+                    'nguoidung.full_name as author_name',
                     DB::raw('COALESCE(ReviewerCounts.reviewer_count, 0) as reviewer_count')
                 )
-                ->orderBy('BaiBao.created_at', 'desc')
+                ->orderBy('baibao.created_at', 'desc')
                 ->get();
             
             // Calculate statistics
@@ -218,15 +218,15 @@ class DashboardController extends Controller
         $recentPapers = collect(); // Empty collection for now to avoid table errors
         
         // Get user role distribution from VaiTroNguoiDung table
-        $userRoles = DB::table('VaiTroNguoiDung')
+        $userRoles = DB::table('vaitronguoidung')
             ->select('role_code as role', DB::raw('count(distinct user_id) as count'))
             ->groupBy('role_code')
             ->get();
 
         // Add count for users with no roles (USER)
         $usersWithoutRoles = DB::table('nguoidung')
-            ->leftJoin('VaiTroNguoiDung', 'nguoidung.user_id', '=', 'VaiTroNguoiDung.user_id')
-            ->whereNull('VaiTroNguoiDung.user_id')
+            ->leftjoin('vaitronguoidung', 'nguoidung.user_id', '=', 'vaitronguoidung.user_id')
+            ->whereNull('vaitronguoidung.user_id')
             ->count();
 
         if ($usersWithoutRoles > 0) {
@@ -261,7 +261,7 @@ class DashboardController extends Controller
 
         // Get recent system logs from ActivityLog
         $recentLogs = DB::table('activity_logs')
-            ->leftJoin('nguoidung', 'activity_logs.user_id', '=', 'nguoidung.user_id')
+            ->leftjoin('nguoidung', 'activity_logs.user_id', '=', 'nguoidung.user_id')
             ->select(
                 'activity_logs.*',
                 'nguoidung.full_name as user_name',
@@ -424,13 +424,13 @@ class DashboardController extends Controller
     {
         try {
             $user = DB::table('nguoidung')
-                ->leftJoin('VaiTroNguoiDung', 'nguoidung.user_id', '=', 'VaiTroNguoiDung.user_id')
+                ->leftjoin('vaitronguoidung', 'nguoidung.user_id', '=', 'vaitronguoidung.user_id')
                 ->select(
                     'nguoidung.user_id',
                     'nguoidung.full_name',
                     'nguoidung.email',
                     'nguoidung.email_verified_at',
-                    'VaiTroNguoiDung.role_code'
+                    'vaitronguoidung.role_code'
                 )
                 ->where('nguoidung.user_id', $id)
                 ->first();
@@ -499,13 +499,13 @@ class DashboardController extends Controller
             }
 
             // Get old roles for logging
-            $oldRoles = DB::table('VaiTroNguoiDung')
+            $oldRoles = DB::table('vaitronguoidung')
                 ->where('user_id', $id)
                 ->pluck('role_code')
                 ->toArray();
 
             // Update role - xóa tất cả vai trò cũ trước khi thêm vai trò mới
-            DB::table('VaiTroNguoiDung')
+            DB::table('vaitronguoidung')
                 ->where('user_id', $id)
                 ->delete(); // Xóa tất cả vai trò cũ
 
@@ -570,7 +570,7 @@ class DashboardController extends Controller
             }
 
             // Don't allow deleting admin users
-            $isAdmin = DB::table('VaiTroNguoiDung')
+            $isAdmin = DB::table('vaitronguoidung')
                 ->where('user_id', $id)
                 ->where('role_code', 'ADMIN')
                 ->exists();
@@ -589,7 +589,7 @@ class DashboardController extends Controller
             ]);
             
             // Delete user roles first
-            DB::table('VaiTroNguoiDung')->where('user_id', $id)->delete();
+            DB::table('vaitronguoidung')->where('user_id', $id)->delete();
             
             // Delete user
             DB::table('nguoidung')->where('user_id', $id)->delete();
@@ -637,15 +637,15 @@ class DashboardController extends Controller
 
     public function adminRoles()
     {
-        $roleStats = DB::table('VaiTroNguoiDung')
+        $roleStats = DB::table('vaitronguoidung')
             ->select('role_code as role', DB::raw('COUNT(DISTINCT user_id) as count'))
             ->groupBy('role_code')
             ->get();
 
         // Add count for users with no roles (USER)
         $usersWithoutRoles = DB::table('nguoidung')
-            ->leftJoin('VaiTroNguoiDung', 'nguoidung.user_id', '=', 'VaiTroNguoiDung.user_id')
-            ->whereNull('VaiTroNguoiDung.user_id')
+            ->leftjoin('vaitronguoidung', 'nguoidung.user_id', '=', 'vaitronguoidung.user_id')
+            ->whereNull('vaitronguoidung.user_id')
             ->count();
 
         if ($usersWithoutRoles > 0) {
@@ -760,7 +760,7 @@ class DashboardController extends Controller
     {
         try {
             $user = DB::table('nguoidung')
-                ->leftJoin('vaitronguoidung', 'nguoidung.user_id', '=', 'vaitronguoidung.user_id')
+                ->leftjoin('vaitronguoidung', 'nguoidung.user_id', '=', 'vaitronguoidung.user_id')
                 ->leftJoin('loaivaitro', 'vaitronguoidung.role_code', '=', 'loaivaitro.role_code')
                 ->where('nguoidung.user_id', $id)
                 ->select(
@@ -848,10 +848,10 @@ class DashboardController extends Controller
             }
 
             // Remove all existing roles for this user
-            DB::table('VaiTroNguoiDung')->where('user_id', $id)->delete();
+            DB::table('vaitronguoidung')->where('user_id', $id)->delete();
 
             // Add new role
-            DB::table('VaiTroNguoiDung')->insert([
+            DB::table('vaitronguoidung')->insert([
                 'user_id' => $id,
                 'role_id' => $role->role_id
             ]);
@@ -895,7 +895,7 @@ class DashboardController extends Controller
             }
 
             // Delete related records first
-            DB::table('VaiTroNguoiDung')->whereIn('user_id', $userIds)->delete();
+            DB::table('vaitronguoidung')->whereIn('user_id', $userIds)->delete();
             
             // Delete users
             $deleted = DB::table('nguoidung')->whereIn('user_id', $userIds)->delete();
@@ -921,7 +921,7 @@ class DashboardController extends Controller
     public function getConferenceDetails($id)
     {
         try {
-            $conference = DB::table('HoiThao')
+            $conference = DB::table('hoithao')
                 ->where('conference_id', $id)
                 ->first();
 
@@ -961,7 +961,7 @@ class DashboardController extends Controller
     {
         $request->validate([
             'conference_ids' => 'required|array',
-            'conference_ids.*' => 'integer|exists:HoiThao,conference_id'
+            'conference_ids.*' => 'integer|exists:hoithao,conference_id'
         ]);
 
         DB::beginTransaction();
@@ -969,11 +969,11 @@ class DashboardController extends Controller
             $conferenceIds = $request->conference_ids;
 
             // Delete related records first (papers, assignments, etc.)
-            DB::table('BaiBao')->whereIn('conference_id', $conferenceIds)->delete();
-            DB::table('PhanCong')->whereIn('conference_id', $conferenceIds)->delete();
+            DB::table('baibao')->whereIn('conference_id', $conferenceIds)->delete();
+            DB::table('phancong')->whereIn('conference_id', $conferenceIds)->delete();
             
             // Delete conferences
-            $deleted = DB::table('HoiThao')->whereIn('conference_id', $conferenceIds)->delete();
+            $deleted = DB::table('hoithao')->whereIn('conference_id', $conferenceIds)->delete();
 
             DB::commit();
 
@@ -990,4 +990,8 @@ class DashboardController extends Controller
         }
     }
 }
+
+
+
+
 

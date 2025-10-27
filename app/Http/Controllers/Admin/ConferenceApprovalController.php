@@ -78,3 +78,7 @@ class ConferenceApprovalController extends Controller
             ->with('success', 'Hội thảo đã bị từ chối.');
     }
 }
+
+
+
+

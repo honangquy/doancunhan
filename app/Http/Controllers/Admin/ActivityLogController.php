@@ -55,7 +55,7 @@ class ActivityLogController extends Controller
             ->distinct()
             ->pluck('log_type');
 
-        $users = DB::table('NguoiDung')
+        $users = DB::table('nguoidung')
             ->select('user_id', 'full_name', 'email')
             ->whereIn('user_id', ActivityLog::whereNotNull('user_id')->pluck('user_id')->unique())
             ->get();
@@ -237,3 +237,6 @@ class ActivityLogController extends Controller
         ]);
     }
 }
+
+
+
