@@ -19,6 +19,7 @@ class JoinRequest extends Model
         'processed_by',
         'processed_at',
         'admin_notes',
+        'invitation_token', // Track if this came from an invitation
         
         // Thông tin cá nhân chung
         'full_name',

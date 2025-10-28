@@ -124,8 +124,11 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                     </svg>
                                 </div>
-                    <input id="email" name="email" type="email" autocomplete="email" required value="{{ old('email') }}" placeholder="Nhập email"
-                        class="block w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-accent-orange transition-shadow duration-200 focus:shadow-md">
+                    <input id="email" name="email" type="email" autocomplete="email" required 
+                        value="{{ old('email', session('pre_filled_email')) }}" 
+                        placeholder="Nhập email"
+                        @if(session('pre_filled_email')) readonly @endif
+                        class="block w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-accent-orange focus:border-accent-orange transition-shadow duration-200 focus:shadow-md @if(session('pre_filled_email')) bg-gray-100 @endif">
                             </div>
                         </div>
 

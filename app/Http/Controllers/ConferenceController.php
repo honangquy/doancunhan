@@ -128,8 +128,39 @@ class ConferenceController extends Controller
         try {
             $conference = HoiThao::findOrFail($id);
             
-            // Check if conference is still open
-            if (!$conference->isOpen()) {
+            // Check for invitation token
+            $invitationToken = $request->input('invitation_token');
+            $isInvitedUser = false;
+            $reviewerInvitation = null;
+            
+            if ($invitationToken) {
+                $reviewerInvitation = \DB::table('reviewer_invitations')
+                    ->where('token', $invitationToken)
+                    ->where('conference_id', $id)
+                    ->where('status', 'pending')
+                    ->where('expires_at', '>', now())
+                    ->first();
+                
+                if ($reviewerInvitation) {
+                    // Verify email matches invitation
+                    if ($reviewerInvitation->email === $validated['email_contact']) {
+                        $isInvitedUser = true;
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Email không khớp với lời mời được gửi'
+                        ], 422);
+                    }
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Lời mời không hợp lệ hoặc đã hết hạn'
+                    ], 422);
+                }
+            }
+            
+            // Check if conference is still open (skip check for invited users)
+            if (!$isInvitedUser && !$conference->isOpen()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Hội thảo đã đóng, không thể gửi yêu cầu tham gia'
@@ -163,7 +194,7 @@ class ConferenceController extends Controller
                 'conference_id' => $id,
                 'user_id' => $userId,
                 'role' => $validated['role'],
-                'status' => JoinRequest::STATUS_PENDING,
+                'status' => $isInvitedUser ? JoinRequest::STATUS_APPROVED : JoinRequest::STATUS_PENDING,
                 'full_name' => $validated['full_name'],
                 'email_contact' => $validated['email_contact'],
                 'commitment_confirmed' => $validated['commitment_confirmed']
@@ -172,6 +203,11 @@ class ConferenceController extends Controller
             // Add common optional fields
             if (isset($validated['notes'])) {
                 $joinRequestData['notes'] = $validated['notes'];
+            }
+
+            // Add invitation token if this came from an invitation
+            if ($invitationToken) {
+                $joinRequestData['invitation_token'] = $invitationToken;
             }
 
             // Add role-specific fields
@@ -195,12 +231,37 @@ class ConferenceController extends Controller
             // Create new join request
             $joinRequest = JoinRequest::create($joinRequestData);
 
+            // If this was from an invitation, mark it as accepted but don't assign role yet
+            if ($isInvitedUser && $reviewerInvitation) {
+                \DB::table('reviewer_invitations')
+                    ->where('token', $invitationToken)
+                    ->update([
+                        'status' => 'accepted'
+                    ]);
+                
+                // Log that this join request came from an invitation
+                \Log::info('Join request from invited user (auto-approved, pending admin final approval)', [
+                    'user_id' => $userId,
+                    'conference_id' => $id,
+                    'email' => $validated['email_contact'],
+                    'invitation_token' => $invitationToken
+                ]);
+                
+                // Clear invitation data from session
+                session()->forget('invitation_data');
+            }
+
+            $message = $isInvitedUser 
+                ? 'Yêu cầu tham gia đã được gửi thành công! Do bạn được mời, yêu cầu được ưu tiên xử lý. Admin sẽ duyệt và cấp quyền sớm nhất.'
+                : 'Yêu cầu tham gia đã được gửi thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.';
+
             return response()->json([
                 'success' => true,
-                'message' => 'Yêu cầu tham gia đã được gửi thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.',
+                'message' => $message,
                 'data' => [
                     'request_id' => $joinRequest->id,
-                    'status' => $joinRequest->status
+                    'status' => $joinRequest->status,
+                    'is_invited' => $isInvitedUser
                 ]
             ]);
 

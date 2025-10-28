@@ -726,14 +726,26 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Email được mời <span class="text-red-500">*</span></label>
                             <input type="email" x-model="formData.email_contact" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                   :readonly="invitationData && invitationData.invited"
+                                   :class="invitationData && invitationData.invited ? 
+                                           'w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed' : 
+                                           'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500'">
+                            <template x-if="invitationData && invitationData.invited">
+                                <p class="mt-1 text-xs text-gray-500">Email này đã được mời tham gia</p>
+                            </template>
                         </div>
                         
                         <!-- Họ và tên -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Họ và tên <span class="text-red-500">*</span></label>
                             <input type="text" x-model="formData.full_name" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                   :readonly="invitationData && invitationData.invited"
+                                   :class="invitationData && invitationData.invited ? 
+                                           'w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed' : 
+                                           'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500'">
+                            <template x-if="invitationData && invitationData.invited">
+                                <p class="mt-1 text-xs text-gray-500">Thông tin từ tài khoản cá nhân</p>
+                            </template>
                         </div>
                         
                         <!-- Đơn vị công tác -->
@@ -793,13 +805,14 @@
     function conferenceDetail() {
         return {
             activeTab: 'overview',
-            openJoinModal: false,
-            joinRole: '',
+            openJoinModal: @if(session('invitation_data'))true @else false @endif, // Auto-open if invited
+            joinRole: @if(session('invitation_data'))'REVIEWER'@else ''@endif, // Auto-select REVIEWER if invited
             isSubmitting: false,
+            invitationData: @json(session('invitation_data', null)),
             formData: {
                 // Common fields
-                full_name: '',
-                email_contact: '',
+                full_name: @if(session('invitation_data'))'{{ Auth::user()->full_name ?? "" }}'@else ''@endif,
+                email_contact: @if(session('invitation_data'))'{{ session('invitation_data.email') }}'@else ''@endif,
                 commitment_confirmed: false,
                 
                 // Author specific fields
@@ -838,6 +851,14 @@
             submitJoinRequest() {
                 if (!this.joinRole || !this.formData.commitment_confirmed) return;
                 
+                // Validate email for invited reviewer
+                if (this.invitationData && this.invitationData.invited && this.joinRole === 'REVIEWER') {
+                    if (this.formData.email_contact !== this.invitationData.email) {
+                        alert('Email không trùng với email được mời. Vui lòng sử dụng email: ' + this.invitationData.email);
+                        return;
+                    }
+                }
+                
                 this.isSubmitting = true;
                 const conferenceId = '{{ $conference->conference_id ?? 1 }}';
 
@@ -848,6 +869,11 @@
                     email_contact: this.formData.email_contact,
                     commitment_confirmed: this.formData.commitment_confirmed ? 1 : 0
                 };
+                
+                // Add invitation token if exists
+                if (this.invitationData && this.invitationData.token) {
+                    submitData.invitation_token = this.invitationData.token;
+                }
 
                 if (this.joinRole === 'AUTHOR') {
                     submitData = {
@@ -894,10 +920,15 @@
                     console.log('Response data:', data);
                     this.isSubmitting = false;
                     if (data.success) {
-                        alert('Yêu cầu tham gia đã được gửi thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.');
+                        alert(data.message);
                         this.openJoinModal = false;
                         this.joinRole = '';
                         this.resetForm();
+                        
+                        // Clear invitation data if this was an invited user
+                        if (data.data && data.data.is_invited) {
+                            this.invitationData = null;
+                        }
                     } else {
                         if (data.errors) {
                             // Display validation errors

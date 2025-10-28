@@ -205,15 +205,19 @@ class AuthController extends Controller
         ]);
 
         try {
+            // Check if this is an invited user
+            $invitationData = session('invitation_data');
+            $isInvitedUser = $invitationData && isset($invitationData['email']) && $invitationData['email'] === $validated['email'];
+            
             // Create new user (without role - admin will assign role later)
-            // Email verification is required before full account activation
+            // Email verification is skipped for invited users
             $userId = DB::table('nguoidung')->insertGetId([
                 'email' => $validated['email'],
                 'password_hash' => Hash::make($validated['password']),
                 'full_name' => $validated['full_name'],
                 'is_student' => false,
                 'locked' => false,
-                'email_verified_at' => null, // Not verified yet
+                'email_verified_at' => $isInvitedUser ? now() : null, // Auto verify for invited users
                 'created_at' => now(),
             ]);
 
@@ -225,27 +229,35 @@ class AuthController extends Controller
                 'log_type' => 'AUTH',
                 'user_id' => $user->user_id,
                 'action' => 'Đăng ký tài khoản',
-                'description' => 'Người dùng đăng ký tài khoản mới: ' . $user->email,
+                'description' => 'Người dùng đăng ký tài khoản mới: ' . $user->email . ($isInvitedUser ? ' (qua lời mời)' : ''),
                 'properties' => [
                     'email' => $user->email,
                     'full_name' => $user->full_name,
                     'user_agent' => $request->userAgent(),
-                    'timestamp' => now()->format('Y-m-d H:i:s')
+                    'timestamp' => now()->format('Y-m-d H:i:s'),
+                    'is_invited' => $isInvitedUser
                 ],
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'severity' => 'low'
             ]);
             
-            // Login the user but they need to verify email first
+            // Login the user
             Auth::login($user);
 
-            // Send email verification notification
-            $user->sendEmailVerificationNotification();
-
-            // Redirect to email verification notice
-            return redirect()->route('verification.notice')
-                ->with('success', 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản của bạn.');
+            if ($isInvitedUser) {
+                // Skip email verification for invited users and redirect to conference
+                $conferenceId = $invitationData['conference_id'];
+                return redirect()->route('conferences.show', $conferenceId)
+                    ->with('success', 'Đăng ký thành công! Bạn có thể tham gia làm reviewer ngay bây giờ.');
+            } else {
+                // Send email verification notification for regular users
+                $user->sendEmailVerificationNotification();
+                
+                // Redirect to email verification notice
+                return redirect()->route('verification.notice')
+                    ->with('success', 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản của bạn.');
+            }
 
         } catch (\Exception $e) {
             // Log the actual error for debugging

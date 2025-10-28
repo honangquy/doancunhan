@@ -47,6 +47,11 @@ Route::post('/api/notifications/sample', [HomeController::class, 'createSampleNo
 Route::get('/conferences', [\App\Http\Controllers\ConferenceController::class, 'index'])->name('conferences.index');
 Route::get('/conferences/{id}', [\App\Http\Controllers\ConferenceController::class, 'show'])->name('conferences.show');
 
+// Reviewer invitation routes (public access)
+Route::get('/reviewer/invitation/{token}', [\App\Http\Controllers\Reviewer\InvitationController::class, 'acceptInvitation'])->name('reviewer.invitation.accept');
+Route::get('/reviewer/join', [\App\Http\Controllers\Reviewer\InvitationController::class, 'showJoinForm'])->name('reviewer.join.form');
+Route::post('/reviewer/join', [\App\Http\Controllers\Reviewer\InvitationController::class, 'submitJoinForm'])->name('reviewer.join.submit');
+
 // Conference Join Request Routes (Authenticated and Verified)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/conferences/{id}/join-request', [\App\Http\Controllers\ConferenceController::class, 'submitJoinRequest'])->name('conferences.join-request');
@@ -359,9 +364,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/papers/{id}/decision', [\App\Http\Controllers\Chair\ChairController::class, 'makeDecision'])->name('papers.decision');
         Route::post('/papers/{id}/decision', [\App\Http\Controllers\Chair\ChairController::class, 'storeDecision'])->name('papers.decision.store');
         
-        // Phase 8.10: Reviewers Management
-        Route::get('/reviewers', [\App\Http\Controllers\Chair\ChairController::class, 'listReviewers'])->name('reviewers.index');
-        Route::get('/reviewers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showReviewer'])->name('reviewers.show');
+        // Phase 8.10: Reviewers Management - Direct to invitation controller
+        Route::get('/reviewers', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'index'])->name('reviewers.index');
         
         // Phase 8.10: COI Management
         Route::get('/coi', [\App\Http\Controllers\Chair\COIController::class, 'index'])->name('coi.index');
@@ -369,6 +373,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/coi/{id}/resolve', [\App\Http\Controllers\Chair\COIController::class, 'resolveForm'])->name('coi.resolve-form');
         Route::post('/coi/{id}/resolve', [\App\Http\Controllers\Chair\COIController::class, 'resolve'])->name('coi.resolve');
         Route::get('/conferences/{conferenceId}/coi-statistics', [\App\Http\Controllers\Chair\COIController::class, 'statistics'])->name('coi.statistics');
+        
+        // Reviewer Invitation Management
+        Route::get('/reviewers/invite', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'index'])->name('reviewers.invite');
+        Route::post('/reviewers/invite/send', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'sendInvitation'])->name('reviewers.invite.send');
+        Route::get('/reviewers/invitations', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'sentInvitations'])->name('reviewers.invite.list');
+        
+        // Test route
+        Route::get('/test-invite', function() {
+            return view('chair.reviewers.invite', ['conferences' => collect()]);
+        })->name('test.invite');
+        
+        // Route with parameter should be last to avoid conflicts
+        Route::get('/reviewers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showReviewer'])->name('reviewers.show');
+        
+        // Reviewer Assignment Management
+        Route::get('/assignments', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'index'])->name('assignments.index');
+        Route::get('/assignments/{paperId}/assign', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'assign'])->name('assignments.assign');
+        Route::post('/assignments/store', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'store'])->name('assignments.store');
+        Route::delete('/assignments/remove', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'remove'])->name('assignments.remove');
     });
     
     // Admin Routes
@@ -451,3 +474,53 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/chair/debug-menu', function () {
     return view('chair.debug-menu');
 })->name('chair.debug-menu')->middleware(['auth']);
+
+// Test join request debug
+Route::get('/debug/test-join/{token}', function($token) {
+    // Simulate a join request with invitation
+    $invitation = DB::table('reviewer_invitations')
+        ->where('token', $token)
+        ->where('status', 'PENDING')
+        ->first();
+    
+    if (!$invitation) {
+        return 'Invitation not found';
+    }
+    
+    $user = DB::table('nguoidung')->where('email', $invitation->email)->first();
+    if (!$user) {
+        return 'User not found with email: ' . $invitation->email;
+    }
+    
+    // Check existing roles
+    $existingRoles = DB::table('vaitronguoidung')
+        ->where('user_id', $user->user_id)
+        ->get();
+    
+    $output = "User: {$user->full_name} (ID: {$user->user_id})\n";
+    $output .= "Email: {$user->email}\n";
+    $output .= "Existing roles: " . count($existingRoles) . "\n";
+    foreach($existingRoles as $role) {
+        $output .= "- {$role->role_code} for conference {$role->conference_id}\n";
+    }
+    
+    // Test role assignment
+    $existingReviewerRole = DB::table('vaitronguoidung')
+        ->where('user_id', $user->user_id)
+        ->where('conference_id', $invitation->conference_id)
+        ->where('role_code', 'REVIEWER')
+        ->first();
+    
+    if (!$existingReviewerRole) {
+        DB::table('vaitronguoidung')->insert([
+            'user_id' => $user->user_id,
+            'conference_id' => $invitation->conference_id,
+            'role_code' => 'REVIEWER'
+        ]);
+        $output .= "\n✅ REVIEWER role assigned!";
+    } else {
+        $output .= "\n⚠️ REVIEWER role already exists";
+    }
+    
+    return nl2br($output);
+});
