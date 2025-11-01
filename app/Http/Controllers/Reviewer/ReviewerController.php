@@ -18,17 +18,17 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Get all assignments for this reviewer
-        $assignments = DB::table('PhanCongPhanBien as pc')
-            ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->leftJoin('PhanBien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
-            ->where('pc.reviewer_id', $userId)
+        $assignments = DB::table('reviewer_assignments as ra')
+            ->join('baibao as bb', 'ra.paper_id', '=', 'bb.paper_id')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->leftJoin('phanbien as pb', 'ra.id', '=', 'pb.assignment_id')
+            ->where('ra.user_id', $userId)
             ->select(
-                'pc.assignment_id',
-                'pc.paper_id',
-                'pc.status_code',
-                'pc.assigned_at',
-                'pc.deadline',
+                'ra.id as assignment_id',
+                'ra.paper_id',
+                'ra.status',
+                'ra.assigned_at',
+                'ra.responded_at',
                 'bb.title as paper_title',
                 'bb.abstract',
                 'bb.keywords',
@@ -38,15 +38,15 @@ class ReviewerController extends Controller
                 'pb.submitted_at',
                 'pb.recommendation_code'
             )
-            ->orderBy('pc.assigned_at', 'desc')
+            ->orderBy('ra.assigned_at', 'desc')
             ->get();
         
         // Calculate statistics
         $stats = [
             'total' => $assignments->count(),
-            'pending' => $assignments->where('status_code', 'INVITED')->count(),
-            'accepted' => $assignments->where('status_code', 'ACCEPTED')->count(),
-            'completed' => $assignments->where('status_code', 'COMPLETED')->count(),
+            'pending' => $assignments->where('status', 'PENDING')->count(),
+            'accepted' => $assignments->where('status', 'ACCEPTED')->count(),
+            'completed' => $assignments->where('status', 'COMPLETED')->count(),
         ];
         
         return view('reviewer.assignments', compact('assignments', 'stats'));
@@ -60,9 +60,9 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Check assignment exists and belongs to this reviewer
-        $assignment = DB::table('phancongphanbien')
-            ->where('assignment_id', $id)
-            ->where('reviewer_id', $userId)
+        $assignment = DB::table('reviewer_assignments')
+            ->where('id', $id)
+            ->where('user_id', $userId)
             ->first();
         
         if (!$assignment) {
@@ -71,16 +71,17 @@ class ReviewerController extends Controller
         }
         
         // Check if already accepted or completed
-        if (in_array($assignment->status_code, ['ACCEPTED', 'COMPLETED'])) {
+        if (in_array($assignment->status, ['ACCEPTED', 'COMPLETED'])) {
             return redirect()->route('reviewer.assignments')
                 ->with('warning', 'This assignment has already been accepted or completed.');
         }
         
         // Update status to ACCEPTED
-        DB::table('phancongphanbien')
-            ->where('assignment_id', $id)
+        DB::table('reviewer_assignments')
+            ->where('id', $id)
             ->update([
-                'status_code' => 'ACCEPTED',
+                'status' => 'ACCEPTED',
+                'responded_at' => now(),
             ]);
         
         return redirect()->route('reviewer.assignments')
@@ -95,9 +96,9 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Check assignment exists and belongs to this reviewer
-        $assignment = DB::table('phancongphanbien')
-            ->where('assignment_id', $id)
-            ->where('reviewer_id', $userId)
+        $assignment = DB::table('reviewer_assignments')
+            ->where('id', $id)
+            ->where('user_id', $userId)
             ->first();
         
         if (!$assignment) {
@@ -106,16 +107,18 @@ class ReviewerController extends Controller
         }
         
         // Check if already completed
-        if ($assignment->status_code === 'COMPLETED') {
+        if ($assignment->status === 'COMPLETED') {
             return redirect()->route('reviewer.assignments')
                 ->with('warning', 'Cannot decline a completed review.');
         }
         
         // Update status to DECLINED
-        DB::table('phancongphanbien')
-            ->where('assignment_id', $id)
+        DB::table('reviewer_assignments')
+            ->where('id', $id)
             ->update([
-                'status_code' => 'DECLINED',
+                'status' => 'DECLINED',
+                'responded_at' => now(),
+                'decline_reason' => $request->input('reason'),
             ]);
         
         return redirect()->route('reviewer.assignments')
@@ -130,22 +133,23 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Get all reviews by this reviewer
-        $reviews = DB::table('PhanBien as pb')
-            ->join('PhanCongPhanBien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
-            ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->where('pc.reviewer_id', $userId)
+        $reviews = DB::table('phanbien as pb')
+            ->join('reviewer_assignments as ra', 'pb.assignment_id', '=', 'ra.id')
+            ->join('baibao as bb', 'ra.paper_id', '=', 'bb.paper_id')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->where('ra.user_id', $userId)
+            ->whereNotNull('pb.submitted_at')
             ->select(
                 'pb.review_id',
                 'pb.assignment_id',
-                'pc.paper_id',
+                'ra.paper_id',
                 'pb.recommendation_code',
                 'pb.score',
                 'pb.submitted_at',
                 'bb.title as paper_title',
                 'bb.status_code as paper_status',
                 'ht.title as conference_name',
-                'pc.deadline'
+                'ra.assigned_at'
             )
             ->orderBy('pb.submitted_at', 'desc')
             ->get();
@@ -169,16 +173,16 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Get assignment details
-        $assignment = DB::table('PhanCongPhanBien as pc')
-            ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
-            ->where('pc.assignment_id', $assignmentId)
-            ->where('pc.reviewer_id', $userId)
+        $assignment = DB::table('reviewer_assignments as ra')
+            ->join('baibao as bb', 'ra.paper_id', '=', 'bb.paper_id')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->where('ra.id', $assignmentId)
+            ->where('ra.user_id', $userId)
             ->select(
-                'pc.assignment_id',
-                'pc.paper_id',
-                'pc.status_code',
-                'pc.deadline',
+                'ra.id as assignment_id',
+                'ra.paper_id',
+                'ra.status',
+                'ra.assigned_at',
                 'bb.title',
                 'bb.abstract',
                 'bb.keywords',

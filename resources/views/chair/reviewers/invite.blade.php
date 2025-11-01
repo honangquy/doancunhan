@@ -79,6 +79,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày gửi</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hết hạn</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -96,11 +97,26 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="formatDate(invitation.created_at)"></td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" x-text="formatDate(invitation.expires_at)"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div x-show="invitation.status === 'PENDING'" class="flex space-x-2">
+                                    <button @click="resendInvitation(invitation.id, invitation.email, invitation.conference_id)" 
+                                            class="px-3 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition">
+                                        Gửi lại
+                                    </button>
+                                    <button @click="revokeInvitation(invitation.id)" 
+                                            class="px-3 py-1 text-xs text-red-600 border border-red-600 rounded hover:bg-red-50 transition">
+                                        Thu hồi
+                                    </button>
+                                </div>
+                                <div x-show="invitation.status !== 'PENDING'" class="text-xs text-gray-400">
+                                    -
+                                </div>
+                            </td>
                         </tr>
                     </template>
                     
                     <tr x-show="invitations.length === 0">
-                        <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
                             Chưa có lời mời nào được gửi
                         </td>
                     </tr>
@@ -199,6 +215,92 @@ function reviewerInvitation() {
         
         formatDate(dateString) {
             return new Date(dateString).toLocaleDateString('vi-VN');
+        },
+        
+        async resendInvitation(invitationId, email, conferenceId) {
+            if (!confirm('Bạn có chắc chắn muốn gửi lại lời mời? Link cũ sẽ không còn hiệu lực.')) {
+                return;
+            }
+            
+            this.loading = true;
+            this.message = '';
+            
+            try {
+                const response = await fetch(`/chair/reviewers/invite/${invitationId}/resend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        conference_id: conferenceId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.message = data.message || 'Đã gửi lại lời mời thành công!';
+                    this.messageType = 'success';
+                    this.loadSentInvitations();
+                } else {
+                    this.message = data.message || 'Có lỗi xảy ra khi gửi lại lời mời.';
+                    this.messageType = 'error';
+                }
+            } catch (error) {
+                this.message = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                this.messageType = 'error';
+                console.error('Resend invitation error:', error);
+            }
+            
+            this.loading = false;
+            
+            // Clear message after 5 seconds
+            setTimeout(() => {
+                this.message = '';
+            }, 5000);
+        },
+        
+        async revokeInvitation(invitationId) {
+            if (!confirm('Bạn có chắc chắn muốn thu hồi lời mời này? Link sẽ không còn hiệu lực.')) {
+                return;
+            }
+            
+            this.loading = true;
+            this.message = '';
+            
+            try {
+                const response = await fetch(`/chair/reviewers/invite/${invitationId}/revoke`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.message = data.message || 'Đã thu hồi lời mời thành công!';
+                    this.messageType = 'success';
+                    this.loadSentInvitations();
+                } else {
+                    this.message = data.message || 'Có lỗi xảy ra khi thu hồi lời mời.';
+                    this.messageType = 'error';
+                }
+            } catch (error) {
+                this.message = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                this.messageType = 'error';
+                console.error('Revoke invitation error:', error);
+            }
+            
+            this.loading = false;
+            
+            // Clear message after 5 seconds
+            setTimeout(() => {
+                this.message = '';
+            }, 5000);
         }
     }
 }

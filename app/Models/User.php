@@ -69,6 +69,14 @@ class User extends Authenticatable
     }
     
     /**
+     * Get the name attribute (alias for full_name)
+     */
+    public function getNameAttribute()
+    {
+        return $this->full_name;
+    }
+    
+    /**
      * Override the getName method for authentication
      */
     public function getAuthIdentifierName()

@@ -30,7 +30,7 @@
                 </a>
                 <div class="flex items-center space-x-4">
                     <a href="{{ route('reviewer.dashboard') }}" class="hover:text-purple-100">Dashboard</a>
-                    <a href="{{ route('reviewer.assignments') }}" class="hover:text-purple-100">Assignments</a>
+                    <a href="{{ route('reviewer.assignments.index') }}" class="hover:text-purple-100">Assignments</a>
                     <a href="{{ route('reviewer.reviews') }}" class="hover:text-purple-100">My Reviews</a>
                     <div class="h-6 w-px bg-purple-400"></div>
                     <span class="font-medium">{{ Auth::user()->full_name }}</span>

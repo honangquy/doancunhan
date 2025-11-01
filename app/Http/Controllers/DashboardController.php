@@ -86,18 +86,19 @@ class DashboardController extends Controller
         // Use authenticated user ID
         $userId = Auth::id();
         
-        // Get reviewer's assignments with paper and review data
-        $assignments = DB::table('phancongphanbien')
-            ->where('reviewer_id', $userId)
-            ->join('baibao', 'phancongphanbien.paper_id', '=', 'baibao.paper_id')
+        // Get reviewer's assignments with paper and review data  
+        $assignments = DB::table('reviewer_assignments as ra')
+            ->where('ra.user_id', $userId)
+            ->join('baibao', 'ra.paper_id', '=', 'baibao.paper_id')
             ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
-            ->join('NguoiDung as Submitter', 'baibao.submitter_id', '=', 'Submitter.user_id')
-            ->leftjoin('phanbien', 'phancongphanbien.assignment_id', '=', 'phanbien.assignment_id')
-            ->leftJoin('LoaiKhuyenNghi', 'phanbien.recommendation_code', '=', 'LoaiKhuyenNghi.recommendation_code')
+            ->join('nguoidung as Submitter', 'baibao.submitter_id', '=', 'Submitter.user_id')
+            ->leftjoin('phanbien', 'ra.id', '=', 'phanbien.assignment_id')
+            ->leftJoin('loaikhuyennghi as LoaiKhuyenNghi', 'phanbien.recommendation_code', '=', 'LoaiKhuyenNghi.recommendation_code')
             ->select(
-                'phancongphanbien.assignment_id',
-                'phancongphanbien.status_code as assignment_status',
-                'phancongphanbien.deadline',
+                'ra.id as assignment_id',
+                'ra.status as assignment_status',
+                'ra.assigned_at',
+                'hoithao.deadline_review as deadline',
                 'baibao.paper_id',
                 'baibao.title as paper_title',
                 'hoithao.title as conference_name',
@@ -105,22 +106,43 @@ class DashboardController extends Controller
                 'phanbien.review_id',
                 'phanbien.recommendation_code',
                 'LoaiKhuyenNghi.recommendation_name',
-                'phanbien.score'
+                'phanbien.score',
+                'ra.review_submitted_at'
             )
-            ->orderBy('phancongphanbien.deadline', 'asc')
+            ->orderBy('ra.assigned_at', 'desc')
             ->get();
         
+        // Get papers available for bidding
+        $availablePapers = DB::table('baibao as b')
+            ->join('hoithao as h', 'b.conference_id', '=', 'h.conference_id')
+            ->join('vaitronguoidung as vr', function($join) use ($userId) {
+                $join->on('h.conference_id', '=', 'vr.conference_id')
+                     ->where('vr.user_id', '=', $userId)
+                     ->where('vr.role_code', '=', 'REVIEWER');
+            })
+            ->leftJoin('reviewer_bidding as rb', function($join) use ($userId) {
+                $join->on('b.paper_id', '=', 'rb.paper_id')
+                     ->where('rb.user_id', '=', $userId);
+            })
+            ->whereIn('b.status_code', ['SUBMITTED', 'UNDER_REVIEW'])
+            ->whereNull('rb.paper_id') // Only papers not yet bid on
+            ->select('b.*', 'h.title as conference_name')
+            ->orderBy('b.created_at', 'desc')
+            ->limit(10)
+            ->get();
+
         // Calculate statistics
         $stats = [
             'total' => $assignments->count(),
-            'pending' => $assignments->where('assignment_status', 'INVITED')->count(),
+            'pending' => $assignments->where('assignment_status', 'PENDING')->count(),
             'in_progress' => $assignments->where('assignment_status', 'ACCEPTED')->count(),
-            'completed' => $assignments->whereNotNull('review_id')->count(),
+            'completed' => $assignments->whereNotNull('review_submitted_at')->count(),
         ];
         
         return view('reviewer.dashboard', [
             'title' => 'Reviewer Dashboard',
             'assignments' => $assignments,
+            'availablePapers' => $availablePapers,
             'stats' => $stats
         ]);
     }
@@ -147,8 +169,19 @@ class DashboardController extends Controller
             ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status')
             ->get();
         
-        // Get the primary conference for this chair (first approved)
-        $conference = $approvedConferences->first();
+        // Get the primary conference for this chair (prioritize conference with papers)
+        $conference = null;
+        foreach ($approvedConferences as $conf) {
+            $paperCount = DB::table('baibao')->where('conference_id', $conf->conference_id)->count();
+            if ($paperCount > 0) {
+                $conference = $conf;
+                break;
+            }
+        }
+        // Fallback to first approved conference if no papers found
+        if (!$conference) {
+            $conference = $approvedConferences->first();
+        }
         
         $papers = collect();
         $stats = [
@@ -163,12 +196,16 @@ class DashboardController extends Controller
         ];
         
         if ($conference) {
-            // Get papers for this conference
+            // Get papers for this conference with reviewer assignment counts
             $papers = DB::table('baibao')
                 ->where('conference_id', $conference->conference_id)
                 ->join('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
                 ->join('nguoidung', 'baibao.submitter_id', '=', 'nguoidung.user_id')
-                ->leftJoin(DB::raw('(SELECT paper_id, COUNT(*) as reviewer_count FROM PhanCongPhanBien GROUP BY paper_id) as ReviewerCounts'), 
+                ->leftJoin(DB::raw('(SELECT paper_id, COUNT(*) as reviewer_count, 
+                    SUM(CASE WHEN status = "PENDING" THEN 1 ELSE 0 END) as pending_reviewers,
+                    SUM(CASE WHEN status = "ACCEPTED" THEN 1 ELSE 0 END) as active_reviewers,
+                    SUM(CASE WHEN review_submitted_at IS NOT NULL THEN 1 ELSE 0 END) as completed_reviews
+                    FROM reviewer_assignments GROUP BY paper_id) as ReviewerCounts'), 
                     'baibao.paper_id', '=', 'ReviewerCounts.paper_id')
                 ->select(
                     'baibao.paper_id',
@@ -177,7 +214,10 @@ class DashboardController extends Controller
                     'baibao.created_at',
                     'trangthaibaibao.status_name',
                     'nguoidung.full_name as author_name',
-                    DB::raw('COALESCE(ReviewerCounts.reviewer_count, 0) as reviewer_count')
+                    DB::raw('COALESCE(ReviewerCounts.reviewer_count, 0) as reviewer_count'),
+                    DB::raw('COALESCE(ReviewerCounts.pending_reviewers, 0) as pending_reviewers'),
+                    DB::raw('COALESCE(ReviewerCounts.active_reviewers, 0) as active_reviewers'),
+                    DB::raw('COALESCE(ReviewerCounts.completed_reviews, 0) as completed_reviews')
                 )
                 ->orderBy('baibao.created_at', 'desc')
                 ->get();
@@ -188,7 +228,11 @@ class DashboardController extends Controller
                 'accepted' => $papers->where('status_code', 'ACCEPTED')->count(),
                 'under_review' => $papers->where('status_code', 'UNDER_REVIEW')->count(),
                 'rejected' => $papers->where('status_code', 'REJECTED')->count(),
-                'needs_reviewers' => $papers->where('reviewer_count', '<', 3)->count()
+                'needs_reviewers' => $papers->where('reviewer_count', '<', 3)->count(),
+                'total_reviewers' => $papers->sum('reviewer_count'),
+                'pending_reviewers' => $papers->sum('pending_reviewers'),
+                'active_reviewers' => $papers->sum('active_reviewers'),
+                'completed_reviews' => $papers->sum('completed_reviews')
             ];
         }
         

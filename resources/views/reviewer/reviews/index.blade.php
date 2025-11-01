@@ -43,7 +43,7 @@
                 </svg>
                 <p class="mt-4 text-lg text-gray-600">No reviews yet</p>
                 <p class="mt-2 text-sm text-gray-500">Reviews you submit will appear here.</p>
-                <a href="{{ route('reviewer.assignments') }}" class="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <a href="{{ route('reviewer.assignments.index') }}" class="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                     View Assignments
                 </a>
             </div>

@@ -71,10 +71,11 @@
         <aside class="w-64 bg-gradient-to-b from-orange-600 to-orange-700 text-white flex-shrink-0 hidden md:flex flex-col animate-slideInLeft">
             <!-- Logo -->
             <div class="p-6 border-b border-orange-500">
-                <a href="{{ route('chair.dashboard') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
-                        <span class="text-2xl font-bold text-orange-600">H</span>
-                    </div>
+                <!-- Logo links to site homepage -->
+                <a href="{{ url('/') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                            <img src="https://foodtech.huit.edu.vn/images_new/logo_en.png" alt="Logo" class="w-full h-full object-contain p-1">
+                        </div>
                     <div>
                         <h1 class="text-lg font-bold">HUIT Conferences</h1>
                         <p class="text-xs text-orange-200">Chair Dashboard</p>

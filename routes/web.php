@@ -38,11 +38,25 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/api/search-conferences', [HomeController::class, 'searchConferences'])->name('api.search.conferences');
 Route::get('/api/conference-counts', [HomeController::class, 'getConferenceCounts'])->name('api.conference.counts');
 
-// Notification Routes
-Route::get('/api/notifications', [HomeController::class, 'getNotifications'])->name('api.notifications');
-Route::patch('/api/notifications/{id}/read', [HomeController::class, 'markNotificationAsRead'])->name('api.notifications.read');
-Route::patch('/api/notifications/read-all', [HomeController::class, 'markAllNotificationsAsRead'])->name('api.notifications.read_all');
-Route::post('/api/notifications/sample', [HomeController::class, 'createSampleNotifications'])->name('api.notifications.sample');
+// Assignment Notification Routes
+Route::middleware(['auth', 'role:REVIEWER'])->prefix('reviewer')->group(function () {
+    Route::get('/notifications', [\App\Http\Controllers\Reviewer\NotificationController::class, 'index'])->name('reviewer.notifications.index');
+    Route::patch('/notifications/{id}/read', [\App\Http\Controllers\Reviewer\NotificationController::class, 'markAsRead'])->name('reviewer.notifications.read');
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\Reviewer\NotificationController::class, 'getUnreadCount'])->name('reviewer.notifications.unread_count');
+    Route::patch('/notifications/mark-all-read', [\App\Http\Controllers\Reviewer\NotificationController::class, 'markAllAsRead'])->name('reviewer.notifications.mark_all_read');
+    
+    // Assignment tracking routes
+    Route::get('/assignments', [\App\Http\Controllers\Reviewer\AssignmentController::class, 'index'])->name('reviewer.assignments.index');
+    Route::get('/assignments/{id}', [\App\Http\Controllers\Reviewer\AssignmentController::class, 'show'])->name('reviewer.assignments.show');
+    
+    // UI Animations Demo
+    Route::get('/animations-demo', function () {
+        return view('animations-demo');
+    })->name('reviewer.animations.demo');
+    Route::post('/assignments/{id}/accept', [\App\Http\Controllers\Reviewer\AssignmentController::class, 'accept'])->name('reviewer.assignments.accept');
+    Route::post('/assignments/{id}/decline', [\App\Http\Controllers\Reviewer\AssignmentController::class, 'decline'])->name('reviewer.assignments.decline');
+    Route::get('/assignments/stats', [\App\Http\Controllers\Reviewer\AssignmentController::class, 'getStats'])->name('reviewer.assignments.stats');
+});
 // Conference Routes (Public)
 Route::get('/conferences', [\App\Http\Controllers\ConferenceController::class, 'index'])->name('conferences.index');
 Route::get('/conferences/{id}', [\App\Http\Controllers\ConferenceController::class, 'show'])->name('conferences.show');
@@ -64,6 +78,10 @@ Route::get('/process', [HomeController::class, 'process'])->name('process');
 Route::get('/support', [HomeController::class, 'support'])->name('support');
 
 // Debug route (no auth required)
+Route::get('/test-api', function () {
+    return view('test_api');
+})->middleware(['auth', 'role:CHAIR']);
+
 Route::get('/debug-status', function () {
     $user = auth()->user();
     return response()->json([
@@ -288,11 +306,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('reviewer')->middleware('role:REVIEWER')->name('reviewer.')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'reviewerDashboard'])->name('dashboard');
         
-        // Review Assignments
-        Route::get('/assignments', [\App\Http\Controllers\Reviewer\ReviewerController::class, 'assignments'])->name('assignments');
-        Route::post('/assignments/{id}/accept', [\App\Http\Controllers\Reviewer\ReviewerController::class, 'acceptAssignment'])->name('assignments.accept');
-        Route::post('/assignments/{id}/decline', [\App\Http\Controllers\Reviewer\ReviewerController::class, 'declineAssignment'])->name('assignments.decline');
-        
         // Reviews
         Route::get('/reviews', [\App\Http\Controllers\Reviewer\ReviewerController::class, 'reviews'])->name('reviews');
         Route::get('/reviews/create/{assignmentId}', [\App\Http\Controllers\Reviewer\ReviewerController::class, 'createReview'])->name('reviews.create');
@@ -304,7 +317,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Paper Download
         Route::get('/papers/{assignmentId}/download', [\App\Http\Controllers\Reviewer\ReviewerController::class, 'downloadPaper'])->name('papers.download');
         
-        // Phase 8.10: COI Management
+        // Bidding & COI Management
+        Route::get('/bidding', [BiddingController::class, 'index'])->name('bidding');
+        Route::get('/conferences', [BiddingController::class, 'getConferences'])->name('conferences');
+        Route::get('/conference/{conferenceId}/papers', [BiddingController::class, 'getConferencePapers'])->name('conference.papers');
+        Route::post('/bidding', [BiddingController::class, 'submitBidding'])->name('bidding.submit');
+        Route::post('/bidding/bulk', [BiddingController::class, 'submitBulkBidding'])->name('bidding.bulk');
+        Route::get('/assignments/data', [BiddingController::class, 'getAssignments'])->name('assignments.data');
+        Route::post('/assignment/{assignmentId}/respond', [BiddingController::class, 'respondToAssignment'])->name('assignment.respond');
+        Route::get('/bidding/statistics/{conferenceId?}', [BiddingController::class, 'getBiddingStatistics'])->name('bidding.statistics');
+        
+        // Phase 8.10: Legacy COI Management (keeping for compatibility)
         Route::get('/coi', [\App\Http\Controllers\Reviewer\COIController::class, 'index'])->name('coi.index');
         Route::get('/coi/create', [\App\Http\Controllers\Reviewer\COIController::class, 'create'])->name('coi.create');
         Route::post('/coi', [\App\Http\Controllers\Reviewer\COIController::class, 'store'])->name('coi.store');
@@ -378,6 +401,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reviewers/invite', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'index'])->name('reviewers.invite');
         Route::post('/reviewers/invite/send', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'sendInvitation'])->name('reviewers.invite.send');
         Route::get('/reviewers/invitations', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'sentInvitations'])->name('reviewers.invite.list');
+        Route::post('/reviewers/invite/{id}/resend', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'resendInvitation'])->name('reviewers.invite.resend');
+        Route::post('/reviewers/invite/{id}/revoke', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'revokeInvitation'])->name('reviewers.invite.revoke');
         
         // Test route
         Route::get('/test-invite', function() {
@@ -387,11 +412,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Route with parameter should be last to avoid conflicts
         Route::get('/reviewers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showReviewer'])->name('reviewers.show');
         
-        // Reviewer Assignment Management
+        // Reviewer Assignment Management (New Bidding System)
         Route::get('/assignments', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'index'])->name('assignments.index');
+        Route::get('/assignments/statistics/{conferenceId}', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'getAssignmentStatistics'])->name('assignments.statistics');
+        Route::get('/assignments/papers/{conferenceId}', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'getConferencePapers'])->name('assignments.papers');
+        Route::get('/assignments/paper/{paperId}/biddings', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'getPaperBiddings'])->name('assignments.paper.biddings');
+        Route::post('/assignments/manual-assign', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'manualAssign'])->name('assignments.manual');
+        Route::post('/assignments/auto-assign', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'autoAssign'])->name('assignments.auto');
+        Route::delete('/assignments/{assignmentId}', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'removeAssignment'])->name('assignments.remove');
+        
+        // Legacy routes for backward compatibility
         Route::get('/assignments/{paperId}/assign', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'assign'])->name('assignments.assign');
         Route::post('/assignments/store', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'store'])->name('assignments.store');
-        Route::delete('/assignments/remove', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'remove'])->name('assignments.remove');
     });
     
     // Admin Routes

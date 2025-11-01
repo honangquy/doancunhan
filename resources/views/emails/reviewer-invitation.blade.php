@@ -51,7 +51,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🎓 HUIT Conferences</h1>
+        <h1>HUIT Conferences</h1>
         <h2>Lời mời làm phản biện viên</h2>
     </div>
     
@@ -84,7 +84,7 @@
 
         <div style="text-align: center;">
             <a href="{{ $invitation_url }}" class="button">
-                ✅ Chấp nhận lời mời
+                 Chấp nhận lời mời
             </a>
         </div>
 

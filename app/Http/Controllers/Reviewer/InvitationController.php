@@ -129,43 +129,95 @@ class InvitationController extends Controller
         DB::beginTransaction();
         
         try {
-            // Thêm role REVIEWER cho user
-            DB::table('vaitronguoidung')->insert([
+            // Kiểm tra xem đã có join request pending chưa (dùng bảng join_requests có sẵn)
+            $existingRequest = DB::table('join_requests')
+                ->where('user_id', $user->user_id)
+                ->where('conference_id', $invitation->conference_id)
+                ->where('role', 'REVIEWER')
+                ->where('status', 'PENDING')
+                ->first();
+
+            if ($existingRequest) {
+                return back()->with('info', 'Yêu cầu vai trò của bạn đã được gửi trước đó và đang chờ admin duyệt.');
+            }
+
+            // Tạo join request để admin duyệt (dùng cùng hệ thống như Author)
+            DB::table('join_requests')->insert([
                 'user_id' => $user->user_id,
                 'conference_id' => $invitation->conference_id,
-                'role_code' => 'REVIEWER',
-                'assigned_at' => now(),
+                'role' => 'REVIEWER',
+                'status' => 'PENDING',
+                'invitation_token' => $token, // Liên kết với invitation
+                'full_name' => $user->full_name,
+                'email_contact' => $user->email,
+                'organization' => $request->organization,
+                'expertise_keywords' => $request->specialization,
+                'max_papers' => $request->experience_years, // Tạm dùng experience_years
+                'notes' => $request->bio,
+                'commitment_confirmed' => true,
+                'message' => "Đăng ký qua lời mời của Chair. Chuyên môn: {$request->specialization}",
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
 
-            // Cập nhật thông tin reviewer trong bảng nguoidung nếu cần
+            // Cập nhật thông tin cơ bản của user (không phải reviewer-specific info)
             DB::table('nguoidung')
                 ->where('user_id', $user->user_id)
                 ->update([
                     'organization' => $request->organization,
-                    'position' => $request->position,
-                    'specialization' => $request->specialization,
-                    'bio' => $request->bio,
-                    'experience_years' => $request->experience_years,
                     'updated_at' => now()
                 ]);
 
-            // Cập nhật trạng thái lời mời
+            // Cập nhật trạng thái lời mời thành "RESPONDED" (chưa phải ACCEPTED)
             DB::table('reviewer_invitations')
                 ->where('id', $invitation->id)
                 ->update([
-                    'status' => 'ACCEPTED',
+                    'status' => 'RESPONDED', // Đã phản hồi nhưng chưa được duyệt
                     'responded_at' => now(),
                     'updated_at' => now()
                 ]);
 
+            // Tạo thông báo cho admin (sử dụng hệ thống thông báo có sẵn)
+            $conference = DB::table('hoithao')->where('conference_id', $invitation->conference_id)->first();
+            
+            // Tìm admin để gửi thông báo
+            $admins = DB::table('nguoidung as nd')
+                ->join('vaitronguoidung as vt', 'nd.user_id', '=', 'vt.user_id')
+                ->where('vt.role_code', 'ADMIN')
+                ->whereNull('vt.conference_id') // Admin toàn hệ thống
+                ->select('nd.*')
+                ->get();
+
+            foreach ($admins as $admin) {
+                DB::table('notifications')->insert([
+                    'user_id' => $admin->user_id,
+                    'title' => 'Yêu cầu vai trò Reviewer mới (Qua lời mời)',
+                    'message' => "Người dùng {$user->full_name} ({$user->email}) đã đăng ký làm Reviewer cho hội thảo \"{$conference->title}\" qua lời mời của Chair. Vui lòng vào mục 'Yêu cầu vai trò' để xem xét và duyệt.",
+                    'type' => 'join_request',
+                    'data' => json_encode([
+                        'user_id' => $user->user_id,
+                        'conference_id' => $invitation->conference_id,
+                        'role' => 'REVIEWER',
+                        'invitation_based' => true,
+                        'url' => '/admin/join-requests'
+                    ]),
+                    'is_read' => false,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
+
             DB::commit();
 
-            return redirect()->route('reviewer.dashboard')->with('success', 'Chào mừng bạn đã trở thành phản biện viên! Hồ sơ của bạn đã được cập nhật thành công.');
+            return redirect()->route('home')->with('success', 'Cám ơn bạn đã đăng ký! Thông tin của bạn đã được gửi đến admin để xem xét và phê duyệt vai trò Reviewer. Bạn sẽ nhận được thông báo khi yêu cầu được duyệt.');
 
         } catch (\Exception $e) {
             DB::rollback();
+            \Log::error('Error in submitJoinForm: ' . $e->getMessage(), [
+                'user_id' => $user->user_id,
+                'invitation_id' => $invitation->id,
+                'trace' => $e->getTraceAsString()
+            ]);
             return back()->with('error', 'Có lỗi xảy ra. Vui lòng thử lại.')->withInput();
         }
     }
