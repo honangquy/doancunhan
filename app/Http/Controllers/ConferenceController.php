@@ -194,7 +194,7 @@ class ConferenceController extends Controller
                 'conference_id' => $id,
                 'user_id' => $userId,
                 'role' => $validated['role'],
-                'status' => $isInvitedUser ? JoinRequest::STATUS_APPROVED : JoinRequest::STATUS_PENDING,
+                'status' => JoinRequest::STATUS_PENDING, // ✅ Always PENDING - Admin must approve manually
                 'full_name' => $validated['full_name'],
                 'email_contact' => $validated['email_contact'],
                 'commitment_confirmed' => $validated['commitment_confirmed']

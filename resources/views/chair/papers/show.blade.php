@@ -60,6 +60,106 @@
             </div>
         </div>
 
+        <!-- Paper Content -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Nội dung bài báo
+            </h2>
+            
+            <!-- Abstract -->
+            @if($paper->abstract)
+            <div class="mb-6">
+                <h3 class="text-md font-semibold text-gray-800 mb-2">Tóm tắt</h3>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <p class="text-sm text-gray-700 leading-relaxed">{{ $paper->abstract }}</p>
+                </div>
+            </div>
+            @endif
+
+            <!-- Keywords -->
+            @if($paper->keywords)
+            <div class="mb-6">
+                <h3 class="text-md font-semibold text-gray-800 mb-2">Từ khóa</h3>
+                <div class="flex flex-wrap gap-2">
+                    @foreach(explode(',', $paper->keywords) as $keyword)
+                    <span class="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                        {{ trim($keyword) }}
+                    </span>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <!-- Track Information -->
+            @if(isset($paper->track_name) && $paper->track_name)
+            <div class="mb-6">
+                <h3 class="text-md font-semibold text-gray-800 mb-2">Tiểu ban</h3>
+                <div class="inline-block px-3 py-1 text-sm font-medium bg-purple-100 text-purple-700 rounded">
+                    {{ $paper->track_name }}
+                </div>
+            </div>
+            @endif
+
+            <!-- Conference Information -->
+            <div class="mb-6">
+                <h3 class="text-md font-semibold text-gray-800 mb-2">Thông tin hội thảo</h3>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-xs text-gray-500">Tên hội thảo:</span>
+                            <div class="text-sm font-medium text-gray-900">{{ $paper->conference_name }}</div>
+                        </div>
+                        @if(isset($paper->conference_acronym) && $paper->conference_acronym)
+                        <div>
+                            <span class="text-xs text-gray-500">Acronym:</span>
+                            <div class="text-sm font-medium text-gray-900">{{ $paper->conference_acronym }}</div>
+                        </div>
+                        @endif
+                        @if(isset($paper->conference_year) && $paper->conference_year)
+                        <div>
+                            <span class="text-xs text-gray-500">Năm:</span>
+                            <div class="text-sm font-medium text-gray-900">{{ $paper->conference_year }}</div>
+                        </div>
+                        @endif
+                        @if(isset($paper->author_organization) && $paper->author_organization)
+                        <div>
+                            <span class="text-xs text-gray-500">Tổ chức tác giả chính:</span>
+                            <div class="text-sm font-medium text-gray-900">{{ $paper->author_organization }}</div>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Attachment -->
+            @if($paper->file_path)
+            <div class="mb-6">
+                <h3 class="text-md font-semibold text-gray-800 mb-2">File đính kèm</h3>
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-900">{{ basename($paper->file_path) }}</div>
+                            <div class="text-xs text-gray-500">Bài báo chính thức</div>
+                        </div>
+                        <a href="{{ asset('storage/' . $paper->file_path) }}" 
+                           target="_blank"
+                           class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                            Tải xuống
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
+
         <!-- Authors Section -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center">

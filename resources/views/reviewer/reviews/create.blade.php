@@ -30,7 +30,7 @@
                 </a>
                 <div class="flex items-center space-x-4">
                     <a href="{{ route('reviewer.dashboard') }}" class="hover:text-purple-100">Dashboard</a>
-                    <a href="{{ route('reviewer.assignments') }}" class="hover:text-purple-100">Assignments</a>
+                    <a href="{{ route('reviewer.assignments.index') }}" class="hover:text-purple-100">Assignments</a>
                     <a href="{{ route('reviewer.reviews') }}" class="hover:text-purple-100">My Reviews</a>
                     <div class="h-6 w-px bg-purple-400"></div>
                     <span class="font-medium">{{ Auth::user()->full_name }}</span>
@@ -47,7 +47,7 @@
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header -->
         <div class="mb-8">
-            <a href="{{ route('reviewer.assignments') }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">
+            <a href="{{ route('reviewer.assignments.index') }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">
                 ← Back to Assignments
             </a>
             <h1 class="text-3xl font-bold text-gray-900">Submit Review</h1>
@@ -267,7 +267,7 @@
 
             <!-- Form Actions -->
             <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-                <a href="{{ route('reviewer.assignments') }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+                <a href="{{ route('reviewer.assignments.index') }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition">
                     Cancel
                 </a>
                 <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">

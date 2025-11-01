@@ -620,19 +620,49 @@
                 </div>
                 
                 <form @submit.prevent="submitJoinRequest()">
+                    <!-- Thông báo thông tin tài khoản -->
+                    @auth
+                    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                        <div class="flex items-start space-x-2">
+                            <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div class="text-sm">
+                                <p class="font-medium text-blue-800">Thông tin cá nhân</p>
+                                <p class="text-blue-700 mt-1">Họ tên và email được lấy từ hồ sơ tài khoản của bạn. 
+                                Để thay đổi thông tin này, vui lòng liên hệ quản trị viên hệ thống.</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endauth
+                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Họ và tên -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Họ và tên <span class="text-red-500">*</span></label>
-                            <input type="text" x-model="formData.full_name" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <input type="text" x-model="formData.full_name" required readonly
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                                   title="Thông tin này được lấy từ hồ sơ của bạn và không thể chỉnh sửa">
+                            <p class="text-xs text-gray-500 mt-1">
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Thông tin lấy từ hồ sơ tài khoản
+                            </p>
                         </div>
                         
                         <!-- Email -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Email <span class="text-red-500">*</span></label>
-                            <input type="email" x-model="formData.email_contact" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                            <input type="email" x-model="formData.email_contact" required readonly
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                                   title="Thông tin này được lấy từ hồ sơ của bạn và không thể chỉnh sửa">
+                            <p class="text-xs text-gray-500 mt-1">
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Thông tin lấy từ hồ sơ tài khoản
+                            </p>
                         </div>
                         
                         <!-- Quốc gia -->
@@ -810,9 +840,9 @@
             isSubmitting: false,
             invitationData: @json(session('invitation_data', null)),
             formData: {
-                // Common fields
-                full_name: @if(session('invitation_data'))'{{ Auth::user()->full_name ?? "" }}'@else ''@endif,
-                email_contact: @if(session('invitation_data'))'{{ session('invitation_data.email') }}'@else ''@endif,
+                // Common fields - get from logged in user profile
+                full_name: @if(Auth::check())'{{ Auth::user()->full_name ?? Auth::user()->name ?? "" }}'@elseif(session('invitation_data'))'{{ session('invitation_data.full_name', '') }}'@else ''@endif,
+                email_contact: @if(Auth::check())'{{ Auth::user()->email ?? "" }}'@elseif(session('invitation_data'))'{{ session('invitation_data.email', '') }}'@else ''@endif,
                 commitment_confirmed: false,
                 
                 // Author specific fields
