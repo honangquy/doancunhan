@@ -26,8 +26,8 @@ class AssignmentController extends Controller
 
         // Validate input
         $validator = Validator::make($request->all(), [
-            'paper_id' => 'required|integer|exists:BaiBao,paper_id',
-            'reviewer_id' => 'required|integer|exists:NguoiDung,user_id',
+            'paper_id' => 'required|integer|exists:baibao,paper_id',
+            'reviewer_id' => 'required|integer|exists:nguoidung,user_id',
             'deadline' => 'nullable|date|after:today',
         ]);
 
@@ -88,7 +88,7 @@ class AssignmentController extends Controller
         }
 
         // Check if reviewer is an author
-        $isAuthor = DB::table('TacGiaBaiBao')
+        $isAuthor = DB::table('tacgiabaibao')
             ->where('paper_id', $request->paper_id)
             ->where('user_id', $request->reviewer_id)
             ->exists();
@@ -160,8 +160,8 @@ class AssignmentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'paper_id' => 'nullable|integer|exists:BaiBao,paper_id',
-            'conference_id' => 'nullable|integer|exists:HoiThao,conference_id',
+            'paper_id' => 'nullable|integer|exists:baibao,paper_id',
+            'conference_id' => 'nullable|integer|exists:hoithao,conference_id',
             'reviewers_per_paper' => 'nullable|integer|min:1|max:10',
             'deadline' => 'nullable|date|after:today',
         ]);
@@ -202,7 +202,7 @@ class AssignmentController extends Controller
             }
 
             // Get paper authors (to exclude)
-            $authorIds = DB::table('TacGiaBaiBao')
+            $authorIds = DB::table('tacgiabaibao')
                 ->where('paper_id', $paper->paper_id)
                 ->pluck('user_id')
                 ->toArray();
@@ -248,7 +248,7 @@ class AssignmentController extends Controller
             })->sortByDesc('score')->values();
 
             // Get reviewer workload (assignments count)
-            $reviewerWorkloads = DB::table('PhanCongPhanBien')
+            $reviewerWorkloads = DB::table('phancongphanbien')
                 ->select('reviewer_id', DB::raw('COUNT(*) as workload'))
                 ->groupBy('reviewer_id')
                 ->pluck('workload', 'reviewer_id')
@@ -265,7 +265,7 @@ class AssignmentController extends Controller
             // If not enough bidders, get all reviewers
             if ($scoredReviewers->count() < $neededReviewers) {
                 // Get all reviewers not in exclude list
-                $allReviewers = DB::table('VaiTroNguoiDung')
+                $allReviewers = DB::table('vaitronguoidung')
                     ->where('role_code', 'REVIEWER')
                     ->whereNotIn('user_id', $excludeIds)
                     ->pluck('user_id')
@@ -368,7 +368,7 @@ class AssignmentController extends Controller
         }
 
         // Check if review already submitted
-        $reviewExists = DB::table('PhanBien')
+        $reviewExists = DB::table('phanbien')
             ->where('assignment_id', $assignment_id)
             ->exists();
 
@@ -686,7 +686,7 @@ class AssignmentController extends Controller
     // Helper methods
     private function isAdmin($user)
     {
-        return DB::table('VaiTroNguoiDung')
+        return DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->where('role_code', 'ADMIN')
             ->exists();
@@ -694,7 +694,7 @@ class AssignmentController extends Controller
 
     private function isReviewer($user)
     {
-        return DB::table('VaiTroNguoiDung')
+        return DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->where('role_code', 'REVIEWER')
             ->exists();
@@ -706,3 +706,7 @@ class AssignmentController extends Controller
         return $track && $track->chair_id == $user->user_id;
     }
 }
+
+
+
+

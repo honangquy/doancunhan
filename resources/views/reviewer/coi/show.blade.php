@@ -234,7 +234,7 @@
                         </div>
                         @else
                         <div class="px-6 py-4 bg-yellow-50 border-b border-yellow-200">
-                            <h2 class="text-lg font-bold text-yellow-800">⏳ Chờ xử lý</h2>
+                            <h2 class="text-lg font-bold text-yellow-800">Chờ xử lý</h2>
                         </div>
                         <div class="p-6">
                             <p class="text-sm text-gray-600">

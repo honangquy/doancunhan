@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.favicon')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Chair Dashboard') - HUIT Conference</title>
 
@@ -27,6 +28,35 @@
                     colors: {
                         primary: '#ea580c',
                         accent: '#f97316',
+                    },
+                    animation: {
+                        'fadeIn': 'fadeIn 0.5s ease-in-out',
+                        'slideInLeft': 'slideInLeft 0.6s ease-out',
+                        'slideInRight': 'slideInRight 0.6s ease-out',
+                        'slideInUp': 'slideInUp 0.5s ease-out',
+                        'scaleIn': 'scaleIn 0.4s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideInLeft: {
+                            '0%': { transform: 'translateX(-100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' }
+                        },
+                        slideInRight: {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' }
+                        },
+                        slideInUp: {
+                            '0%': { transform: 'translateY(30px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        scaleIn: {
+                            '0%': { transform: 'scale(0.9)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        }
                     }
                 }
             }
@@ -38,18 +68,18 @@
 <body class="bg-gray-50 font-sans">
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-orange-600 to-orange-700 text-white flex-shrink-0 hidden md:flex flex-col">
+        <aside class="w-64 bg-gradient-to-b from-orange-600 to-orange-700 text-white flex-shrink-0 hidden md:flex flex-col animate-slideInLeft">
             <!-- Logo -->
             <div class="p-6 border-b border-orange-500">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                <a href="{{ route('chair.dashboard') }}" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
                         <span class="text-2xl font-bold text-orange-600">H</span>
                     </div>
                     <div>
                         <h1 class="text-lg font-bold">HUIT Conferences</h1>
                         <p class="text-xs text-orange-200">Chair Dashboard</p>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Navigation -->
@@ -62,6 +92,14 @@
                     <span>Dashboard</span>
                 </a>
 
+                <a href="{{ route('chair.conferences.index') }}" 
+                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.conferences*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <span>Quản lý hội thảo</span>
+                </a>
+
                 <a href="{{ route('chair.papers') }}" 
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.papers*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,16 +108,16 @@
                     <span>Quản lý bài báo</span>
                 </a>
 
-                <a href="#" 
-                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition hover:bg-orange-500">
+                <a href="{{ route('chair.reviewers.index') }}" 
+                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.reviewers*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                     </svg>
-                    <span>Quản lý reviewer</span>
+                    <span>Mời reviewer</span>
                 </a>
 
-                <a href="#" 
-                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition hover:bg-orange-500">
+                <a href="{{ route('chair.assignments.index') }}" 
+                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.assignments*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                     </svg>
@@ -106,7 +144,7 @@
             <!-- User Info -->
             <div class="p-4 border-t border-orange-500">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-orange-400 rounded-full flex items-center justify-center font-bold">
+                    <div class="w-10 h-10 bg-orange-400 rounded-full flex items-center justify-center font-bold shadow-lg">
                         {{ substr(Auth::user()->full_name ?? 'C', 0, 1) }}
                     </div>
                     <div class="flex-1 min-w-0">
@@ -128,7 +166,7 @@
             <!-- Top Bar -->
             <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">@yield('page-title', 'Dashboard')</h2>
+                    <h2 class="text-xl font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h2>
                     <p class="text-sm text-gray-600">@yield('page-subtitle', '')</p>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -138,18 +176,33 @@
                         </svg>
                         <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                     </button>
-                    <div class="flex items-center space-x-2">
-                        <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                            <span class="text-orange-600 font-semibold text-sm">{{ substr(Auth::user()->full_name ?? 'C', 0, 1) }}</span>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                <span class="text-orange-600 font-semibold text-sm">{{ substr(Auth::user()->full_name ?? 'C', 0, 1) }}</span>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">{{ Auth::user()->full_name ?? 'Chair User' }}</span>
+                            <svg class="w-4 h-4 text-gray-500" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Hồ sơ cá nhân</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cài đặt</a>
+                            <form method="POST" action="{{ route('logout') }}" class="block">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Đăng xuất</button>
+                            </form>
                         </div>
-                        <span class="text-sm font-medium text-gray-700">{{ Auth::user()->full_name ?? 'Chair User' }}</span>
                     </div>
                 </div>
             </header>
 
             <!-- Content Area (Scrollable) -->
             <main class="flex-1 overflow-y-auto p-6">
-                @yield('content')
+                <div class="animate-slideInUp">
+                    @yield('content')
+                </div>
             </main>
         </div>
     </div>

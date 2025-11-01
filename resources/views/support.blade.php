@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @include('partials.favicon')
     <title>Hỗ trợ - HUIT Conferences</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -46,9 +47,7 @@
             <div class="flex items-center justify-between h-16">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex items-center space-x-3 hover:opacity-90 transition">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-md">
-                        <span class="text-blue-700 font-bold text-xl">H</span>
-                    </div>
+<img src="https://foodtech.huit.edu.vn/images_new/logo_en.png" alt="HUIT logo" class="w-10 h-10 bg-white rounded-full object-cover shadow-md">
                     <div>
                         <div class="font-bold text-lg">HUIT Conferences</div>
                         <div class="text-xs text-blue-200">Hệ thống quản lý hội thảo</div>

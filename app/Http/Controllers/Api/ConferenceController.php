@@ -91,7 +91,7 @@ class ConferenceController extends Controller
                 'deadline_camera_ready' => 'required|date|after:deadline_review|before:start_date',
                 'level_code' => 'required|exists:CapHoiThao,level_code',
                 'faculty_id' => 'required|exists:Khoa,faculty_id',
-                'parent_id' => 'nullable|exists:HoiThao,conference_id',
+                'parent_id' => 'nullable|exists:hoithao,conference_id',
                 'status' => 'nullable|in:OPEN,CLOSED,CANCELLED',
             ]);
 
@@ -209,7 +209,7 @@ class ConferenceController extends Controller
                 'deadline_camera_ready' => 'sometimes|required|date',
                 'level_code' => 'sometimes|required|exists:CapHoiThao,level_code',
                 'faculty_id' => 'sometimes|required|exists:Khoa,faculty_id',
-                'parent_id' => 'nullable|exists:HoiThao,conference_id',
+                'parent_id' => 'nullable|exists:hoithao,conference_id',
                 'status' => 'sometimes|in:OPEN,CLOSED,CANCELLED',
             ]);
 
@@ -325,19 +325,19 @@ class ConferenceController extends Controller
                         ->distinct('user_id')
                         ->count('user_id'),
                     'total_reviewers' => DB::table('PhanCongReview')
-                        ->join('BaiBao', 'PhanCongReview.paper_id', '=', 'BaiBao.paper_id')
-                        ->where('BaiBao.conference_id', $id)
+                        ->join('baibao', 'PhanCongReview.paper_id', '=', 'baibao.paper_id')
+                        ->where('baibao.conference_id', $id)
                         ->distinct('PhanCongReview.reviewer_id')
                         ->count('PhanCongReview.reviewer_id'),
                 ],
                 'reviews' => [
                     'total_assignments' => DB::table('PhanCongReview')
-                        ->join('BaiBao', 'PhanCongReview.paper_id', '=', 'BaiBao.paper_id')
-                        ->where('BaiBao.conference_id', $id)
+                        ->join('baibao', 'PhanCongReview.paper_id', '=', 'baibao.paper_id')
+                        ->where('baibao.conference_id', $id)
                         ->count(),
                     'completed_reviews' => DB::table('Review')
-                        ->join('BaiBao', 'Review.paper_id', '=', 'BaiBao.paper_id')
-                        ->where('BaiBao.conference_id', $id)
+                        ->join('baibao', 'Review.paper_id', '=', 'baibao.paper_id')
+                        ->where('baibao.conference_id', $id)
                         ->count(),
                 ],
                 'deadlines' => [
@@ -418,3 +418,7 @@ class ConferenceController extends Controller
         }
     }
 }
+
+
+
+

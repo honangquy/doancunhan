@@ -1,13 +1,12 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết bài báo - {{ $paper->title }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50">
-    <main class="container mx-auto p-6">
+@extends('layouts.chair')
+
+@section('title', 'Chi tiết bài báo - ' . $paper->title)
+
+@section('page-title', 'Chi tiết bài báo')
+
+@section('page-subtitle', $paper->title)
+
+@section('content')
         <!-- Paper Header -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <div class="flex items-start justify-between mb-4">
@@ -358,6 +357,4 @@
             </div>
         </div>
         @endif
-    </main>
-</body>
-</html>
+@endsection

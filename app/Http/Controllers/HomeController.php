@@ -42,8 +42,8 @@ class HomeController extends Controller
         $sortBy = $request->get('sortBy', 'year');
         $sortOrder = $request->get('sortOrder', 'desc');
         
-        $query = DB::table('HoiThao as h')
-            ->leftJoin('BaiBao as b', 'h.conference_id', '=', 'b.conference_id')
+        $query = DB::table('hoithao as h')
+            ->leftJoin('baibao as b', 'h.conference_id', '=', 'b.conference_id')
             ->select(
                 'h.conference_id',
                 'h.title',
@@ -54,6 +54,7 @@ class HomeController extends Controller
                 'h.status',
                 DB::raw('COUNT(b.paper_id) as paper_count')
             )
+            ->where('h.status', 'ACTIVE') // Chỉ tìm kiếm trong các hội thảo đã được duyệt
             ->groupBy('h.conference_id', 'h.title', 'h.start_date', 'h.end_date', 'h.deadline_submission', 'h.year', 'h.status');
             
         // Apply search filter
@@ -136,13 +137,13 @@ class HomeController extends Controller
         $now = now();
         
         $counts = [
-            'all' => DB::table('HoiThao')->count(),
-            'open' => DB::table('HoiThao')->where('deadline_submission', '>', $now)->count(),
-            'closed' => DB::table('HoiThao')
+            'all' => DB::table('hoithao')->count(),
+            'open' => DB::table('hoithao')->where('deadline_submission', '>', $now)->count(),
+            'closed' => DB::table('hoithao')
                 ->where('deadline_submission', '<=', $now)
                 ->where('start_date', '>', $now)
                 ->count(),
-            'ended' => DB::table('HoiThao')->where('start_date', '<=', $now)->count()
+            'ended' => DB::table('hoithao')->where('start_date', '<=', $now)->count()
         ];
         
         return response()->json($counts);
@@ -154,20 +155,21 @@ class HomeController extends Controller
     private function getStatistics()
     {
         return [
-            'totalConferences' => DB::table('HoiThao')->count(),
-            'totalPapers' => DB::table('BaiBao')->count(),
-            'totalAuthors' => DB::table('VaiTroNguoiDung')
-                ->join('LoaiVaiTro', 'VaiTroNguoiDung.role_code', '=', 'LoaiVaiTro.role_code')
+            'totalConferences' => DB::table('hoithao')->where('status', 'ACTIVE')->count(),
+            'totalPapers' => DB::table('baibao')->count(),
+            'totalAuthors' => DB::table('vaitronguoidung')
+                ->join('LoaiVaiTro', 'vaitronguoidung.role_code', '=', 'LoaiVaiTro.role_code')
                 ->where('LoaiVaiTro.role_code', 'AUTHOR')
                 ->distinct('user_id')
                 ->count(),
-            'totalReviewers' => DB::table('VaiTroNguoiDung')
-                ->join('LoaiVaiTro', 'VaiTroNguoiDung.role_code', '=', 'LoaiVaiTro.role_code')
+            'totalReviewers' => DB::table('vaitronguoidung')
+                ->join('LoaiVaiTro', 'vaitronguoidung.role_code', '=', 'LoaiVaiTro.role_code')
                 ->where('LoaiVaiTro.role_code', 'REVIEWER')
                 ->distinct('user_id')
                 ->count(),
-            'totalReviews' => DB::table('PhanBien')->count(),
-            'activeConferences' => DB::table('HoiThao')
+            'totalReviews' => DB::table('phanbien')->count(),
+            'activeConferences' => DB::table('hoithao')
+                ->where('status', 'ACTIVE')
                 ->where('start_date', '>', now())
                 ->count()
         ];
@@ -178,8 +180,8 @@ class HomeController extends Controller
      */
     private function getRecentConferences()
     {
-        return DB::table('HoiThao as h')
-            ->leftJoin('BaiBao as b', 'h.conference_id', '=', 'b.conference_id')
+        return DB::table('hoithao as h')
+            ->leftJoin('baibao as b', 'h.conference_id', '=', 'b.conference_id')
             ->select(
                 'h.conference_id',
                 'h.title',
@@ -190,6 +192,7 @@ class HomeController extends Controller
                 'h.status',
                 DB::raw('COUNT(b.paper_id) as paper_count')
             )
+            ->where('h.status', 'ACTIVE') // Chỉ hiển thị hội thảo đã được admin duyệt
             ->groupBy('h.conference_id', 'h.title', 'h.start_date', 'h.end_date', 'h.deadline_submission', 'h.year', 'h.status')
             ->orderBy('h.year', 'desc')
             ->orderBy('h.conference_id', 'desc')
@@ -224,9 +227,9 @@ class HomeController extends Controller
      */
     private function getRecentPapers()
     {
-        return DB::table('BaiBao as b')
-            ->join('NguoiDung as u', 'b.submitter_id', '=', 'u.user_id')
-            ->join('HoiThao as h', 'b.conference_id', '=', 'h.conference_id')
+        return DB::table('baibao as b')
+            ->join('nguoidung as u', 'b.submitter_id', '=', 'u.user_id')
+            ->join('hoithao as h', 'b.conference_id', '=', 'h.conference_id')
             ->select(
                 'b.paper_id',
                 'b.title as paper_title',
@@ -248,19 +251,19 @@ class HomeController extends Controller
         $userId = Auth::id();
         
         // Get user's role information
-        $userRoles = DB::table('VaiTroNguoiDung as vt')
+        $userRoles = DB::table('VaiTronguoidung as vt')
             ->join('LoaiVaiTro as lt', 'vt.role_code', '=', 'lt.role_code')
             ->where('vt.user_id', $userId)
             ->select('lt.role_code', 'lt.role_name')
             ->get();
             
         // Get user's papers if author
-        $userPapers = DB::table('BaiBao')
+        $userPapers = DB::table('baibao')
             ->where('submitter_id', $userId)
             ->count();
             
         // Get user's assignments if reviewer
-        $userAssignments = DB::table('PhanCongPhanBien')
+        $userAssignments = DB::table('phancongphanbien')
             ->where('reviewer_id', $userId)
             ->count();
             
@@ -474,3 +477,7 @@ class HomeController extends Controller
         }
     }
 }
+
+
+
+

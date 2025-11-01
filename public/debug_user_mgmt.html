@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug User Management</title>
+    <meta name="csrf-token" content="test-token">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-8">
+    <h1 class="text-2xl font-bold mb-4">Debug User Management</h1>
+    
+    <div class="space-y-4">
+        <button onclick="testEditUser()" class="bg-blue-500 text-white px-4 py-2 rounded">
+            Test Edit User Function
+        </button>
+        
+        <button onclick="testModals()" class="bg-green-500 text-white px-4 py-2 rounded">
+            Test Modal Elements
+        </button>
+        
+        <button onclick="testForms()" class="bg-yellow-500 text-white px-4 py-2 rounded">
+            Test Form Elements
+        </button>
+    </div>
+    
+    <div id="results" class="mt-4 p-4 bg-gray-100 rounded"></div>
+
+    <!-- Add modals for testing -->
+    <div id="addUserModal" class="hidden">
+        <form id="addUserForm">
+            <input type="text" name="test">
+        </form>
+    </div>
+    
+    <div id="editUserModal" class="hidden">
+        <form id="editUserForm">
+            <input type="hidden" id="editUserId">
+        </form>
+    </div>
+
+    <script>
+        // Helper function to get correct base URL
+        function getBaseUrl() {
+            return window.location.origin + '/qly_hthao/qlyhoithao/public';
+        }
+
+        function log(message) {
+            const results = document.getElementById('results');
+            results.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+        }
+
+        function testEditUser() {
+            log('Testing editUser function...');
+            
+            // Test if elements exist
+            const editModal = document.getElementById('editUserModal');
+            const editForm = document.getElementById('editUserForm');
+            const editUserId = document.getElementById('editUserId');
+            
+            log('editUserModal exists: ' + (editModal ? 'YES' : 'NO'));
+            log('editUserForm exists: ' + (editForm ? 'YES' : 'NO'));
+            log('editUserId exists: ' + (editUserId ? 'YES' : 'NO'));
+            
+            if (typeof editUser === 'function') {
+                log('editUser function exists: YES');
+                // Don't actually call it
+            } else {
+                log('editUser function exists: NO');
+            }
+        }
+
+        function testModals() {
+            log('Testing modal elements...');
+            
+            const addModal = document.getElementById('addUserModal');
+            const editModal = document.getElementById('editUserModal');
+            
+            log('addUserModal: ' + (addModal ? 'Found' : 'Not found'));
+            log('editUserModal: ' + (editModal ? 'Found' : 'Not found'));
+        }
+
+        function testForms() {
+            log('Testing form elements...');
+            
+            const addForm = document.getElementById('addUserForm');
+            const editForm = document.getElementById('editUserForm');
+            
+            log('addUserForm: ' + (addForm ? 'Found' : 'Not found'));
+            log('editUserForm: ' + (editForm ? 'Found' : 'Not found'));
+            
+            if (addForm) {
+                log('addForm can addEventListener: ' + (typeof addForm.addEventListener === 'function' ? 'YES' : 'NO'));
+            }
+            if (editForm) {
+                log('editForm can addEventListener: ' + (typeof editForm.addEventListener === 'function' ? 'YES' : 'NO'));
+            }
+        }
+
+        // Test immediate
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOM loaded - running initial tests...');
+            testModals();
+            testForms();
+        });
+    </script>
+</body>
+</html>

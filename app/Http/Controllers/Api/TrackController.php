@@ -63,7 +63,7 @@ class TrackController extends Controller
             $validator = Validator::make($request->all(), [
                 'track_name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'chair_id' => 'required|exists:NguoiDung,user_id',
+                'chair_id' => 'required|exists:nguoidung,user_id',
             ]);
 
             if ($validator->fails()) {
@@ -128,8 +128,8 @@ class TrackController extends Controller
                     ->groupBy('trang_thai_code')
                     ->get(),
                 'total_reviews' => DB::table('Review')
-                    ->join('BaiBao', 'Review.paper_id', '=', 'BaiBao.paper_id')
-                    ->where('BaiBao.track_id', $id)
+                    ->join('baibao', 'Review.paper_id', '=', 'baibao.paper_id')
+                    ->where('baibao.track_id', $id)
                     ->count(),
             ];
 
@@ -169,7 +169,7 @@ class TrackController extends Controller
             $validator = Validator::make($request->all(), [
                 'track_name' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
-                'chair_id' => 'sometimes|required|exists:NguoiDung,user_id',
+                'chair_id' => 'sometimes|required|exists:nguoidung,user_id',
             ]);
 
             if ($validator->fails()) {
@@ -327,4 +327,8 @@ class TrackController extends Controller
         }
     }
 }
+
+
+
+
 

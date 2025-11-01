@@ -11,8 +11,6 @@
     <script>
         // Make sure data is available globally
         window.reviewersData = {!! json_encode($availableReviewers) !!};
-        console.log('✅ Reviewers data loaded:', window.reviewersData ? window.reviewersData.length : 0, 'items');
-        console.log('✅ First reviewer:', window.reviewersData && window.reviewersData[0] ? window.reviewersData[0].full_name : 'NONE');
     </script>
     
     <!-- Load Alpine.js AFTER data is ready -->
@@ -34,11 +32,7 @@
                 reviewers: window.reviewersData || [],
                 
                 init() {
-                    console.log('🚀 Alpine component initialized');
-                    console.log('📊 Reviewers count:', this.reviewers.length);
-                    if (this.reviewers.length > 0) {
-                        console.log('✅ First reviewer:', this.reviewers[0].full_name);
-                    }
+                    // Component initialized
                 },
                 
                 get filteredReviewers() {
