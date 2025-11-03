@@ -246,7 +246,7 @@
                                 @if($assignment->deadline)
                                 <p>Deadline: {{ \Carbon\Carbon::parse($assignment->deadline)->format('d/m/Y') }}</p>
                                 @endif
-                                <p>Trạng thái: {{ $assignment->status_code }}</p>
+                                <p>Trạng thái: {{ $assignment->status }}</p>
                             </div>
                         </div>
                         @endif

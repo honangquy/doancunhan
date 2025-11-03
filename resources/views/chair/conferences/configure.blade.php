@@ -242,29 +242,14 @@
                 </div>
 
                 <div>
-                    <label for="cfp_url" class="block text-sm font-medium text-gray-700 mb-2">
-                        Link Call for Papers (CFP)
-                    </label>
-                    <input type="url" 
-                           id="cfp_url" 
-                           name="cfp_url" 
-                           value="{{ old('cfp_url') }}"
-                           maxlength="500"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                           placeholder="https://...">
-                    @error('cfp_url')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                <div>
                     <label for="cfp_file" class="block text-sm font-medium text-gray-700 mb-2">
-                        File Call for Papers (PDF)
+                        File Call for Papers (PDF) <span class="text-red-500">*</span>
                     </label>
                     <input type="file" 
                            id="cfp_file" 
                            name="cfp_file" 
                            accept=".pdf"
+                           required
                            class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <p class="mt-1 text-xs text-gray-500">Chỉ chấp nhận file PDF, tối đa 10MB</p>
                     @error('cfp_file')

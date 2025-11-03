@@ -1,51 +1,17 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $paper->title }} - HUIT Conferences</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .badge { padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-        .section { border-left: 4px solid; padding-left: 16px; margin-bottom: 24px; }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-blue-800 via-blue-700 to-blue-600 text-white shadow-xl">
-        <div class="px-4">
-            <div class="flex items-center justify-between h-16">
-                <a href="{{ route('author.dashboard') }}" class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                        <span class="text-blue-700 font-bold text-xl">H</span>
-                    </div>
-                    <div>
-                        <div class="font-bold text-lg">HUIT Conferences</div>
-                        <div class="text-xs text-blue-200">Author Portal</div>
-                    </div>
-                </a>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ route('author.dashboard') }}" class="px-4 py-2 hover:bg-blue-700 rounded-lg transition">Dashboard</a>
-                    <a href="{{ route('author.papers.index') }}" class="px-4 py-2 hover:bg-blue-700 rounded-lg transition">Bài báo</a>
-                    <span class="text-white">{{ Auth::user()->full_name }}</span>
-                </div>
-            </div>
-        </div>
-    </nav>
+@extends('layouts.author')
 
-    <div class="max-w-5xl mx-auto px-4 py-8">
+@section('title', $paper->title)
+
+@push('styles')
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .badge { padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .section { border-left: 4px solid; padding-left: 16px; margin-bottom: 24px; }
+</style>
+@endpush
+
+@section('content')
+    <div class="max-w-5xl mx-auto">
         <!-- Breadcrumb -->
         <div class="mb-6">
             <nav class="flex items-center space-x-2 text-sm">
@@ -322,9 +288,4 @@
             </form>
         </div>
     </div>
-
-    <footer class="mt-12 py-6 text-center text-gray-600 text-sm">
-        <p>&copy; 2025 HUIT Conferences. All rights reserved.</p>
-    </footer>
-</body>
-</html>
+@endsection

@@ -237,12 +237,12 @@
                                     <td class="px-4 py-3">
                                         @php
                                             $statusBadge = [
-                                                'INVITED' => ['label' => 'Đã mời', 'class' => 'bg-blue-100 text-blue-800'],
+                                                'PENDING' => ['label' => 'Đã mời', 'class' => 'bg-blue-100 text-blue-800'],
                                                 'ACCEPTED' => ['label' => 'Đã nhận', 'class' => 'bg-green-100 text-green-800'],
                                                 'DECLINED' => ['label' => 'Từ chối', 'class' => 'bg-red-100 text-red-800'],
                                                 'COMPLETED' => ['label' => 'Hoàn thành', 'class' => 'bg-purple-100 text-purple-800'],
                                             ];
-                                            $badge = $statusBadge[$assignment->status_code] ?? ['label' => $assignment->status_code, 'class' => 'bg-gray-100 text-gray-800'];
+                                            $badge = $statusBadge[$assignment->status] ?? ['label' => $assignment->status, 'class' => 'bg-gray-100 text-gray-800'];
                                         @endphp
                                         <span class="px-2 py-1 text-xs font-medium rounded {{ $badge['class'] }}">
                                             {{ $badge['label'] }}

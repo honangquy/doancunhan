@@ -172,128 +172,224 @@ class ReviewerController extends Controller
     {
         $userId = Auth::id();
         
-        // Get assignment details
+        // Get assignment and paper details
         $assignment = DB::table('reviewer_assignments as ra')
             ->join('baibao as bb', 'ra.paper_id', '=', 'bb.paper_id')
-            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->leftJoin('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+            ->leftJoin('tieuban as tb', 'bb.track_id', '=', 'tb.track_id')
+            ->leftJoin('nguoidung as nd', 'bb.submitter_id', '=', 'nd.user_id')
             ->where('ra.id', $assignmentId)
             ->where('ra.user_id', $userId)
             ->select(
-                'ra.id as assignment_id',
-                'ra.paper_id',
+                'ra.id',
+                'ra.paper_id', 
                 'ra.status',
                 'ra.assigned_at',
                 'bb.title',
-                'bb.abstract',
+                'bb.abstract', 
                 'bb.keywords',
                 'bb.file_path',
+                'bb.created_at',
+                'nd.full_name as author_name',
+                'nd.full_name as author_names', // For backward compatibility
                 'ht.title as conference_name',
-                'ht.conference_id'
+                'ht.conference_id',
+                'tb.title as track_name'
             )
             ->first();
         
         if (!$assignment) {
-            return redirect()->route('reviewer.assignments')
-                ->with('error', 'Assignment not found or you do not have permission.');
+            return redirect()->route('reviewer.assignments.index')
+                ->with('error', 'Không tìm thấy phân công hoặc bạn không có quyền truy cập.');
         }
         
         // Check if assignment is accepted
-        if ($assignment->status_code !== 'ACCEPTED') {
-            return redirect()->route('reviewer.assignments')
-                ->with('warning', 'You must accept the assignment before submitting a review.');
+        if ($assignment->status !== 'ACCEPTED') {
+            return redirect()->route('reviewer.assignments.show', $assignmentId)
+                ->with('warning', 'Bạn cần chấp nhận phân công trước khi có thể phản biện.');
         }
         
-        // Check if review already exists
+        // Create paper object with proper field mapping
+        $paper = (object) [
+            'paper_id' => $assignment->paper_id,
+            'title' => $assignment->title,
+            'abstract' => $assignment->abstract,
+            'keywords' => $assignment->keywords,
+            'file_path' => $assignment->file_path,
+            'author_name' => $assignment->author_name ?? 'Chưa xác định',
+            'author_names' => $assignment->author_names ?? 'Chưa xác định',
+            'created_at' => $assignment->created_at,
+            'conference_name' => $assignment->conference_name,
+            'track_name' => $assignment->track_name,
+            'field' => $assignment->track_name
+        ];
+
+        // Load existing review (draft or final) if exists
         $existingReview = DB::table('phanbien')
             ->where('assignment_id', $assignmentId)
             ->first();
         
-        if ($existingReview) {
-            return redirect()->route('reviewer.reviews.edit', $existingReview->review_id)
-                ->with('info', 'You have already started this review. Continue editing.');
-        }
-        
-        // Get paper authors (excluding submitter to show only co-authors)
-        $authors = DB::table('TacGiaBaiBao as tg')
-            ->join('NguoiDung as nd', 'tg.user_id', '=', 'nd.user_id')
-            ->where('tg.paper_id', $assignment->paper_id)
-            ->select('nd.full_name', 'nd.organization', 'tg.author_order', 'tg.is_contact')
-            ->orderBy('tg.author_order')
-            ->get();
-        
-        return view('reviewer.reviews.create', compact('assignment', 'authors'));
+        return view('reviewer.reviews.create', compact('assignment', 'paper', 'existingReview'));
     }
     
     /**
-     * Store a new review
+     * Store a new review or update existing draft
      */
-    public function storeReview(Request $request)
+    public function storeReview(Request $request, $assignmentId)
     {
         $userId = Auth::id();
         
+        // Convert string '1'/'0' to boolean
+        $isDraft = $request->input('is_draft') === '1';
+        
         $validated = $request->validate([
-            'assignment_id' => 'required|exists:phancongphanbien,assignment_id',
-            'score' => 'required|integer|min:1|max:10',
-            'recommendation_code' => 'required|in:ACCEPT,MINOR_REVISION,MAJOR_REVISION,REJECT',
-            'comment_author' => 'required|string|min:50',
-            'comment_chair' => 'nullable|string',
+            'score_novelty' => $isDraft ? 'nullable|integer|min:1|max:10' : 'required|integer|min:1|max:10',
+            'score_relevance' => $isDraft ? 'nullable|integer|min:1|max:10' : 'required|integer|min:1|max:10', 
+            'score_technical_quality' => $isDraft ? 'nullable|integer|min:1|max:10' : 'required|integer|min:1|max:10',
+            'score_presentation' => $isDraft ? 'nullable|integer|min:1|max:10' : 'required|integer|min:1|max:10',
+            'score_references' => $isDraft ? 'nullable|integer|min:1|max:10' : 'required|integer|min:1|max:10',
+            'detailed_comments' => $isDraft ? 'nullable|string' : 'required|string|min:50',
+            'recommendation_code' => $isDraft ? 'nullable|in:ACCEPT,REJECT,STRONG_ACCEPT,WEAK_ACCEPT,STRONG_REJECT,WEAK_REJECT,BORDERLINE' : 'required|in:ACCEPT,REJECT,STRONG_ACCEPT,WEAK_ACCEPT,STRONG_REJECT,WEAK_REJECT,BORDERLINE',
+            'is_draft' => 'required',
+            'review_file' => 'nullable|file|mimes:pdf,doc,docx|max:10240' // 10MB max
         ]);
         
         // Verify assignment belongs to this reviewer
-        $assignment = DB::table('phancongphanbien')
-            ->where('assignment_id', $validated['assignment_id'])
-            ->where('reviewer_id', $userId)
+        $assignment = DB::table('reviewer_assignments')
+            ->where('id', $assignmentId)
+            ->where('user_id', $userId)
             ->first();
         
         if (!$assignment) {
-            return redirect()->route('reviewer.assignments')
-                ->with('error', 'Invalid assignment.');
+            return redirect()->route('reviewer.assignments.index')
+                ->with('error', 'Không tìm thấy phân công hoặc không có quyền truy cập.');
         }
         
         // Check if assignment is accepted
-        if ($assignment->status_code !== 'ACCEPTED') {
-            return redirect()->route('reviewer.assignments')
-                ->with('error', 'Assignment must be accepted before submitting review.');
-        }
-        
-        // Check if review already exists
-        $existingReview = DB::table('phanbien')
-            ->where('assignment_id', $validated['assignment_id'])
-            ->first();
-        
-        if ($existingReview) {
-            return redirect()->route('reviewer.reviews.edit', $existingReview->review_id)
-                ->with('warning', 'Review already exists. Please edit instead.');
+        if ($assignment->status !== 'ACCEPTED') {
+            return redirect()->route('reviewer.assignments.show', $assignmentId)
+                ->with('error', 'Cần chấp nhận phân công trước khi phản biện.');
         }
         
         DB::beginTransaction();
         try {
-            // Insert review
-            $reviewId = DB::table('phanbien')->insertGetId([
-                'assignment_id' => $validated['assignment_id'],
-                'recommendation_code' => $validated['recommendation_code'],
-                'score' => $validated['score'],
-                'comment_author' => $validated['comment_author'],
-                'comment_chair' => $validated['comment_chair'],
-                'submitted_at' => now(),
-            ]);
+            // Calculate total score
+            $totalScore = null;
+            if ($validated['score_novelty'] && $validated['score_relevance'] && 
+                $validated['score_technical_quality'] && $validated['score_presentation'] && 
+                $validated['score_references']) {
+                $totalScore = ($validated['score_novelty'] + $validated['score_relevance'] + 
+                              $validated['score_technical_quality'] + $validated['score_presentation'] + 
+                              $validated['score_references']) / 5;
+            }
             
-            // Update assignment status to COMPLETED
-            DB::table('phancongphanbien')
-                ->where('assignment_id', $validated['assignment_id'])
-                ->update([
-                    'status_code' => 'COMPLETED',
-                ]);
+            // Handle file upload if present
+            $reviewFilePath = null;
+            if ($request->hasFile('review_file')) {
+                $file = $request->file('review_file');
+                $reviewFilePath = $file->store('reviews', 'public');
+            }
+            
+            // Check if review already exists
+            $existingReview = DB::table('phanbien')
+                ->where('assignment_id', $assignmentId)
+                ->first();
+            
+            $reviewData = [
+                'assignment_id' => $assignmentId,
+                'score_novelty' => $validated['score_novelty'],
+                'score_relevance' => $validated['score_relevance'],
+                'score_technical_quality' => $validated['score_technical_quality'],
+                'score_presentation' => $validated['score_presentation'],
+                'score_references' => $validated['score_references'],
+                'total_score' => $totalScore,
+                'detailed_comments' => $validated['detailed_comments'],
+                'recommendation_code' => $validated['recommendation_code'],
+                'is_draft' => $isDraft
+            ];
+            
+            if ($reviewFilePath) {
+                $reviewData['review_file_path'] = $reviewFilePath;
+            }
+            
+            if ($existingReview) {
+                // Update existing review
+                if (!$isDraft) {
+                    $reviewData['submitted_at'] = now();
+                } else {
+                    // Keep submitted_at as null for drafts
+                    $reviewData['submitted_at'] = null;
+                }
+                
+                DB::table('phanbien')
+                    ->where('review_id', $existingReview->review_id)
+                    ->update($reviewData);
+                $reviewId = $existingReview->review_id;
+            } else {
+                // Create new review
+                if (!$isDraft) {
+                    $reviewData['submitted_at'] = now();
+                } else {
+                    // For drafts, explicitly set submitted_at to null to override default
+                    $reviewData['submitted_at'] = null;
+                }
+                $reviewId = DB::table('phanbien')->insertGetId($reviewData);
+            }
+            
+            // Update assignment status if final submission (not draft)
+            if (!$isDraft) {
+                DB::table('reviewer_assignments')
+                    ->where('id', $assignmentId)
+                    ->update([
+                        'status' => 'COMPLETED',
+                        'review_submitted_at' => now()
+                    ]);
+            }
             
             DB::commit();
             
-            return redirect()->route('reviewer.reviews.show', $reviewId)
-                ->with('success', 'Review submitted successfully!');
+            $message = $isDraft ? 'Đã lưu bản nháp thành công!' : 'Đã gửi phản biện thành công!';
+            
+            if ($isDraft) {
+                // For drafts, redirect back to create form to continue editing
+                return redirect()->route('reviewer.reviews.create', $assignmentId)
+                    ->with('success', $message);
+            } else {
+                // For final submission, go to assignment details
+                return redirect()->route('reviewer.assignments.show', $assignmentId)
+                    ->with('success', $message);
+            }
                 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Failed to submit review: ' . $e->getMessage());
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * Get existing review data for an assignment
+     */
+    public function getReviewData($assignmentId)
+    {
+        $userId = Auth::id();
+        
+        // Verify assignment belongs to this reviewer
+        $assignment = DB::table('reviewer_assignments')
+            ->where('id', $assignmentId)
+            ->where('user_id', $userId)
+            ->first();
+        
+        if (!$assignment) {
+            return response()->json(['review' => null], 404);
+        }
+        
+        $review = DB::table('phanbien')
+            ->where('assignment_id', $assignmentId)
+            ->first();
+        
+        return response()->json(['review' => $review]);
     }
     
     /**
@@ -428,27 +524,37 @@ class ReviewerController extends Controller
     /**
      * Download paper file
      */
-    public function downloadPaper($assignmentId)
+    public function downloadPaper($paperId)
     {
         $userId = Auth::id();
         
-        // Get assignment and paper details
-        $assignment = DB::table('PhanCongPhanBien as pc')
-            ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
-            ->where('pc.assignment_id', $assignmentId)
-            ->where('pc.reviewer_id', $userId)
-            ->select('bb.file_path', 'bb.title')
+        // Verify reviewer has permission to access this paper
+        $hasPermission = DB::table('reviewer_assignments as ra')
+            ->where('ra.paper_id', $paperId)
+            ->where('ra.user_id', $userId)
+            ->where('ra.status', 'ACCEPTED')
+            ->exists();
+        
+        if (!$hasPermission) {
+            abort(404, 'Bạn không có quyền truy cập file này.');
+        }
+        
+        // Get paper details
+        $paper = DB::table('baibao')
+            ->where('paper_id', $paperId)
+            ->select('file_path', 'title')
             ->first();
         
-        if (!$assignment) {
-            abort(404, 'Paper not found or you do not have permission.');
+        if (!$paper || !$paper->file_path) {
+            abort(404, 'Không tìm thấy file bài báo.');
         }
         
-        if (!$assignment->file_path || !Storage::exists($assignment->file_path)) {
-            abort(404, 'Paper file not found.');
+        $filePath = storage_path('app/public/' . $paper->file_path);
+        if (!file_exists($filePath)) {
+            abort(404, 'File bài báo không tồn tại trên server.');
         }
         
-        return Storage::download($assignment->file_path, $assignment->title . '.pdf');
+        return response()->download($filePath, $paper->title . '.pdf');
     }
 }
 

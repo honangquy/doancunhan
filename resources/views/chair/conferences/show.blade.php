@@ -142,14 +142,14 @@
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Hạn nộp bài</dt>
                         <dd class="mt-1 text-sm text-gray-900">
-                            {{ isset($conference->submission_deadline) && $conference->submission_deadline ? \Carbon\Carbon::parse($conference->submission_deadline)->format('d/m/Y H:i') : 'Chưa xác định' }}</dd>
+                            {{ isset($conference->deadline_submission) && $conference->deadline_submission ? \Carbon\Carbon::parse($conference->deadline_submission)->format('d/m/Y H:i') : 'Chưa xác định' }}
                         </dd>
                     </div>
 
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Hạn phản biện</dt>
                         <dd class="mt-1 text-sm text-gray-900">
-                            {{ isset($conference->review_deadline) && $conference->review_deadline ? \Carbon\Carbon::parse($conference->review_deadline)->format('d/m/Y H:i') : 'Chưa xác định' }}</dd>
+                            {{ isset($conference->deadline_review) && $conference->deadline_review ? \Carbon\Carbon::parse($conference->deadline_review)->format('d/m/Y H:i') : 'Chưa xác định' }}
                         </dd>
                     </div>
                 </div>
@@ -160,6 +160,150 @@
                         <dd class="mt-1 text-sm text-gray-900">{{ $conference->description }}</dd>
                     </div>
                 @endif
+            </div>
+        </div>
+
+        <!-- Detailed Information -->
+        <div class="bg-white shadow rounded-lg mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Thông tin chi tiết</h2>
+            </div>
+            <div class="px-6 py-4">
+                <dl class="divide-y divide-gray-200">
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Tên viết tắt</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ $conference->acronym ?: 'Chưa có' }}
+                        </dd>
+                    </div>
+                    
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Năm tổ chức</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ $conference->year ?: 'Chưa xác định' }}
+                        </dd>
+                    </div>
+                    
+                    @if($conference->keywords)
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Từ khóa</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ $conference->keywords }}
+                        </dd>
+                    </div>
+                    @endif
+                    
+                    @if($conference->detailed_description)
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Mô tả chi tiết</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ $conference->detailed_description }}
+                        </dd>
+                    </div>
+                    @endif
+                    
+                    @if($conference->submission_guidelines)
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Hướng dẫn nộp bài</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ $conference->submission_guidelines }}
+                        </dd>
+                    </div>
+                    @endif
+                    
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Hạn camera ready</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ isset($conference->deadline_camera_ready) && $conference->deadline_camera_ready ? \Carbon\Carbon::parse($conference->deadline_camera_ready)->format('d/m/Y H:i') : 'Chưa xác định' }}
+                        </dd>
+                    </div>
+                    
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Hạn công bố kết quả</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ isset($conference->result_announcement_deadline) && $conference->result_announcement_deadline ? \Carbon\Carbon::parse($conference->result_announcement_deadline)->format('d/m/Y H:i') : 'Chưa xác định' }}
+                        </dd>
+                    </div>
+                    
+                    @if($conference->cfp_file_path)
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Call for Papers (PDF)</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <a href="{{ asset('storage/' . $conference->cfp_file_path) }}" target="_blank" 
+                               class="inline-flex items-center text-blue-600 hover:text-blue-900">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Tải file CFP
+                            </a>
+                        </dd>
+                    </div>
+                    @endif
+                </dl>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="bg-white shadow rounded-lg mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Thông tin liên hệ</h2>
+            </div>
+            <div class="px-6 py-4">
+                <dl class="divide-y divide-gray-200">
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Email liên hệ</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            @if($conference->contact_email)
+                                <a href="mailto:{{ $conference->contact_email }}" class="text-blue-600 hover:text-blue-900">
+                                    {{ $conference->contact_email }}
+                                </a>
+                            @else
+                                Chưa có
+                            @endif
+                        </dd>
+                    </div>
+                    
+                    @if($conference->contact_phone)
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Điện thoại</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ $conference->contact_phone }}
+                        </dd>
+                    </div>
+                    @endif
+                    
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Kiểm tra xung đột lợi ích</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            @if($conference->enable_coi_check)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Bật
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                    Tắt
+                                </span>
+                            @endif
+                        </dd>
+                    </div>
+                    
+                    @if($conference->banner_path)
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">Banner hội thảo</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            <img src="{{ asset('storage/' . $conference->banner_path) }}" 
+                                 alt="Banner hội thảo" 
+                                 class="max-w-xs h-auto rounded-lg shadow-sm">
+                        </dd>
+                    </div>
+                    @endif
+                </dl>
             </div>
         </div>
 
@@ -178,7 +322,7 @@
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Tổng bài báo</dt>
-                                <dd class="text-lg font-medium text-gray-900">0</dd>
+                                <dd class="text-lg font-medium text-gray-900">{{ $totalPapers ?? 0 }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -198,7 +342,7 @@
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Đã chấp nhận</dt>
-                                <dd class="text-lg font-medium text-gray-900">0</dd>
+                                <dd class="text-lg font-medium text-gray-900">{{ $acceptedPapers ?? 0 }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -218,7 +362,7 @@
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Đang xét duyệt</dt>
-                                <dd class="text-lg font-medium text-gray-900">0</dd>
+                                <dd class="text-lg font-medium text-gray-900">{{ $pendingPapers ?? 0 }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -238,7 +382,7 @@
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Reviewer</dt>
-                                <dd class="text-lg font-medium text-gray-900">0</dd>
+                                <dd class="text-lg font-medium text-gray-900">{{ $totalReviewers ?? 0 }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -246,19 +390,90 @@
             </div>
         </div>
 
-        <!-- Recent Papers -->
-        <div class="bg-white shadow rounded-lg">
+        <!-- Committees -->
+        @if(isset($committees) && $committees->count() > 0)
+        <div class="bg-white shadow rounded-lg mb-8">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">Bài báo gần đây</h2>
+                <h2 class="text-lg font-medium text-gray-900">Tiểu ban hội thảo</h2>
             </div>
             <div class="px-6 py-4">
-                <div class="text-center py-12">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">Chưa có bài báo</h3>
-                    <p class="mt-1 text-sm text-gray-500">Bài báo được nộp sẽ hiển thị ở đây.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach($committees as $committee)
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="text-sm font-medium text-gray-900">{{ $committee->title }}</h4>
+                            @if($committee->description)
+                                <p class="text-sm text-gray-500 mt-2">{{ $committee->description }}</p>
+                            @endif
+                        </div>
+                    @endforeach
                 </div>
+            </div>
+        </div>
+        @endif
+
+        <!-- Recent Papers -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-medium text-gray-900">Bài báo gần đây</h2>
+                @if($totalPapers > 0)
+                    <span class="text-sm text-gray-500">
+                        {{ $totalPapers }} bài báo
+                    </span>
+                @endif
+            </div>
+            <div class="px-6 py-4">
+                @if(isset($recentPapers) && $recentPapers->count() > 0)
+                    <div class="space-y-4">
+                        @foreach($recentPapers as $paper)
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-medium text-gray-900">{{ $paper->title }}</h4>
+                                        <p class="text-sm text-gray-500 mt-1">Tác giả: {{ $paper->submitter_name ?: 'Chưa xác định' }}</p>
+                                        <div class="mt-2 flex items-center space-x-4">
+                                            <span class="text-xs text-gray-500">
+                                                {{ \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y H:i') }}
+                                            </span>
+                                            @if($paper->status_code === 'ACCEPTED')
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Đã chấp nhận
+                                                </span>
+                                            @elseif($paper->status_code === 'REJECTED')
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    Bị từ chối
+                                                </span>
+                                            @elseif($paper->status_code === 'UNDER_REVIEW')
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    Đang xét duyệt
+                                                </span>
+                                            @elseif($paper->status_code === 'SUBMITTED')
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    Đã nộp
+                                                </span>
+                                            @elseif($paper->status_code === 'REVISION_REQUIRED')
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                    Yêu cầu sửa
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    {{ $paper->status_code }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">Chưa có bài báo</h3>
+                        <p class="mt-1 text-sm text-gray-500">Bài báo được nộp sẽ hiển thị ở đây.</p>
+                    </div>
+                @endif
             </div>
         </div>
 

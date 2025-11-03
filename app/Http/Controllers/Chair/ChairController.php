@@ -72,20 +72,20 @@ class ChairController extends Controller
                 ->where('bb.status_code', 'REVIEWED')
                 ->count();
             
-            // Accepted papers
-            $stats['accepted'] = DB::table('baibao')
+            // Accepted reviewer assignments (not accepted papers)
+            $stats['accepted'] = DB::table('reviewer_assignments')
                 ->whereIn('conference_id', $conferenceIds)
-                ->where('status_code', 'ACCEPTED')
+                ->where('status', 'ACCEPTED')
                 ->count();
             
             // Papers needing reviewers (no assignments yet)
             $needsReviewersCount = DB::table('baibao as bb')
-                ->leftJoin('phancongphanbien as pc', 'bb.paper_id', '=', 'pc.paper_id')
+                ->leftJoin('reviewer_assignments as ra', 'bb.paper_id', '=', 'ra.paper_id')
                 ->whereIn('bb.conference_id', $conferenceIds)
                 ->whereIn('bb.status_code', ['SUBMITTED', 'UNDER_REVIEW'])
                 ->select('bb.paper_id')
                 ->groupBy('bb.paper_id')
-                ->havingRaw('COUNT(pc.assignment_id) = 0')
+                ->havingRaw('COUNT(ra.id) = 0')
                 ->get()
                 ->count();
             $stats['needs_reviewers'] = $needsReviewersCount;
@@ -124,11 +124,11 @@ class ChairController extends Controller
         
         // Add review counts to recent papers
         foreach ($recentPapers as $paper) {
-            $reviewCounts = DB::table('phancongphanbien as pc')
-                ->leftJoin('phanbien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
-                ->where('pc.paper_id', $paper->paper_id)
+            $reviewCounts = DB::table('reviewer_assignments as ra')
+                ->leftJoin('phanbien as pb', 'ra.id', '=', 'pb.assignment_id')
+                ->where('ra.paper_id', $paper->paper_id)
                 ->selectRaw('
-                    COUNT(pc.assignment_id) as total_assigned,
+                    COUNT(ra.id) as total_assigned,
                     COUNT(pb.review_id) as completed
                 ')
                 ->first();
@@ -342,6 +342,7 @@ class ChairController extends Controller
         // Get review assignments with reviewer info
         $assignments = DB::table('reviewer_assignments as ra')
             ->join('nguoidung as nd', 'ra.user_id', '=', 'nd.user_id')
+            ->join('hoithao as ht', 'ra.conference_id', '=', 'ht.conference_id')
             ->leftJoin('phanbien as pb', 'ra.id', '=', 'pb.assignment_id')
             ->where('ra.paper_id', $paperId)
             ->select(
@@ -349,6 +350,7 @@ class ChairController extends Controller
                 'ra.user_id as reviewer_id',
                 'ra.assigned_at',
                 'ra.status',
+                'ht.deadline_review as deadline',
                 'nd.full_name as reviewer_name',
                 'nd.email as reviewer_email',
                 'nd.organization as reviewer_org',
@@ -441,17 +443,20 @@ class ChairController extends Controller
             ->get();
 
         // Get review assignments and reviews
-        $assignments = DB::table('phancongphanbien as pc')
-            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
-            ->leftJoin('trangthaiphancong as ttpc', 'pc.status_code', '=', 'ttpc.status_code')
-            ->where('pc.paper_id', $paperId)
-            ->select('pc.*', 'nd.full_name as reviewer_name', 'nd.email as reviewer_email', 'ttpc.status_name')
+        $assignments = DB::table('reviewer_assignments as ra')
+            ->join('nguoidung as nd', 'ra.user_id', '=', 'nd.user_id')
+            ->where('ra.paper_id', $paperId)
+            ->select(
+                'ra.*',
+                'nd.full_name as reviewer_name', 
+                'nd.email as reviewer_email'
+            )
             ->get();
 
         $reviews = DB::table('phanbien as pb')
-            ->join('phancongphanbien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
-            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
-            ->where('pc.paper_id', $paperId)
+            ->join('reviewer_assignments as ra', 'pb.assignment_id', '=', 'ra.id')
+            ->join('nguoidung as nd', 'ra.user_id', '=', 'nd.user_id')
+            ->where('ra.paper_id', $paperId)
             ->select('pb.*', 'nd.full_name as reviewer_name')
             ->orderBy('pb.submitted_at', 'desc')
             ->get();
@@ -460,9 +465,9 @@ class ChairController extends Controller
         $reviewStats = [
             'total_assigned' => $assignments->count(),
             'completed' => $reviews->count(),
-            'pending' => $assignments->where('status_code', 'INVITED')->count(),
-            'accepted' => $assignments->where('status_code', 'ACCEPTED')->count(),
-            'declined' => $assignments->where('status_code', 'DECLINED')->count(),
+            'pending' => $assignments->where('status', 'PENDING')->count(),
+            'accepted' => $assignments->where('status', 'ACCEPTED')->count(),
+            'declined' => $assignments->where('status', 'DECLINED')->count(),
             'avg_score' => $reviews->avg('score'),
             'recommendations' => $reviews->pluck('recommendation_code')->countBy()->all()
         ];

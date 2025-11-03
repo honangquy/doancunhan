@@ -196,4 +196,4 @@ php artisan schema:dump            # Export full schema
 
 7. Giao diện UI/UX:  
    - Bắt buộc dùng svg icons hiện đại, không được phép dùng emoji
-   - Thêm animations appear cho các trang
+

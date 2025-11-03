@@ -232,7 +232,10 @@ class DashboardController extends Controller
                 'total_reviewers' => $papers->sum('reviewer_count'),
                 'pending_reviewers' => $papers->sum('pending_reviewers'),
                 'active_reviewers' => $papers->sum('active_reviewers'),
-                'completed_reviews' => $papers->sum('completed_reviews')
+                'completed_reviews' => $papers->sum('completed_reviews'),
+                'total_requests' => $conferenceRequests->count(),
+                'approved_conferences' => $approvedConferences->count(),
+                'pending_requests' => $conferenceRequests->where('status', 'PENDING')->count()
             ];
         }
         

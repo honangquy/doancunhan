@@ -558,6 +558,37 @@ class ConferenceController extends Controller
 
         return view('admin.join-requests.index', compact('joinRequests', 'stats'));
     }
+
+    /**
+     * Display CFP PDF file
+     */
+    public function showCFP($id)
+    {
+        $conference = HoiThao::findOrFail($id);
+        
+        if (!$conference->cfp_file_path) {
+            abort(404, 'Không tìm thấy file Call for Papers');
+        }
+        
+        $filePath = storage_path('app/public/' . $conference->cfp_file_path);
+        
+        if (!file_exists($filePath)) {
+            abort(404, 'File Call for Papers không tồn tại');
+        }
+        
+        $filename = 'CFP_' . $conference->title . '.pdf';
+        $safeFilename = preg_replace('/[^A-Za-z0-9_\-]/', '_', $filename);
+        
+        $headers = [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $safeFilename . '"',
+            'Cache-Control' => 'public, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+            'X-Frame-Options' => 'SAMEORIGIN',
+        ];
+        
+        return response()->file($filePath, $headers);
+    }
 }
 
 
