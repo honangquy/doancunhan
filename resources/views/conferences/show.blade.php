@@ -3,6 +3,9 @@
 @section('title', ($conference->title ?? 'Chi tiết hội thảo'))
 
 @section('content')
+@php
+    $conferenceId = $conference->conference_id ?? request()->route('id') ?? $conference->id;
+@endphp
 <div x-data="conferenceDetail()">
     <!-- Breadcrumb -->
     <nav class="flex items-center space-x-2 text-sm text-gray-600 mb-6">
@@ -124,12 +127,12 @@
                         $canJoin = $submissionDeadline && $now->lt($submissionDeadline);
                     @endphp
                     @if($canJoin)
-                        <button @click="openJoinModal = true" 
+                        <button @click="openJoinModal = true; joinRole = 'AUTHOR'" 
                                 class="px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                             </svg>
-                            <span>Yêu cầu tham gia</span>
+                            <span>Đăng ký tham gia - Tác giả</span>
                         </button>
                     @else
                         <div class="px-6 py-3 bg-gray-100 text-gray-500 font-medium rounded-lg text-center">
@@ -338,7 +341,7 @@
                         $fullPath = storage_path('app/public/' . $conference->cfp_file_path);
                         if(file_exists($fullPath)) {
                             $hasCFPFile = true;
-                            $cfpFileUrl = asset('storage/' . $conference->cfp_file_path);
+                            $cfpFileUrl = route('conferences.cfp', $conferenceId);
                         }
                     }
                     
@@ -359,25 +362,95 @@
                         
                         @if($hasCFPFile)
                             <!-- Embedded PDF Viewer for uploaded file -->
-                            <div class="bg-gray-100 rounded-lg p-4 mb-4">
-                                <iframe src="{{ $cfpFileUrl }}" 
-                                        width="100%" 
-                                        height="500px" 
-                                        class="border-0 rounded">
-                                    <p>Trình duyệt của bạn không hỗ trợ hiển thị PDF. 
-                                       <a href="{{ $cfpFileUrl }}" target="_blank" class="text-blue-600 underline">Nhấn vào đây để tải xuống</a>
-                                    </p>
-                                </iframe>
+                            <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+                                <!-- PDF Viewer Header -->
+                                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <h4 class="text-sm font-medium text-gray-900">Call for Papers PDF</h4>
+                                        <div class="flex space-x-2">
+                                            <button onclick="toggleFullscreen()" 
+                                                    class="text-gray-600 hover:text-gray-900 p-1 rounded" 
+                                                    title="Toàn màn hình">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- PDF Viewer -->
+                                <div class="relative" id="pdf-container">
+                                    <div id="pdf-loading" class="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                                        <div class="text-center">
+                                            <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <p class="text-sm text-gray-600">Đang tải PDF...</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Simple PDF Preview Options -->
+                                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8 text-center">
+                                        <div class="w-20 h-20 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                                            <svg class="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                                            </svg>
+                                        </div>
+                                        <h4 class="text-xl font-bold text-gray-900 mb-2">Call for Papers PDF</h4>
+                                        <p class="text-gray-600 mb-6">Chọn cách xem tài liệu phù hợp với thiết bị của bạn</p>
+                                        
+                                        <!-- Viewing Options -->
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                                            <!-- View in New Tab -->
+                                            <a href="{{ $cfpFileUrl }}" target="_blank"
+                                               class="group bg-white rounded-lg p-6 shadow-sm hover:shadow-md border-2 border-transparent hover:border-blue-200 transition-all duration-200 text-center">
+                                                <svg class="w-8 h-8 text-blue-600 mx-auto mb-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                                </svg>
+                                                <h5 class="font-semibold text-gray-900 mb-1">Xem trực tiếp</h5>
+                                                <p class="text-sm text-gray-600">Mở trong tab mới</p>
+                                            </a>
+                                            
+                                            <!-- Show Embedded -->
+                                            <button onclick="showEmbeddedViewer()" 
+                                                    class="group bg-white rounded-lg p-6 shadow-sm hover:shadow-md border-2 border-transparent hover:border-green-200 transition-all duration-200 text-center">
+                                                <svg class="w-8 h-8 text-green-600 mx-auto mb-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0V9a2 2 0 012 2h2a2 2 0 002 2V7a2 2 0 00-2-2H9a2 2 0 00-2 2z"></path>
+                                                </svg>
+                                                <h5 class="font-semibold text-gray-900 mb-1">Xem nhúng</h5>
+                                                <p class="text-sm text-gray-600">Hiển thị tại đây</p>
+                                            </button>
+                                            
+                                            <!-- Download -->
+                                            <a href="{{ asset('storage/' . $conference->cfp_file_path) }}" download
+                                               class="group bg-white rounded-lg p-6 shadow-sm hover:shadow-md border-2 border-transparent hover:border-purple-200 transition-all duration-200 text-center">
+                                                <svg class="w-8 h-8 text-purple-600 mx-auto mb-3 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                <h5 class="font-semibold text-gray-900 mb-1">Tải xuống</h5>
+                                                <p class="text-sm text-gray-600">Lưu về máy</p>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Embedded Viewer (hidden by default) -->
+                                    <div id="embedded-viewer" class="hidden mt-6 bg-white rounded-lg shadow-lg overflow-hidden">
+                                        <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
+                                            <h4 class="font-medium text-gray-900">PDF Viewer</h4>
+                                            <button onclick="hideEmbeddedViewer()" class="text-gray-500 hover:text-gray-700">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <iframe src="{{ $cfpFileUrl }}#view=FitH" width="100%" height="600" class="border-0"></iframe>
+                                    </div>
+                                </div>
                             </div>
                             
-                            <!-- Download Button for uploaded file -->
-                            <a href="{{ $cfpFileUrl }}" target="_blank" download
-                               class="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors mr-3">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                Tải xuống PDF
-                            </a>
+
                         @endif
                         
                         @if($hasCFPUrl)
@@ -570,51 +643,15 @@
         <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
              @click.away="openJoinModal = false">
              
-            <!-- Step 1: Role Selection -->
-            <div x-show="!joinRole" class="p-6">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4">Chọn vai trò tham gia</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Author Option -->
-                    <div @click="joinRole = 'AUTHOR'" 
-                         class="p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 hover:bg-orange-50 transition-all">
-                        <div class="flex items-center mb-3">
-                            <svg class="w-8 h-8 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                            <h4 class="text-lg font-semibold text-gray-900">Tác giả</h4>
-                        </div>
-                        <p class="text-gray-600 text-sm">Tham gia với vai trò tác giả để nộp bài báo khoa học</p>
-                    </div>
-                    
-                    <!-- Reviewer Option -->
-                    <div @click="joinRole = 'REVIEWER'" 
-                         class="p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 hover:bg-orange-50 transition-all">
-                        <div class="flex items-center mb-3">
-                            <svg class="w-8 h-8 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <h4 class="text-lg font-semibold text-gray-900">Phản biện viên</h4>
-                        </div>
-                        <p class="text-gray-600 text-sm">Tham gia với vai trò phản biện để đánh giá bài báo</p>
-                    </div>
-                </div>
-                
-                <div class="mt-6 text-center">
-                    <button type="button" @click="openJoinModal = false"
-                            class="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
-                        Hủy
-                    </button>
-                </div>
-            </div>
+            <!-- Role Selection Removed - Direct to Author Registration -->
 
             <!-- Step 2: Author Form -->
             <div x-show="joinRole === 'AUTHOR'" class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-semibold text-gray-900">Đăng ký tham gia - Tác giả</h3>
-                    <button @click="joinRole = ''" class="text-gray-400 hover:text-gray-600">
+                    <button @click="openJoinModal = false" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -743,9 +780,9 @@
             <div x-show="joinRole === 'REVIEWER'" class="p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-xl font-semibold text-gray-900">Đăng ký tham gia - Phản biện viên</h3>
-                    <button @click="joinRole = ''" class="text-gray-400 hover:text-gray-600">
+                    <button @click="openJoinModal = false" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
@@ -836,7 +873,7 @@
         return {
             activeTab: 'overview',
             openJoinModal: @if(session('invitation_data'))true @else false @endif, // Auto-open if invited
-            joinRole: @if(session('invitation_data'))'REVIEWER'@else ''@endif, // Auto-select REVIEWER if invited
+            joinRole: @if(session('invitation_data'))'REVIEWER'@else 'AUTHOR'@endif, // Default to AUTHOR, REVIEWER only if invited
             isSubmitting: false,
             invitationData: @json(session('invitation_data', null)),
             formData: {
@@ -1033,6 +1070,22 @@
                 window.URL.revokeObjectURL(url);
             }
         };
+    }
+
+    // PDF Viewer Functions
+    function showEmbeddedViewer() {
+        const embeddedViewer = document.getElementById('embedded-viewer');
+        if (embeddedViewer) {
+            embeddedViewer.classList.remove('hidden');
+            embeddedViewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function hideEmbeddedViewer() {
+        const embeddedViewer = document.getElementById('embedded-viewer');
+        if (embeddedViewer) {
+            embeddedViewer.classList.add('hidden');
+        }
     }
 </script>
 @endpush

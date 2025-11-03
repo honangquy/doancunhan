@@ -24,12 +24,16 @@ class AssignmentController extends Controller
         $userId = Auth::id();
         
         $assignments = ReviewerAssignment::join('baibao as b', 'reviewer_assignments.paper_id', '=', 'b.paper_id')
+            // join conference table so we can show conference title/name
+            ->leftJoin('hoithao as ht', 'b.conference_id', '=', 'ht.conference_id')
             ->join('nguoidung as assigner', 'reviewer_assignments.assigned_by', '=', 'assigner.user_id')
             ->where('reviewer_assignments.user_id', $userId)
             ->select(
                 'reviewer_assignments.*',
                 'b.title as paper_title',
                 'b.abstract as paper_abstract',
+                'b.conference_id as conference_id',
+                'ht.title as conference_name',
                 'assigner.full_name as assigned_by_name'
             )
             ->orderBy('reviewer_assignments.assigned_at', 'desc')
@@ -46,6 +50,8 @@ class AssignmentController extends Controller
         $userId = Auth::id();
         
         $assignment = ReviewerAssignment::join('baibao as b', 'reviewer_assignments.paper_id', '=', 'b.paper_id')
+            // also include conference info
+            ->leftJoin('hoithao as ht', 'b.conference_id', '=', 'ht.conference_id')
             ->join('nguoidung as assigner', 'reviewer_assignments.assigned_by', '=', 'assigner.user_id')
             ->where('reviewer_assignments.id', $assignmentId)
             ->where('reviewer_assignments.user_id', $userId)
@@ -54,6 +60,8 @@ class AssignmentController extends Controller
                 'b.title as paper_title',
                 'b.abstract as paper_abstract',
                 'b.file_path as paper_file',
+                'b.conference_id as conference_id',
+                'ht.title as conference_name',
                 'assigner.full_name as assigned_by_name'
             )
             ->firstOrFail();

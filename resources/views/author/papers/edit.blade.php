@@ -1,33 +1,20 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Chỉnh sửa bài báo - HUIT Conferences</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .input-field {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        .input-field:focus {
-            outline: none;
-            border-color: #3b82f6;
+@extends('layouts.author')
+
+@section('title', 'Chỉnh sửa bài báo')
+
+@push('styles')
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .input-field {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .input-field:focus {
+        outline: none;
+        border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
         .btn-primary {
@@ -38,29 +25,10 @@
             font-weight: 600;
         }
     </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-blue-800 via-blue-700 to-blue-600 text-white shadow-xl">
-        <div class="px-4">
-            <div class="flex items-center justify-between h-16">
-                <a href="{{ route('author.dashboard') }}" class="flex items-center space-x-3">
-                    <img src="https://foodtech.huit.edu.vn/images_new/logo_en.png" alt="HUIT logo" class="w-10 h-10 bg-white rounded-full object-cover shadow-md" />
-                    <div>
-                        <div class="font-bold text-lg">HUIT Conferences</div>
-                        <div class="text-xs text-blue-200">Author Portal</div>
-                    </div>
-                </a>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ route('author.dashboard') }}" class="px-4 py-2 hover:bg-blue-700 rounded-lg transition">Dashboard</a>
-                    <a href="{{ route('author.papers.index') }}" class="px-4 py-2 hover:bg-blue-700 rounded-lg transition">Bài báo</a>
-                    <span class="text-white">{{ Auth::user()->full_name }}</span>
-                </div>
-            </div>
-        </div>
-    </nav>
+@endpush
 
-    <div class="max-w-4xl mx-auto px-4 py-8">
+@section('content')
+    <div class="max-w-4xl mx-auto">
         <!-- Breadcrumb -->
         <div class="mb-6">
             <nav class="flex items-center space-x-2 text-sm">
@@ -303,8 +271,5 @@
         </form>
     </div>
 
-    <footer class="mt-12 py-6 text-center text-gray-600 text-sm">
-        <p>&copy; 2025 HUIT Conferences. All rights reserved.</p>
-    </footer>
-</body>
-</html>
+    </div>
+@endsection

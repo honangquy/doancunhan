@@ -8,6 +8,7 @@
     <title>@yield('title', 'Reviewer Dashboard') - HUIT Conferences</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { 
@@ -32,7 +33,7 @@
     <nav class="bg-gradient-to-r from-purple-800 via-purple-700 to-purple-600 text-white shadow-xl sticky top-0 z-50">
         <div class="max-w-full px-6">
             <div class="flex items-center justify-between h-16"> 
-                <a href="{{ route('reviewer.dashboard') }}" class="flex items-center space-x-3 hover:opacity-90 transition">
+                <a href="{{ route('home') }}" aria-label="Go to HUIT Conferences homepage" class="flex items-center space-x-3 hover:opacity-90 transition">
                     <img src="https://foodtech.huit.edu.vn/images_new/logo_en.png" alt="HUIT logo" class="w-10 h-10 bg-white rounded-full object-cover shadow-md" />
                     <div>
                         <div class="font-bold text-lg">HUIT Conferences</div>
@@ -144,8 +145,8 @@
                         </button>
                         
                         <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl z-50">
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Hồ sơ</a>
-                            <a href="{{ route('reviewer.dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Trang chủ</a>
+                            <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Hồ sơ</a>
+                            <a href="{{ route('home') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Trang chủ</a>
                             <hr>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
@@ -208,5 +209,6 @@
     </div>
 
     @stack('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
 </body>
 </html>

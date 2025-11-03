@@ -9,7 +9,7 @@
         <div class="md:flex md:items-center md:justify-between mb-6">
             <div class="flex-1 min-w-0">
                 <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                    Chi tiết hội thảo: {{ $conference->conference_name }}
+                    Chi tiết hội thảo: {{ $conference->title }}
                 </h2>
                 <div class="mt-2 flex items-center space-x-4">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -41,7 +41,7 @@
                 <dl>
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Tên hội thảo</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $conference->conference_name }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $conference->title }}</dd>
                     </div>
                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Tên rút gọn (Acronym)</dt>
@@ -54,8 +54,8 @@
                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Thời gian tổ chức</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ $conference->start_date ? $conference->start_date->format('d/m/Y') : 'Chưa xác định' }} - 
-                            {{ $conference->end_date ? $conference->end_date->format('d/m/Y') : 'Chưa xác định' }}
+                            {{ $conference->start_date ? \Carbon\Carbon::parse($conference->start_date)->format('d/m/Y') : 'Chưa xác định' }} - 
+                            {{ $conference->end_date ? \Carbon\Carbon::parse($conference->end_date)->format('d/m/Y') : 'Chưa xác định' }}
                         </dd>
                     </div>
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -87,23 +87,14 @@
                         </dd>
                     </div>
                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                        <dt class="text-sm font-medium text-gray-500">Call for Papers (URL)</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            @if($conference->cfp_url)
-                                <a href="{{ $conference->cfp_url }}" target="_blank" class="text-blue-600 hover:text-blue-900">
-                                    {{ $conference->cfp_url }}
-                                </a>
-                            @else
-                                Chưa có URL
-                            @endif
-                        </dd>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Call for Papers (File PDF)</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                             @if($conference->cfp_file_path)
-                                <a href="{{ asset('storage/' . $conference->cfp_file_path) }}" target="_blank" class="text-blue-600 hover:text-blue-900">
-                                    📄 Xem file CFP
+                                <a href="{{ asset('storage/' . $conference->cfp_file_path) }}" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-900">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Tải file CFP
                                 </a>
                             @else
                                 Chưa có file CFP
@@ -124,11 +115,11 @@
                 <dl>
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Tên Chair</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $conference->chair_name ?: 'Chưa xác định' }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $conference->chair->full_name ?? 'Chưa xác định' }}</dd>
                     </div>
                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Email Chair</dt>
-                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $conference->chair_email ?: 'Chưa xác định' }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ $conference->chair->email ?? 'Chưa xác định' }}</dd>
                     </div>
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Email liên hệ</dt>
@@ -153,25 +144,25 @@
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Deadline nộp bài</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ $conference->deadline_submission ? $conference->deadline_submission->format('d/m/Y H:i') : 'Chưa xác định' }}
+                            {{ $conference->deadline_submission ? \Carbon\Carbon::parse($conference->deadline_submission)->format('d/m/Y H:i') : 'Chưa xác định' }}
                         </dd>
                     </div>
                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Deadline review</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ $conference->deadline_review ? $conference->deadline_review->format('d/m/Y H:i') : 'Chưa xác định' }}
+                            {{ $conference->deadline_review ? \Carbon\Carbon::parse($conference->deadline_review)->format('d/m/Y H:i') : 'Chưa xác định' }}
                         </dd>
                     </div>
                     <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Deadline camera ready</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ $conference->deadline_camera_ready ? $conference->deadline_camera_ready->format('d/m/Y H:i') : 'Chưa xác định' }}
+                            {{ $conference->deadline_camera_ready ? \Carbon\Carbon::parse($conference->deadline_camera_ready)->format('d/m/Y H:i') : 'Chưa xác định' }}
                         </dd>
                     </div>
                     <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                         <dt class="text-sm font-medium text-gray-500">Deadline công bố kết quả</dt>
                         <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {{ $conference->result_announcement_deadline ? $conference->result_announcement_deadline->format('d/m/Y H:i') : 'Chưa xác định' }}
+                            {{ $conference->result_announcement_deadline ? \Carbon\Carbon::parse($conference->result_announcement_deadline)->format('d/m/Y H:i') : 'Chưa xác định' }}
                         </dd>
                     </div>
                 </dl>

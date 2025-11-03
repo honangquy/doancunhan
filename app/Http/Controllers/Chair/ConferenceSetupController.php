@@ -88,7 +88,7 @@ class ConferenceSetupController extends Controller
             'description' => 'required|string|max:500',
             'detailed_description' => 'required|string|max:2000',
             'submission_guidelines' => 'nullable|string|max:1000',
-            'cfp_file' => 'nullable|file|mimes:pdf|max:10240', // 10MB PDF
+            'cfp_file' => 'required|file|mimes:pdf|max:10240', // 10MB PDF - required
             
             // Dates
             'start_date' => 'required|date|after:today',
@@ -110,7 +110,6 @@ class ConferenceSetupController extends Controller
             
             // Files and committees
             'banner' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-            'cfp_file' => 'nullable|file|mimes:pdf|max:10240', // CFP file PDF, max 10MB
             'committees' => 'nullable|array',
             'committees.*.name' => 'required_with:committees|string|max:255',
             'committees.*.description' => 'nullable|string|max:500',
@@ -228,15 +227,42 @@ class ConferenceSetupController extends Controller
                      ->where('yeucauhoithao.chair_email', '=', $userEmail)
                      ->where('yeucauhoithao.status', '=', 'APPROVED');
             })
-            ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status')
+            ->leftJoin('nguoidung', 'hoithao.chair_id', '=', 'nguoidung.user_id')
+            ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status', 
+                     'nguoidung.full_name as chair_full_name', 'nguoidung.email as chair_email')
             ->where('hoithao.conference_id', $conferenceId)
             ->first();
             
         if (!$conference) {
             return back()->withErrors(['error' => 'Có lỗi xảy ra khi cấu hình hội thảo: Hội thảo không tồn tại hoặc bạn không có quyền truy cập.']);
         }
+        
+        // Get conference statistics
+        $totalPapers = DB::table('baibao')->where('conference_id', $conferenceId)->count();
+        $acceptedPapers = DB::table('baibao')->where('conference_id', $conferenceId)->where('status_code', 'ACCEPTED')->count();
+        $pendingPapers = DB::table('baibao')->where('conference_id', $conferenceId)->whereIn('status_code', ['UNDER_REVIEW', 'SUBMITTED'])->count();
+        $totalReviewers = DB::table('reviewer_assignments')
+            ->join('baibao', 'reviewer_assignments.paper_id', '=', 'baibao.paper_id')
+            ->where('baibao.conference_id', $conferenceId)
+            ->distinct('reviewer_assignments.user_id')
+            ->count();
             
-        return view('chair.conferences.show', compact('conference'));
+        // Get recent papers with submitter info
+        $recentPapers = DB::table('baibao')
+            ->leftJoin('nguoidung', 'baibao.submitter_id', '=', 'nguoidung.user_id')
+            ->leftJoin('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
+            ->where('baibao.conference_id', $conferenceId)
+            ->select('baibao.*', 'nguoidung.full_name as submitter_name', 'trangthaibaibao.status_name')
+            ->orderBy('baibao.created_at', 'desc')
+            ->limit(5)
+            ->get();
+            
+        // Get committees
+        $committees = DB::table('tieuban')
+            ->where('conference_id', $conferenceId)
+            ->get();
+            
+        return view('chair.conferences.show', compact('conference', 'totalPapers', 'acceptedPapers', 'pendingPapers', 'totalReviewers', 'recentPapers', 'committees'));
     }
 
     /**
