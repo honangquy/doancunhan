@@ -253,3 +253,29 @@ Route::post('submit-conference-request', function (Request $request) {
     }
 });
 
+// Test routes for auto assignment
+Route::prefix('test')->group(function () {
+    Route::get('stats', function () {
+        return [
+            'papers' => DB::table('baibao')->count(),
+            'biddings' => DB::table('reviewer_bidding')->count(),
+            'assignments' => DB::table('reviewer_assignments')->count(),
+            'unassigned' => DB::table('baibao as b')
+                ->leftJoin('reviewer_assignments as ra', 'b.paper_id', '=', 'ra.paper_id')
+                ->whereNull('ra.paper_id')
+                ->count()
+        ];
+    });
+    
+    Route::get('papers', function () {
+        return DB::table('baibao as b')
+            ->select([
+                'b.paper_id',
+                'b.title',
+                DB::raw('(SELECT COUNT(*) FROM reviewer_bidding WHERE paper_id = b.paper_id) as bidding_count'),
+                DB::raw('(SELECT COUNT(*) FROM reviewer_assignments WHERE paper_id = b.paper_id) as assignment_count')
+            ])
+            ->get();
+    });
+});
+

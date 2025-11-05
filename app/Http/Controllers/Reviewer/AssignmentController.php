@@ -27,6 +27,12 @@ class AssignmentController extends Controller
             // join conference table so we can show conference title/name
             ->leftJoin('hoithao as ht', 'b.conference_id', '=', 'ht.conference_id')
             ->join('nguoidung as assigner', 'reviewer_assignments.assigned_by', '=', 'assigner.user_id')
+            // Join with main author (contact author)
+            ->leftJoin('tacgiabaibao as tg', function($join) {
+                $join->on('b.paper_id', '=', 'tg.paper_id')
+                     ->where('tg.is_contact', '=', 1);
+            })
+            ->leftJoin('nguoidung as author', 'tg.user_id', '=', 'author.user_id')
             ->where('reviewer_assignments.user_id', $userId)
             ->select(
                 'reviewer_assignments.*',
@@ -34,7 +40,9 @@ class AssignmentController extends Controller
                 'b.abstract as paper_abstract',
                 'b.conference_id as conference_id',
                 'ht.title as conference_name',
-                'assigner.full_name as assigned_by_name'
+                'assigner.full_name as assigned_by_name',
+                'author.full_name as author_name',
+                'author.email as author_email'
             )
             ->orderBy('reviewer_assignments.assigned_at', 'desc')
             ->get();
@@ -53,6 +61,12 @@ class AssignmentController extends Controller
             // also include conference info
             ->leftJoin('hoithao as ht', 'b.conference_id', '=', 'ht.conference_id')
             ->join('nguoidung as assigner', 'reviewer_assignments.assigned_by', '=', 'assigner.user_id')
+            // Join with main author (contact author)
+            ->leftJoin('tacgiabaibao as tg', function($join) {
+                $join->on('b.paper_id', '=', 'tg.paper_id')
+                     ->where('tg.is_contact', '=', 1);
+            })
+            ->leftJoin('nguoidung as author', 'tg.user_id', '=', 'author.user_id')
             ->where('reviewer_assignments.id', $assignmentId)
             ->where('reviewer_assignments.user_id', $userId)
             ->select(
@@ -62,7 +76,10 @@ class AssignmentController extends Controller
                 'b.file_path as paper_file',
                 'b.conference_id as conference_id',
                 'ht.title as conference_name',
-                'assigner.full_name as assigned_by_name'
+                'assigner.full_name as assigned_by_name',
+                'author.full_name as author_name',
+                'author.email as author_email',
+                'author.organization as author_organization'
             )
             ->firstOrFail();
 

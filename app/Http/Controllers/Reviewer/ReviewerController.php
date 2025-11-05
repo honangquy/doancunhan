@@ -144,7 +144,7 @@ class ReviewerController extends Controller
                 'pb.assignment_id',
                 'ra.paper_id',
                 'pb.recommendation_code',
-                'pb.score',
+                'pb.total_score',
                 'pb.submitted_at',
                 'bb.title as paper_title',
                 'bb.status_code as paper_status',
@@ -157,9 +157,9 @@ class ReviewerController extends Controller
         // Calculate statistics
         $stats = [
             'total' => $reviews->count(),
-            'average_score' => $reviews->count() > 0 ? round($reviews->avg('score'), 1) : 0,
-            'accept' => $reviews->where('recommendation_code', 'ACCEPT')->count(),
-            'reject' => $reviews->where('recommendation_code', 'REJECT')->count(),
+            'average_score' => $reviews->count() > 0 ? round($reviews->avg('total_score'), 1) : 0,
+            'accept' => $reviews->whereIn('recommendation_code', ['ACCEPT', 'STRONG_ACCEPT', 'WEAK_ACCEPT'])->count(),
+            'reject' => $reviews->whereIn('recommendation_code', ['REJECT', 'STRONG_REJECT', 'WEAK_REJECT'])->count(),
         ];
         
         return view('reviewer.reviews.index', compact('reviews', 'stats'));
@@ -220,8 +220,8 @@ class ReviewerController extends Controller
             'author_names' => $assignment->author_names ?? 'Chưa xác định',
             'created_at' => $assignment->created_at,
             'conference_name' => $assignment->conference_name,
-            'track_name' => $assignment->track_name,
-            'field' => $assignment->track_name
+            'track_name' => $assignment->track_name ?? 'Chưa xác định',
+            'field' => $assignment->track_name ?? 'Chưa xác định'
         ];
 
         // Load existing review (draft or final) if exists
@@ -238,6 +238,15 @@ class ReviewerController extends Controller
     public function storeReview(Request $request, $assignmentId)
     {
         $userId = Auth::id();
+        
+        // Debug logging
+        \Log::info('Review submission started', [
+            'assignment_id' => $assignmentId,
+            'user_id' => $userId,
+            'has_file' => $request->hasFile('review_file'),
+            'files' => $request->file() ? array_keys($request->file()) : 'no files',
+            'all_input' => $request->except(['_token'])
+        ]);
         
         // Convert string '1'/'0' to boolean
         $isDraft = $request->input('is_draft') === '1';
@@ -287,7 +296,15 @@ class ReviewerController extends Controller
             $reviewFilePath = null;
             if ($request->hasFile('review_file')) {
                 $file = $request->file('review_file');
+                \Log::info('File upload detected', [
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_size' => $file->getSize(),
+                    'file_mime' => $file->getMimeType()
+                ]);
                 $reviewFilePath = $file->store('reviews', 'public');
+                \Log::info('File stored at: ' . $reviewFilePath);
+            } else {
+                \Log::info('No file uploaded in request');
             }
             
             // Check if review already exists
@@ -310,6 +327,9 @@ class ReviewerController extends Controller
             
             if ($reviewFilePath) {
                 $reviewData['review_file_path'] = $reviewFilePath;
+                \Log::info('Adding file path to review data: ' . $reviewFilePath);
+            } else {
+                \Log::info('No file path to add to review data');
             }
             
             if ($existingReview) {
@@ -400,22 +420,22 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Get review details
-        $review = DB::table('PhanBien as pb')
-            ->join('PhanCongPhanBien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
-            ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+        $review = DB::table('phanbien as pb')
+            ->join('reviewer_assignments as ra', 'pb.assignment_id', '=', 'ra.id')
+            ->join('baibao as bb', 'ra.paper_id', '=', 'bb.paper_id')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
             ->where('pb.review_id', $id)
-            ->where('pc.reviewer_id', $userId)
+            ->where('ra.user_id', $userId)
             ->select(
                 'pb.*',
-                'pc.paper_id',
+                'ra.id as assignment_id',
+                'ra.paper_id',
                 'bb.title as paper_title',
                 'bb.abstract',
                 'bb.keywords',
                 'bb.file_path',
                 'ht.title as conference_name',
-                'pc.deadline',
-                'pc.assigned_at'
+                'ra.assigned_at'
             )
             ->first();
         
@@ -435,17 +455,16 @@ class ReviewerController extends Controller
         $userId = Auth::id();
         
         // Get review details
-        $review = DB::table('PhanBien as pb')
-            ->join('PhanCongPhanBien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
-            ->join('BaiBao as bb', 'pc.paper_id', '=', 'bb.paper_id')
-            ->join('HoiThao as ht', 'bb.conference_id', '=', 'ht.conference_id')
+        $review = DB::table('phanbien as pb')
+            ->join('reviewer_assignments as ra', 'pb.assignment_id', '=', 'ra.id')
+            ->join('baibao as bb', 'ra.paper_id', '=', 'bb.paper_id')
+            ->join('hoithao as ht', 'bb.conference_id', '=', 'ht.conference_id')
             ->where('pb.review_id', $id)
-            ->where('pc.reviewer_id', $userId)
+            ->where('ra.user_id', $userId)
             ->select(
                 'pb.*',
-                'pc.assignment_id',
-                'pc.paper_id',
-                'pc.deadline',
+                'ra.id as assignment_id',
+                'ra.paper_id',
                 'bb.title as paper_title',
                 'bb.abstract',
                 'bb.keywords',
@@ -460,10 +479,15 @@ class ReviewerController extends Controller
         }
         
         // Get paper authors
-        $authors = DB::table('TacGiaBaiBao as tg')
-            ->join('NguoiDung as nd', 'tg.user_id', '=', 'nd.user_id')
+        $authors = DB::table('tacgiabaibao as tg')
+            ->join('nguoidung as nd', 'tg.user_id', '=', 'nd.user_id')
             ->where('tg.paper_id', $review->paper_id)
-            ->select('nd.full_name', 'nd.organization', 'tg.author_order', 'tg.is_contact')
+            ->select(
+                'nd.full_name', 
+                'tg.organization', // Use organization from tacgiabaibao table
+                'tg.author_order', 
+                'tg.is_contact'
+            )
             ->orderBy('tg.author_order')
             ->get();
         
@@ -485,11 +509,11 @@ class ReviewerController extends Controller
         ]);
         
         // Verify review belongs to this reviewer
-        $review = DB::table('PhanBien as pb')
-            ->join('PhanCongPhanBien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
+        $review = DB::table('phanbien as pb')
+            ->join('reviewer_assignments as ra', 'pb.assignment_id', '=', 'ra.id')
             ->where('pb.review_id', $id)
-            ->where('pc.reviewer_id', $userId)
-            ->select('pb.*', 'pc.reviewer_id')
+            ->where('ra.user_id', $userId)
+            ->select('pb.*', 'ra.user_id')
             ->first();
         
         if (!$review) {

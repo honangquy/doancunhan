@@ -343,22 +343,25 @@ class ChairController extends Controller
         $assignments = DB::table('reviewer_assignments as ra')
             ->join('nguoidung as nd', 'ra.user_id', '=', 'nd.user_id')
             ->join('hoithao as ht', 'ra.conference_id', '=', 'ht.conference_id')
-            ->leftJoin('phanbien as pb', 'ra.id', '=', 'pb.assignment_id')
+            ->leftJoin('phanbien as pb', function($join) {
+                $join->on('ra.id', '=', 'pb.assignment_id')
+                     ->where('pb.is_draft', '=', 0);
+            })
             ->where('ra.paper_id', $paperId)
             ->select(
                 'ra.id as assignment_id',
                 'ra.user_id as reviewer_id',
                 'ra.assigned_at',
                 'ra.status',
+                'ra.review_submitted_at',
                 'ht.deadline_review as deadline',
                 'nd.full_name as reviewer_name',
                 'nd.email as reviewer_email',
                 'nd.organization as reviewer_org',
                 'pb.review_id',
-                'pb.score',
+                'pb.total_score',
                 'pb.recommendation_code',
-                'pb.submitted_at as review_submitted_at',
-                'ra.review_submitted_at'
+                'pb.submitted_at'
             )
             ->orderBy('ra.assigned_at', 'desc')
             ->get();
@@ -369,31 +372,49 @@ class ChairController extends Controller
             ->join('nguoidung as nd', 'ra.user_id', '=', 'nd.user_id')
             ->where('ra.paper_id', $paperId)
             ->whereNotNull('pb.submitted_at')
+            ->where('pb.is_draft', 0)
             ->select(
                 'pb.*',
                 'nd.full_name as reviewer_name',
-                'ra.assigned_at'
+                'nd.email as reviewer_email',
+                'ra.assigned_at',
+                'ra.id as assignment_id'
             )
             ->orderBy('pb.submitted_at', 'desc')
             ->get();
         
         // Calculate review statistics
+        $completedReviews = $assignments->whereNotNull('review_submitted_at');
+        
         $reviewStats = [
-            'total_assigned' => $assignments->count(),
-            'completed' => $reviews->count(),
-            'pending' => $assignments->where('status', 'PENDING')->count(),
+            'total' => $assignments->count(),
+            'completed' => $completedReviews->count(),
+            'pending' => $assignments->whereNull('review_submitted_at')->count(),
             'accepted' => $assignments->where('status', 'ACCEPTED')->count(),
-            'declined' => $assignments->where('status', 'DECLINED')->count(),
-            'avg_score' => $reviews->avg('score'),
-            'recommendations' => $reviews->pluck('recommendation_code')->countBy()->all()
+            'declined' => $assignments->where('status', 'DECLINED')->count()
         ];
+        
+        // Calculate average scores from phanbien table
+        $averageScores = null;
+        if ($reviews->count() > 0) {
+            $averageScores = [
+                'novelty' => round($reviews->avg('score_novelty') ?: 0, 1),
+                'relevance' => round($reviews->avg('score_relevance') ?: 0, 1),
+                'technical_quality' => round($reviews->avg('score_technical_quality') ?: 0, 1),
+                'presentation' => round($reviews->avg('score_presentation') ?: 0, 1),
+                'references' => round($reviews->avg('score_references') ?: 0, 1),
+                'total' => round($reviews->avg('total_score') ?: 0, 1)
+            ];
+        }
         
         return view('chair.papers.show', [
             'paper' => $paper,
             'authors' => $authors,
             'assignments' => $assignments,
             'reviews' => $reviews,
-            'reviewStats' => $reviewStats
+            'reviewStats' => $reviewStats,
+            'averageScores' => $averageScores,
+            'completedReviews' => $completedReviews
         ]);
     }
 
@@ -1536,6 +1557,29 @@ class ChairController extends Controller
             : [];
 
         return view('chair.reviewers.show', compact('reviewer', 'stats', 'completedAssignments', 'pendingAssignments'));
+    }
+    /**
+     * Get review details for modal display
+     */
+    public function getReviewDetails($reviewId)
+    {
+        $review = DB::table('phanbien as pb')
+            ->join('reviewer_assignments as ra', 'pb.assignment_id', '=', 'ra.id')
+            ->join('nguoidung as u', 'ra.user_id', '=', 'u.user_id')
+            ->where('pb.review_id', $reviewId)
+            ->select([
+                'pb.*',
+                'u.full_name as reviewer_name',
+                'u.email as reviewer_email',
+                'u.organization as reviewer_organization'
+            ])
+            ->first();
+
+        if (!$review) {
+            return response()->json(['error' => 'Review not found'], 404);
+        }
+
+        return response()->json($review);
     }
 }
 

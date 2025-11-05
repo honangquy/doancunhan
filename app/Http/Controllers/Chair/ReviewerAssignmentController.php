@@ -351,6 +351,17 @@ class ReviewerAssignmentController extends Controller
                 return response()->json(['success' => false, 'message' => 'Không có quyền'], 403);
             }
 
+            // Check current assignments for this paper
+            $currentAssignments = ReviewerAssignment::where('paper_id', $paperId)->count();
+            $needToAssign = max(0, $reviewerCount - $currentAssignments);
+            
+            if ($needToAssign <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Bài báo đã có đủ {$currentAssignments} reviewer (yêu cầu: {$reviewerCount})"
+                ], 400);
+            }
+
             // Get available reviewers with workload balancing
             $availableReviewers = DB::table('reviewer_bidding as rb')
                 ->join('nguoidung as n', 'rb.user_id', '=', 'n.user_id')
@@ -377,13 +388,13 @@ class ReviewerAssignmentController extends Controller
                 )
                 // Advanced scoring: bid_value * 100 - current_workload * 10 (prioritize high bids but balance workload)
                 ->orderByRaw('(rb.bidding_value * 100 - COALESCE(workload.current_workload, 0) * 10) DESC')
-                ->limit($reviewerCount)
+                ->limit($needToAssign)
                 ->get();
 
-            if ($availableReviewers->count() < $reviewerCount) {
+            if ($availableReviewers->count() < $needToAssign) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Không đủ reviewer phù hợp. Cần {$reviewerCount}, chỉ tìm được {$availableReviewers->count()}",
+                    'message' => "Không đủ reviewer phù hợp. Cần thêm {$needToAssign} reviewer, chỉ tìm được {$availableReviewers->count()} (hiện tại: {$currentAssignments})",
                     'available_count' => $availableReviewers->count(),
                     'available_reviewers' => $availableReviewers->map(function($r) {
                         return [
@@ -439,7 +450,20 @@ class ReviewerAssignmentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Đã tự động phân công {$availableReviewers->count()} reviewer!"
+                'message' => "Đã thêm {$availableReviewers->count()} reviewer! (Tổng cộng: " . ($currentAssignments + $availableReviewers->count()) . "/{$reviewerCount})",
+                'data' => [
+                    'assigned_count' => $availableReviewers->count(),
+                    'total_assignments' => $currentAssignments + $availableReviewers->count(),
+                    'target_count' => $reviewerCount,
+                    'paper_title' => $paper->title,
+                    'assignments' => $availableReviewers->map(function($reviewer) {
+                        return [
+                            'reviewer_name' => $reviewer->full_name,
+                            'bid_value' => $reviewer->bidding_value,
+                            'workload' => $reviewer->current_workload
+                        ];
+                    })
+                ]
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

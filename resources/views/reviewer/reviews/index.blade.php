@@ -82,28 +82,36 @@
                             </td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center">
-                                    <div class="text-2xl font-bold {{ $review->score <= 3 ? 'text-red-600' : ($review->score <= 6 ? 'text-yellow-600' : 'text-green-600') }}">
-                                        {{ $review->score }}
+                                    <div class="text-2xl font-bold {{ ($review->total_score ?? 0) <= 3 ? 'text-red-600' : (($review->total_score ?? 0) <= 6 ? 'text-yellow-600' : 'text-green-600') }}">
+                                        {{ number_format($review->total_score ?? 0, 1) }}
                                     </div>
                                     <div class="text-sm text-gray-500 ml-1">/10</div>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                @if($review->recommendation_code === 'ACCEPT')
+                                @if(in_array($review->recommendation_code, ['ACCEPT', 'STRONG_ACCEPT']))
                                     <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                        Accept
+                                        {{ $review->recommendation_code === 'STRONG_ACCEPT' ? 'Chấp nhận mạnh' : 'Chấp nhận' }}
                                     </span>
-                                @elseif($review->recommendation_code === 'MINOR_REVISION')
-                                    <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                        Minor Revision
+                                @elseif($review->recommendation_code === 'WEAK_ACCEPT')
+                                    <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-50 text-green-700">
+                                        Chấp nhận yếu
                                     </span>
-                                @elseif($review->recommendation_code === 'MAJOR_REVISION')
+                                @elseif($review->recommendation_code === 'BORDERLINE')
                                     <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                        Major Revision
+                                        Biên giới
                                     </span>
-                                @elseif($review->recommendation_code === 'REJECT')
+                                @elseif($review->recommendation_code === 'WEAK_REJECT')
+                                    <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-50 text-red-700">
+                                        Từ chối yếu
+                                    </span>
+                                @elseif(in_array($review->recommendation_code, ['REJECT', 'STRONG_REJECT']))
                                     <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                        Reject
+                                        {{ $review->recommendation_code === 'STRONG_REJECT' ? 'Từ chối mạnh' : 'Từ chối' }}
+                                    </span>
+                                @else
+                                    <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        {{ $review->recommendation_code ?? 'Chưa xác định' }}
                                     </span>
                                 @endif
                             </td>

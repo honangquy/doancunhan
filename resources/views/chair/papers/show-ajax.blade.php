@@ -188,10 +188,16 @@
                 </div>
             </div>
             
-            @if($review->comments)
+            @if($review->detailed_comments)
             <div class="mt-3 p-3 bg-gray-50 rounded">
-                <p class="text-sm text-gray-700 font-medium mb-1">Nhận xét:</p>
-                <p class="text-sm text-gray-600">{{ Str::limit($review->comments, 200) }}</p>
+                <p class="text-sm text-gray-700 font-medium mb-1">Nhận xét chi tiết:</p>
+                <p class="text-sm text-gray-600">{{ Str::limit($review->detailed_comments, 200) }}</p>
+            </div>
+            @endif
+            @if($review->comment_author)
+            <div class="mt-3 p-3 bg-blue-50 rounded">
+                <p class="text-sm text-blue-700 font-medium mb-1">Nhận xét cho tác giả:</p>
+                <p class="text-sm text-gray-600">{{ Str::limit($review->comment_author, 200) }}</p>
             </div>
             @endif
         </div>
