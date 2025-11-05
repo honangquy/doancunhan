@@ -56,7 +56,15 @@
                     </div>
                     <div>
                         <label class="text-sm font-medium text-gray-600">Tác giả:</label>
-                        <p class="text-gray-900 font-medium mt-1">{{ $assignment->assigned_by_name }}</p>
+                        <p class="text-gray-900 font-medium mt-1">
+                            {{ $assignment->author_name ?? 'Chưa xác định' }}
+                            @if($assignment->author_email)
+                                <span class="text-sm text-gray-500 block">{{ $assignment->author_email }}</span>
+                            @endif
+                            @if($assignment->author_organization)
+                                <span class="text-sm text-gray-500 block">{{ $assignment->author_organization }}</span>
+                            @endif
+                        </p>
                     </div>
                     <div>
                         <label class="text-sm font-medium text-gray-600">Trạng thái:</label>

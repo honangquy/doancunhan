@@ -203,36 +203,78 @@
                 </svg>
                 Thống kê phản biện
             </h2>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div class="text-center p-4 bg-gray-50 rounded-lg">
-                    <div class="text-2xl font-bold text-gray-900">{{ $reviewStats['total_assigned'] }}</div>
-                    <div class="text-xs text-gray-600 mt-1">Tổng số</div>
-                </div>
-                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                    <div class="text-2xl font-bold text-blue-600">{{ $reviewStats['pending'] }}</div>
-                    <div class="text-xs text-blue-700 mt-1">Chờ xác nhận</div>
-                </div>
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <div class="text-2xl font-bold text-green-600">{{ $reviewStats['accepted'] }}</div>
-                    <div class="text-xs text-green-700 mt-1">Đã chấp nhận</div>
-                </div>
-                <div class="text-center p-4 bg-purple-50 rounded-lg">
-                    <div class="text-2xl font-bold text-purple-600">{{ $reviewStats['completed'] }}</div>
-                    <div class="text-xs text-purple-700 mt-1">Hoàn thành</div>
-                </div>
-                <div class="text-center p-4 bg-orange-50 rounded-lg">
-                    <div class="text-2xl font-bold text-orange-600">
-                        {{ $reviewStats['avg_score'] ? number_format($reviewStats['avg_score'], 1) : '--' }}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-4 bg-gray-50 rounded-lg">
+                        <div class="text-2xl font-bold text-gray-900">{{ $reviewStats['total'] }}</div>
+                        <div class="text-xs text-gray-600 mt-1">Tổng số</div>
                     </div>
-                    <div class="text-xs text-orange-700 mt-1">Điểm TB</div>
+                    <div class="text-center p-4 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600">{{ $reviewStats['completed'] }}</div>
+                        <div class="text-xs text-green-700 mt-1">Hoàn thành</div>
+                    </div>
+                    <div class="text-center p-4 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600">{{ $reviewStats['pending'] }}</div>
+                        <div class="text-xs text-blue-700 mt-1">Chờ hoàn thành</div>
+                    </div>
+                    <div class="text-center p-4 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600">{{ $reviewStats['accepted'] }}</div>
+                        <div class="text-xs text-purple-700 mt-1">Đã chấp nhận</div>
+                    </div>
                 </div>
+
+                <!-- Average Scores -->
+                @if($averageScores)
+                <div class="bg-orange-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-orange-900 mb-3">Điểm trung bình</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-orange-700">Tính mới:</span>
+                            <span class="font-bold text-orange-900">{{ $averageScores['novelty'] }}/10</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-orange-700">Liên quan:</span>
+                            <span class="font-bold text-orange-900">{{ $averageScores['relevance'] }}/10</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-orange-700">Kỹ thuật:</span>
+                            <span class="font-bold text-orange-900">{{ $averageScores['technical_quality'] }}/10</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-orange-700">Trình bày:</span>
+                            <span class="font-bold text-orange-900">{{ $averageScores['presentation'] }}/10</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-orange-700">Tài liệu tham khảo:</span>
+                            <span class="font-bold text-orange-900">{{ $averageScores['references'] }}/10</span>
+                        </div>
+                        <div class="border-t border-orange-200 pt-2 mt-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-orange-800">Tổng điểm:</span>
+                                <span class="text-xl font-bold text-orange-900">{{ $averageScores['total'] }}/10</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @else
+                <div class="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
+                    <div class="text-center text-gray-500">
+                        <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <p class="text-sm">Chưa có điểm trung bình</p>
+                        <p class="text-xs">Cần hoàn thành ít nhất 1 review</p>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
 
         <!-- Final Decision Section -->
         @php
             $allReviewsCompleted = $reviewStats['completed'] > 0 && $reviewStats['pending'] == 0;
-            $hasDecision = !empty($paper->decision);
+            $hasDecision = !empty($paper->final_decision ?? null);
         @endphp
         
         @if($allReviewsCompleted || $hasDecision)
@@ -380,15 +422,18 @@
                                 </span>
                             </td>
                             <td class="px-4 py-4 text-sm">
-                                @if($assignment->score)
-                                    <span class="font-bold text-orange-600">{{ $assignment->score }}/10</span>
+                                @if($assignment->total_score)
+                                    <span class="font-bold text-orange-600">{{ number_format($assignment->total_score, 1) }}/10</span>
                                 @else
                                     <span class="text-gray-400">--</span>
                                 @endif
                             </td>
                             <td class="px-4 py-4 text-sm">
                                 @if($assignment->review_id)
-                                <button class="text-orange-600 hover:text-orange-700 font-medium">Xem review</button>
+                                <button onclick="viewReview({{ $assignment->assignment_id }}, {{ $assignment->review_id }})" 
+                                        class="text-orange-600 hover:text-orange-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded px-2 py-1 transition-colors">
+                                    Xem review
+                                </button>
                                 @else
                                 <span class="text-gray-400">Chưa có</span>
                                 @endif
@@ -431,13 +476,17 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-2xl font-bold text-orange-600">{{ $review->score }}/10</div>
+                            <div class="text-2xl font-bold text-orange-600">{{ number_format($review->total_score, 1) }}/10</div>
                             @php
                                 $recommendConfig = [
                                     'ACCEPT' => ['label' => 'Chấp nhận', 'class' => 'bg-green-100 text-green-800'],
+                                    'STRONG_ACCEPT' => ['label' => 'Chấp nhận mạnh', 'class' => 'bg-green-100 text-green-800'],
+                                    'WEAK_ACCEPT' => ['label' => 'Chấp nhận yếu', 'class' => 'bg-green-100 text-green-800'],
                                     'MINOR_REVISION' => ['label' => 'Sửa nhỏ', 'class' => 'bg-blue-100 text-blue-800'],
                                     'MAJOR_REVISION' => ['label' => 'Sửa lớn', 'class' => 'bg-yellow-100 text-yellow-800'],
+                                    'WEAK_REJECT' => ['label' => 'Từ chối yếu', 'class' => 'bg-red-100 text-red-800'],
                                     'REJECT' => ['label' => 'Từ chối', 'class' => 'bg-red-100 text-red-800'],
+                                    'STRONG_REJECT' => ['label' => 'Từ chối mạnh', 'class' => 'bg-red-100 text-red-800'],
                                 ];
                                 $recommend = $recommendConfig[$review->recommendation_code] ?? ['label' => $review->recommendation_code, 'class' => 'bg-gray-100 text-gray-800'];
                             @endphp
@@ -446,15 +495,251 @@
                             </span>
                         </div>
                     </div>
-                    @if($review->comments)
+                    @if($review->detailed_comments)
                     <div class="mt-3 p-3 bg-gray-50 rounded text-sm text-gray-700">
-                        <div class="font-medium text-gray-900 mb-1">Nhận xét:</div>
-                        {{ Str::limit($review->comments, 200) }}
+                        <div class="font-medium text-gray-900 mb-1">Nhận xét chi tiết:</div>
+                        {{ Str::limit($review->detailed_comments, 200) }}
                     </div>
                     @endif
+                    @if($review->comment_author)
+                    <div class="mt-3 p-3 bg-blue-50 rounded text-sm text-gray-700">
+                        <div class="font-medium text-blue-900 mb-1">Nhận xét cho tác giả:</div>
+                        {{ Str::limit($review->comment_author, 200) }}
+                    </div>
+                    @endif
+                    <div class="mt-3 text-right">
+                        <button onclick="viewReview({{ $review->assignment_id }}, {{ $review->review_id }})" 
+                                class="text-orange-600 hover:text-orange-700 font-medium text-sm">
+                            Xem chi tiết →
+                        </button>
+                    </div>
                 </div>
                 @endforeach
             </div>
         </div>
         @endif
 @endsection
+
+@push('scripts')
+<script>
+// Helper function to extract filename from path
+function getFileName(filePath) {
+    if (!filePath) return '';
+    return filePath.split('/').pop().split('\\').pop();
+}
+
+function viewReview(assignmentId, reviewId) {
+    console.log('viewReview called with:', assignmentId, reviewId);
+    
+    // Tạo modal để hiển thị review details
+    const modalHtml = `
+        <div id="reviewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+                <div class="flex justify-between items-center pb-3 border-b">
+                    <h3 class="text-lg font-bold text-gray-900">Chi tiết Review #${reviewId}</h3>
+                    <button onclick="closeReviewModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="reviewContent" class="mt-4">
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+                        <p class="mt-2 text-sm text-gray-600">Đang tải...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Fetch review details
+    fetch(`/chair/reviews/${reviewId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('reviewContent').innerHTML = `
+                <div class="space-y-4">
+                    <!-- Reviewer Info -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">Thông tin Reviewer</h4>
+                        <p class="text-sm"><strong>Tên:</strong> ${data.reviewer_name}</p>
+                        <p class="text-sm"><strong>Email:</strong> ${data.reviewer_email}</p>
+                        <p class="text-sm"><strong>Nộp lúc:</strong> ${new Date(data.submitted_at).toLocaleString('vi-VN')}</p>
+                    </div>
+                    
+                    <!-- Scores -->
+                    <div class="bg-orange-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-orange-900 mb-3">Điểm đánh giá</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex justify-between">
+                                <span class="text-sm">Tính mới:</span>
+                                <span class="font-bold">${data.score_novelty || '--'}/10</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm">Liên quan:</span>
+                                <span class="font-bold">${data.score_relevance || '--'}/10</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm">Kỹ thuật:</span>
+                                <span class="font-bold">${data.score_technical_quality || '--'}/10</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm">Trình bày:</span>
+                                <span class="font-bold">${data.score_presentation || '--'}/10</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm">Tài liệu:</span>
+                                <span class="font-bold">${data.score_references || '--'}/10</span>
+                            </div>
+                            <div class="flex justify-between border-t pt-2">
+                                <span class="font-medium">Tổng điểm:</span>
+                                <span class="text-lg font-bold text-orange-600">${data.total_score || '--'}/10</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommendation -->
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-900 mb-2">Khuyến nghị</h4>
+                        <span class="inline-block px-3 py-1 text-sm font-medium rounded ${getRecommendationClass(data.recommendation_code)}">
+                            ${getRecommendationLabel(data.recommendation_code)}
+                        </span>
+                    </div>
+                    
+                    <!-- Comments -->
+                    ${data.detailed_comments ? `
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">Nhận xét chi tiết</h4>
+                        <p class="text-sm text-gray-700 whitespace-pre-wrap">${data.detailed_comments}</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.comment_author ? `
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-green-900 mb-2">Nhận xét cho tác giả</h4>
+                        <p class="text-sm text-green-800 whitespace-pre-wrap">${data.comment_author}</p>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.comment_chair ? `
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-purple-900 mb-2">Nhận xét riêng cho Chair</h4>
+                        <p class="text-sm text-purple-800 whitespace-pre-wrap">${data.comment_chair}</p>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Review File Attachment -->
+                    ${data.review_file_path ? `
+                    <div class="bg-indigo-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-indigo-900 mb-2">File phản biện bổ sung</h4>
+                        <div class="flex items-center space-x-3">
+                            <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-indigo-900">${getFileName(data.review_file_path)}</div>
+                                <div class="text-xs text-indigo-700">File phản biện chi tiết</div>
+                            </div>
+                            <a href="/storage/${data.review_file_path}" 
+                               target="_blank" 
+                               class="px-3 py-1 text-xs font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">
+                                Tải xuống
+                            </a>
+                        </div>
+                    </div>
+                    ` : `
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <div class="text-gray-400 mb-2">
+                            <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm text-gray-500">Không có file phản biện bổ sung</p>
+                    </div>
+                    `}
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('reviewContent').innerHTML = `
+                <div class="text-center py-8 text-red-600">
+                    <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p>Không thể tải chi tiết review</p>
+                    <p class="text-sm mt-1">Error: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('reviewModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function getRecommendationClass(code) {
+    const classes = {
+        'ACCEPT': 'bg-green-100 text-green-800',
+        'STRONG_ACCEPT': 'bg-green-100 text-green-800',
+        'WEAK_ACCEPT': 'bg-green-100 text-green-800',
+        'MINOR_REVISION': 'bg-blue-100 text-blue-800',
+        'MAJOR_REVISION': 'bg-yellow-100 text-yellow-800',
+        'WEAK_REJECT': 'bg-red-100 text-red-800',
+        'REJECT': 'bg-red-100 text-red-800',
+        'STRONG_REJECT': 'bg-red-100 text-red-800'
+    };
+    return classes[code] || 'bg-gray-100 text-gray-800';
+}
+
+function getRecommendationLabel(code) {
+    const labels = {
+        'ACCEPT': 'Chấp nhận',
+        'STRONG_ACCEPT': 'Chấp nhận mạnh',
+        'WEAK_ACCEPT': 'Chấp nhận yếu',
+        'MINOR_REVISION': 'Sửa đổi nhỏ',
+        'MAJOR_REVISION': 'Sửa đổi lớn', 
+        'WEAK_REJECT': 'Từ chối yếu',
+        'REJECT': 'Từ chối',
+        'STRONG_REJECT': 'Từ chối mạnh'
+    };
+    return labels[code] || code;
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('reviewModal');
+    if (modal && event.target === modal) {
+        closeReviewModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeReviewModal();
+    }
+});
+</script>
+@endpush

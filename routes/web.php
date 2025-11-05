@@ -78,25 +78,7 @@ Route::get('/news', [HomeController::class, 'news'])->name('news.index');
 Route::get('/process', [HomeController::class, 'process'])->name('process');
 Route::get('/support', [HomeController::class, 'support'])->name('support');
 
-// Debug route (no auth required)
-Route::get('/test-api', function () {
-    return view('test_api');
-})->middleware(['auth', 'role:CHAIR']);
 
-Route::get('/debug-status', function () {
-    $user = auth()->user();
-    return response()->json([
-        'authenticated' => auth()->check(),
-        'user' => $user ? [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'email_verified_at' => $user->email_verified_at,
-        ] : null,
-        'csrf_token' => csrf_token(),
-        'session_id' => session()->getId()
-    ]);
-});
 
 // Conference Request Routes (Authenticated and Verified)
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -104,20 +86,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return view('conference-request.create');
     })->name('conference-request.create');
     
-    // Debug route to check user status
-    Route::get('/debug-user', function () {
-        $user = auth()->user();
-        return response()->json([
-            'authenticated' => auth()->check(),
-            'user' => $user ? [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at,
-            ] : null,
-            'csrf_token' => csrf_token()
-        ]);
-    });
+
     
     Route::post('/conference-requests', [ConferenceRequestController::class, 'store'])->name('conference-request.store');
     
@@ -130,51 +99,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-// Test Routes (for development)
-Route::get('/test-join-requests', function () {
-    return view('test-join-requests');
-})->name('test.join-requests');
 
-// Test conference request without verified middleware
-Route::middleware(['auth'])->group(function () {
-    Route::post('/test-conference-requests', [ConferenceRequestController::class, 'store'])->name('test-conference-request.store');
-    Route::get('/test-auth-status', function () {
-        $user = auth()->user();
-        return response()->json([
-            'authenticated' => auth()->check(),
-            'user_id' => $user ? $user->user_id : null,
-            'name' => $user ? $user->name : null,
-            'email' => $user ? $user->email : null,
-            'email_verified_at' => $user ? $user->email_verified_at : null,
-            'has_verified_email' => $user ? $user->hasVerifiedEmail() : false,
-            'csrf_token' => csrf_token()
-        ]);
-    });
-});
-
-// Test route completely without authentication
-Route::post('/test-no-auth-conference', function (Request $request) {
-    \Log::info('Test route called', [
-        'method' => $request->method(),
-        'headers' => $request->headers->all(),
-        'data' => $request->all()
-    ]);
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Route works without auth',
-        'data' => $request->all(),
-        'csrf_token' => csrf_token()
-    ]);
-});
-
-Route::get('/test-simple', function () {
-    return response()->json(['message' => 'Simple test route works']);
-});
-
-Route::get('/test-form', function () {
-    return view('test-form');
-});
 
 // Conference request endpoint without CSRF for testing
 Route::post('/submit-conference-request', function (\Illuminate\Http\Request $request) {
@@ -343,10 +268,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Dashboard
         Route::get('/dashboard', [\App\Http\Controllers\Chair\ChairController::class, 'dashboard'])->name('dashboard');
         
-        // Test route
-        Route::get('/test-layout', function () {
-            return view('test-chair-layout');
-        })->name('test-layout');
+
         
         // Conference Management (New)
         Route::get('/conferences', [\App\Http\Controllers\Chair\ConferenceSetupController::class, 'index'])->name('conferences.index');
@@ -374,16 +296,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/papers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showPaper'])->name('papers.show');
         Route::get('/papers/{id}/ajax', [\App\Http\Controllers\Chair\ChairController::class, 'showPaperAjax'])->name('papers.ajax');
         
-        // Reviewer Assignment
+        // Reviewer Assignment (Legacy)
         Route::get('/papers/{id}/assign', [\App\Http\Controllers\Chair\ChairController::class, 'assignReviewers'])->name('papers.assign');
         Route::post('/papers/{id}/assign', [\App\Http\Controllers\Chair\ChairController::class, 'storeAssignment'])->name('papers.assign.store');
-        Route::delete('/assignments/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'removeAssignment'])->name('assignments.remove');
+        // Route::delete('/assignments/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'removeAssignment'])->name('assignments.remove'); // Commented out due to route conflict
         Route::get('/papers/{paperId}/coi/{reviewerId}', [\App\Http\Controllers\Chair\ChairController::class, 'checkCOI'])->name('papers.coi.check');
         Route::get('/papers/{id}/suggest-reviewers', [\App\Http\Controllers\Chair\ChairController::class, 'suggestReviewers'])->name('papers.suggest');
         
         // Phase 8.8: Reviews Management
         Route::get('/papers/{id}/reviews', [\App\Http\Controllers\Chair\ChairController::class, 'reviews'])->name('papers.reviews');
         Route::get('/papers/{id}/reviews/export', [\App\Http\Controllers\Chair\ChairController::class, 'exportReviews'])->name('papers.reviews.export');
+        Route::get('/reviews/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'getReviewDetails'])->name('reviews.details');
+        Route::get('/test-review/{id}', function($id) {
+            $review = DB::table('phanbien as pb')
+                ->join('reviewer_assignments as ra', 'pb.assignment_id', '=', 'ra.id')
+                ->join('nguoidung as u', 'ra.user_id', '=', 'u.user_id')
+                ->where('pb.review_id', $id)
+                ->select(['pb.*', 'u.full_name as reviewer_name', 'u.email as reviewer_email', 'u.organization as reviewer_organization'])
+                ->first();
+            
+            if (!$review) {
+                return response()->json(['error' => 'Review not found'], 404);
+            }
+            
+            return response()->json($review);
+        });
         
         // Phase 8.9: Final Decision
         Route::get('/papers/{id}/decision', [\App\Http\Controllers\Chair\ChairController::class, 'makeDecision'])->name('papers.decision');

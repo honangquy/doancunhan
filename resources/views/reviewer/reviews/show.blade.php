@@ -2,7 +2,34 @@
 
 @section('title', 'View Review')
 
+@push('styles')
+<style>
+    .review-content {
+        font-size: 14px;
+    }
+    .review-content h1 {
+        font-size: 24px;
+    }
+    .review-content h2 {
+        font-size: 18px;
+    }
+    .review-content h3 {
+        font-size: 16px;
+    }
+    .review-content .text-4xl {
+        font-size: 32px;
+    }
+    .review-content .text-xl {
+        font-size: 16px;
+    }
+    .review-content .text-lg {
+        font-size: 16px;
+    }
+</style>
+@endpush
+
 @section('content')
+<div class="review-content">
     <!-- Header -->
     <div class="mb-8">
         <a href="{{ route('reviewer.reviews') }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">
@@ -33,8 +60,8 @@
                         <div class="font-medium text-gray-900">{{ $review->conference_name }}</div>
                     </div>
                     <div>
-                        <div class="text-sm text-gray-600 mb-1">Review Deadline</div>
-                        <div class="font-medium text-gray-900">{{ \Carbon\Carbon::parse($review->deadline)->format('M d, Y') }}</div>
+                        <div class="text-sm text-gray-600 mb-1">Review ID</div>
+                        <div class="font-medium text-gray-900">#{{ $review->review_id }}</div>
                     </div>
                     <div>
                         <div class="text-sm text-gray-600 mb-1">Assigned Date</div>
@@ -64,7 +91,7 @@
 
                 @if($review->file_path)
                 <div>
-                    <a href="{{ route('reviewer.papers.download', $review->assignment_id) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                    <a href="{{ route('reviewer.papers.download', $review->paper_id) }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
@@ -86,14 +113,14 @@
                     <div>
                         <div class="text-sm text-gray-600 mb-2">Overall Score</div>
                         <div class="flex items-center">
-                            <div class="text-4xl font-bold {{ $review->score <= 3 ? 'text-red-600' : ($review->score <= 6 ? 'text-yellow-600' : 'text-green-600') }}">
-                                {{ $review->score }}
+                            <div class="text-4xl font-bold {{ ($review->total_score ?? 0) <= 3 ? 'text-red-600' : (($review->total_score ?? 0) <= 6 ? 'text-yellow-600' : 'text-green-600') }}">
+                                {{ number_format($review->total_score ?? 0, 1) }}
                             </div>
                             <div class="text-xl text-gray-500 ml-2">/10</div>
                         </div>
                         <div class="mt-2 w-full bg-gray-200 rounded-full h-2">
-                            <div class="h-2 rounded-full {{ $review->score <= 3 ? 'bg-red-600' : ($review->score <= 6 ? 'bg-yellow-600' : 'bg-green-600') }}" 
-                                 style="width: {{ $review->score * 10 }}%"></div>
+                            <div class="h-2 rounded-full {{ ($review->total_score ?? 0) <= 3 ? 'bg-red-600' : (($review->total_score ?? 0) <= 6 ? 'bg-yellow-600' : 'bg-green-600') }}" 
+                                 style="width: {{ ($review->total_score ?? 0) * 10 }}%"></div>
                         </div>
                     </div>
                     <div>
@@ -130,7 +157,7 @@
                         <span class="ml-2 text-xs text-gray-500">(Visible to authors)</span>
                     </div>
                     <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <p class="text-gray-800 leading-relaxed whitespace-pre-line">{{ $review->comment_author }}</p>
+                        <p class="text-gray-800 leading-relaxed whitespace-pre-line">{{ $review->detailed_comments }}</p>
                     </div>
                 </div>
 
@@ -158,4 +185,5 @@
                 ← Back to My Reviews
             </a>
         </div>
+</div> <!-- End review-content -->
 @endsection

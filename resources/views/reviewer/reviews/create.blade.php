@@ -115,6 +115,24 @@
     <form id="reviewForm" action="{{ route('reviewer.reviews.store', $assignment->id) }}" method="POST" enctype="multipart/form-data">
         @csrf
         
+        @if($errors->any())
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex items-start space-x-3">
+                    <svg class="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div>
+                        <h4 class="text-red-800 font-medium">Có lỗi xảy ra:</h4>
+                        <ul class="text-red-700 text-sm mt-2 list-disc list-inside space-y-1">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
+        
         @if($existingReview)
         <!-- Draft Status Indicator -->
         <div class="bg-{{ $existingReview->is_draft ? 'amber' : 'green' }}-50 border border-{{ $existingReview->is_draft ? 'amber' : 'green' }}-200 rounded-lg p-4 mb-6">
@@ -479,6 +497,11 @@
                             <input id="review_file" name="review_file" type="file" accept=".doc,.docx,.pdf" class="sr-only">
                         </label>
                     </div>
+                    @if($errors->has('review_file'))
+                        <div class="text-red-600 text-sm mt-2">
+                            {{ $errors->first('review_file') }}
+                        </div>
+                    @endif
                     <div class="text-xs text-gray-600">
                         <p class="font-medium">Định dạng hỗ trợ: Word (.doc, .docx) hoặc PDF</p>
                         <p class="text-xs text-gray-500 mt-1">Kích thước tối đa: 10MB</p>

@@ -145,7 +145,6 @@
                                 </td>
                                 <td class="px-4 py-4">
                                     <div class="text-sm text-gray-900" x-text="paper.author_names || paper.submitted_by_name"></div>
-                                    <div class="text-xs text-gray-500" x-text="paper.author_affiliations || 'Không có thông tin'"></div>
                                 </td>
                                 <td class="px-4 py-4 text-center">
                                     <div class="flex justify-center space-x-1">
@@ -296,7 +295,33 @@
             
             <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
                 <h3 class="text-lg font-semibold text-gray-900">Chi tiết Bidding & COI</h3>
-                <p class="text-sm text-gray-600 mt-1" x-text="selectedPaper?.title"></p>
+                
+                <!-- Paper Details Section -->
+                <div class="mt-4 space-y-3 bg-white rounded-lg p-4 shadow-sm">
+                    <!-- Paper Title -->
+                    <div>
+                        <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Tên bài báo</label>
+                        <p class="text-sm font-medium text-gray-900 mt-1" x-text="selectedPaper?.title || 'Không có thông tin'"></p>
+                    </div>
+                    
+                    <!-- Keywords -->
+                    <div>
+                        <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Từ khóa</label>
+                        <p class="text-sm text-gray-700 mt-1" x-text="selectedPaper?.keywords || 'Không có từ khóa'"></p>
+                    </div>
+                    
+                    <!-- Author Names -->
+                    <div>
+                        <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Tác giả</label>
+                        <p class="text-sm text-gray-700 mt-1" x-text="selectedPaper?.author_names || selectedPaper?.submitted_by_name || 'Không có thông tin'"></p>
+                    </div>
+                    
+                    <!-- Abstract -->
+                    <div>
+                        <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Tóm tắt</label>
+                        <p class="text-sm text-gray-700 mt-1 leading-relaxed" x-text="selectedPaper?.abstract || 'Không có tóm tắt'"></p>
+                    </div>
+                </div>
             </div>
             
             <div class="p-6 space-y-6">

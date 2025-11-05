@@ -12,7 +12,7 @@
     <div class="bg-white rounded-xl shadow-md p-6">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Thông tin bài báo</h3>
+                <h3 class="text-sm font-semibold text-gray-900 mb-4">Thông tin bài báo</h3>
                 <div class="space-y-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-600">Tiêu đề</label>
@@ -35,7 +35,7 @@
                 </div>
             </div>
             <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Trạng thái phân công</h3>
+                <h3 class="text-sm font-semibold text-gray-900 mb-4">Trạng thái phân công</h3>
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-gray-600">Đã phân công:</span>
@@ -53,7 +53,7 @@
     <!-- Reviewers đã được phân công -->
     @if(count($assignedReviewers) > 0)
     <div class="bg-white rounded-xl shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Phản biện viên đã phân công</h3>
+        <h3 class="text-sm font-semibold text-gray-900 mb-4">Phản biện viên đã phân công</h3>
         <div class="space-y-3">
             @foreach($assignedReviewers as $reviewer)
             <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
@@ -81,7 +81,7 @@
 
     <!-- Chọn reviewers mới -->
     <div class="bg-white rounded-xl shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Chọn phản biện viên</h3>
+        <h3 class="text-sm font-semibold text-gray-900 mb-4">Chọn phản biện viên</h3>
         
         @if(count($availableReviewers) > 0)
         <form @submit.prevent="assignReviewers()" class="space-y-4">
