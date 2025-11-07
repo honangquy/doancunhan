@@ -8,6 +8,7 @@ use App\Models\ReviewerAssignment;
 use App\Models\BaiBao;
 use App\Models\HoiThao;
 use App\Models\VaiTroNguoiDung;
+use App\Models\ConferenceBiddingSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +63,7 @@ class BiddingController extends Controller
 
     /**
      * Get papers for a specific conference with existing bids
+     * Filtered by keywords if enabled in conference settings
      */
     public function getConferencePapers($conferenceId)
     {
@@ -81,16 +83,57 @@ class BiddingController extends Controller
                 ], 403);
             }
 
-            // Get papers with existing bidding data
-            $papers = DB::table('baibao as b')
+            // Get conference bidding settings
+            $biddingSetting = ConferenceBiddingSetting::where('conference_id', $conferenceId)->first();
+            
+            // Start building the query
+            $query = DB::table('baibao as b')
                 ->leftJoin('reviewer_bidding as rb', function($join) use ($userId) {
                     $join->on('b.paper_id', '=', 'rb.paper_id')
                          ->where('rb.user_id', '=', $userId);
                 })
                 ->leftJoin('nguoidung as n', 'b.submitter_id', '=', 'n.user_id')
                 ->where('b.conference_id', $conferenceId)
-                ->whereIn('b.status_code', ['SUBMITTED', 'UNDER_REVIEW']) // Show submitted papers for immediate bidding
-                ->select(
+                ->whereIn('b.status_code', ['SUBMITTED', 'UNDER_REVIEW']); // Show submitted papers for immediate bidding
+
+            // Apply keyword filtering if enabled
+            if ($biddingSetting && $biddingSetting->enable_keyword_matching) {
+                $reviewerKeywords = $this->getReviewerExpertiseKeywords($userId, $conferenceId);
+                
+                if (!empty($reviewerKeywords)) {
+                    $query->where(function($q) use ($reviewerKeywords, $biddingSetting) {
+                        foreach ($reviewerKeywords as $keyword) {
+                            $keyword = trim($keyword);
+                            if (empty($keyword)) continue;
+                            
+                            if ($biddingSetting->allow_partial_keyword_match) {
+                                $q->orWhere('b.keywords', 'LIKE', "%{$keyword}%");
+                            } else {
+                                // Exact match for comma-separated keywords
+                                $q->orWhereRaw("FIND_IN_SET(?, REPLACE(b.keywords, ' ', ''))", [$keyword]);
+                            }
+                        }
+                    });
+                    
+                    // Exclude papers with excluded keywords
+                    if (!empty($biddingSetting->excluded_keywords)) {
+                        $excludedKeywords = $biddingSetting->excluded_keywords_array;
+                        $query->where(function($q) use ($excludedKeywords) {
+                            foreach ($excludedKeywords as $excluded) {
+                                $excluded = trim($excluded);
+                                if (!empty($excluded)) {
+                                    $q->where('b.keywords', 'NOT LIKE', "%{$excluded}%");
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    // If reviewer has no expertise keywords, show no papers when filtering is enabled
+                    $query->whereRaw('1 = 0');
+                }
+            }
+
+            $papers = $query->select(
                     'b.*',
                     'n.full_name as submitted_by_name',
                     'rb.bidding_value',
@@ -103,9 +146,26 @@ class BiddingController extends Controller
                 ->orderBy('b.title')
                 ->get();
 
+            $filterInfo = [];
+            if ($biddingSetting && $biddingSetting->enable_keyword_matching) {
+                $reviewerKeywords = $this->getReviewerExpertiseKeywords($userId, $conferenceId);
+                $filterInfo = [
+                    'keyword_matching_enabled' => true,
+                    'reviewer_keywords' => $reviewerKeywords,
+                    'total_papers_shown' => $papers->count(),
+                    'similarity_threshold' => $biddingSetting->keyword_similarity_threshold
+                ];
+            } else {
+                $filterInfo = [
+                    'keyword_matching_enabled' => false,
+                    'total_papers_shown' => $papers->count()
+                ];
+            }
+
             return response()->json([
                 'success' => true,
-                'papers' => $papers
+                'papers' => $papers,
+                'filter_info' => $filterInfo
             ]);
         } catch (\Exception $e) {
             \Log::error('Error getting conference papers: ' . $e->getMessage());
@@ -114,6 +174,27 @@ class BiddingController extends Controller
                 'message' => 'Có lỗi xảy ra khi tải danh sách bài báo'
             ], 500);
         }
+    }
+
+    /**
+     * Get reviewer's expertise keywords from join_requests table
+     */
+    private function getReviewerExpertiseKeywords($userId, $conferenceId)
+    {
+        $joinRequest = DB::table('join_requests')
+            ->where('user_id', $userId)
+            ->where('conference_id', $conferenceId)
+            ->where('role', 'reviewer')
+            ->where('status', 'APPROVED')
+            ->first(['expertise_keywords']);
+
+        if (!$joinRequest || empty($joinRequest->expertise_keywords)) {
+            return [];
+        }
+
+        // Split keywords by comma and clean them
+        $keywords = array_map('trim', explode(',', $joinRequest->expertise_keywords));
+        return array_filter($keywords); // Remove empty values
     }
 
     /**

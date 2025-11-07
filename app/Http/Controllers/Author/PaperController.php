@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class PaperController extends Controller
 {
@@ -16,13 +17,107 @@ class PaperController extends Controller
     }
 
     /**
+     * Check if paper can be edited based on conference deadlines and paper status
+     */
+    private function canEditPaper($paper)
+    {
+        $now = Carbon::now();
+        $submissionDeadline = Carbon::parse($paper->deadline_submission);
+        $cameraReadyDeadline = $paper->deadline_camera_ready ? Carbon::parse($paper->deadline_camera_ready) : null;
+        
+        // Kiểm tra xem có reviewer nào đã hoàn thành review chưa
+        if ($this->hasCompletedReviews($paper->paper_id)) {
+            return ['can_edit' => false, 'reason' => 'Không thể chỉnh sửa khi đã có reviewer hoàn thành phản biện.'];
+        }
+        
+        // Giai đoạn 1: TRƯỚC Deadline Nộp bài - cho phép chỉnh sửa
+        if ($now->lt($submissionDeadline) && in_array($paper->status_code, ['DRAFT', 'SUBMITTED'])) {
+            return ['can_edit' => true, 'reason' => ''];
+        }
+        
+        // Giai đoạn 2: SAU Deadline Nộp bài hoặc đang review - KHÔNG cho phép
+        if ($now->gte($submissionDeadline) && in_array($paper->status_code, ['SUBMITTED', 'UNDER_REVIEW'])) {
+            return ['can_edit' => false, 'reason' => 'Đã quá hạn nộp bài hoặc bài đang được phản biện.'];
+        }
+        
+        // Giai đoạn 3: Có kết quả review
+        if (in_array($paper->status_code, ['ACCEPTED', 'REJECTED'])) {
+            // Nếu bị từ chối - KHÔNG cho phép chỉnh sửa
+            if ($paper->status_code === 'REJECTED') {
+                return ['can_edit' => false, 'reason' => 'Bài báo đã bị từ chối, không thể chỉnh sửa.'];
+            }
+            
+            // Nếu được chấp nhận - chỉ cho phép trong thời hạn camera-ready
+            if ($paper->status_code === 'ACCEPTED') {
+                if ($cameraReadyDeadline && $now->lt($cameraReadyDeadline)) {
+                    return ['can_edit' => true, 'reason' => ''];
+                } else {
+                    return ['can_edit' => false, 'reason' => 'Đã quá hạn camera-ready hoặc chưa có deadline camera-ready.'];
+                }
+            }
+        }
+        
+        // Các trạng thái khác (WITHDRAWN, etc.) - KHÔNG cho phép
+        return ['can_edit' => false, 'reason' => 'Trạng thái bài báo không cho phép chỉnh sửa.'];
+    }
+    
+    /**
+     * Check if paper can be withdrawn based on conference deadlines and paper status
+     */
+    private function canWithdrawPaper($paper)
+    {
+        $now = Carbon::now();
+        $submissionDeadline = Carbon::parse($paper->deadline_submission);
+        
+        // Kiểm tra xem có reviewer nào đã hoàn thành review chưa
+        if ($this->hasCompletedReviews($paper->paper_id)) {
+            return ['can_withdraw' => false, 'reason' => 'Không thể rút bài khi đã có reviewer hoàn thành phản biện.'];
+        }
+        
+        // Giai đoạn 1: TRƯỚC Deadline Nộp bài - cho phép rút bài
+        if ($now->lt($submissionDeadline) && in_array($paper->status_code, ['DRAFT', 'SUBMITTED'])) {
+            return ['can_withdraw' => true, 'reason' => ''];
+        }
+        
+        // Giai đoạn 2: SAU Deadline Nộp bài hoặc đang review - KHÔNG cho phép
+        if ($now->gte($submissionDeadline) && in_array($paper->status_code, ['SUBMITTED', 'UNDER_REVIEW'])) {
+            return ['can_withdraw' => false, 'reason' => 'Đã quá hạn nộp bài hoặc bài đang được phản biện.'];
+        }
+        
+        // Giai đoạn 3: Có kết quả review - KHÔNG cho phép rút (cả ACCEPTED và REJECTED)
+        if (in_array($paper->status_code, ['ACCEPTED', 'REJECTED'])) {
+            return ['can_withdraw' => false, 'reason' => 'Không thể rút bài sau khi có kết quả phản biện.'];
+        }
+        
+        // Các trạng thái khác - KHÔNG cho phép
+        return ['can_withdraw' => false, 'reason' => 'Trạng thái bài báo không cho phép rút bài.'];
+    }
+    
+    /**
+     * Check if any reviewer has completed review for this paper
+     */
+    private function hasCompletedReviews($paperId)
+    {
+        // Check if there are completed reviews (submitted and not draft)
+        $completedReviews = DB::table('reviewer_assignments as ra')
+            ->join('phanbien as p', 'ra.id', '=', 'p.assignment_id')
+            ->where('ra.paper_id', $paperId)
+            ->where('p.is_draft', 0)
+            ->whereNotNull('p.submitted_at')
+            ->whereNotNull('ra.review_submitted_at')
+            ->count();
+            
+        return $completedReviews > 0;
+    }
+
+    /**
      * Display a listing of the author's papers
      */
     public function index()
     {
         $userId = Auth::id();
         
-        // Get all papers submitted by this author
+        // Get all papers submitted by this author with conference deadline info for permissions
         $papers = DB::table('baibao')
             ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
             ->join('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
@@ -34,10 +129,25 @@ class PaperController extends Controller
                 'baibao.status_code',
                 'hoithao.title as conference_title',
                 'hoithao.conference_id',
+                'hoithao.deadline_submission',
+                'hoithao.deadline_camera_ready',
                 'trangthaibaibao.status_name'
             )
             ->orderBy('baibao.created_at', 'desc')
             ->paginate(20);
+        
+        // Add permission checks for each paper
+        $papers->getCollection()->transform(function ($paper) {
+            $editPermission = $this->canEditPaper($paper);
+            $withdrawPermission = $this->canWithdrawPaper($paper);
+            
+            $paper->can_edit = $editPermission['can_edit'];
+            $paper->edit_reason = $editPermission['reason'];
+            $paper->can_withdraw = $withdrawPermission['can_withdraw'];
+            $paper->withdraw_reason = $withdrawPermission['reason'];
+            
+            return $paper;
+        });
         
         // Get statistics
         $stats = [
@@ -217,6 +327,7 @@ class PaperController extends Controller
                 'baibao.*',
                 'hoithao.title as conference_title',
                 'hoithao.deadline_submission',
+                'hoithao.deadline_camera_ready',
                 'trangthaibaibao.status_name'
             )
             ->first();
@@ -224,6 +335,10 @@ class PaperController extends Controller
         if (!$paper) {
             abort(404, 'Không tìm thấy bài báo hoặc bạn không có quyền truy cập.');
         }
+        
+        // Check permissions for edit and withdraw
+        $editPermission = $this->canEditPaper($paper);
+        $withdrawPermission = $this->canWithdrawPaper($paper);
         
         // Get authors
         $authors = DB::table('tacgiabaibao')
@@ -240,30 +355,57 @@ class PaperController extends Controller
             ->orderBy('tacgiabaibao.author_order')
             ->get();
         
-        // Get review assignments
-        $assignments = DB::table('phancongphanbien')
-            ->where('paper_id', $id)
-            ->select('assignment_id', 'status_code', 'assigned_at', 'deadline')
+        // Get review assignments with proper table names
+        $assignments = DB::table('reviewer_assignments as ra')
+            ->leftJoin('nguoidung as u', 'ra.user_id', '=', 'u.user_id')
+            ->where('ra.paper_id', $id)
+            ->select(
+                'ra.id as assignment_id',
+                'ra.user_id', 
+                'ra.status',
+                'ra.assigned_at',
+                'ra.review_submitted_at',
+                'u.full_name as reviewer_name'
+            )
+            ->orderBy('ra.assigned_at')
             ->get();
         
-        // Get reviews (only if paper is under review or later)
+        // Get completed reviews (only if paper is under review or later)
         $reviews = [];
         if (in_array($paper->status_code, ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED'])) {
-            $reviews = DB::table('phanbien')
-                ->join('phancongphanbien', 'phanbien.assignment_id', '=', 'phancongphanbien.assignment_id')
-                ->where('phancongphanbien.paper_id', $id)
-                ->whereNotNull('phanbien.submitted_at')
+            $reviews = DB::table('phanbien as p')
+                ->join('reviewer_assignments as ra', 'p.assignment_id', '=', 'ra.id')
+                ->leftJoin('nguoidung as u', 'ra.user_id', '=', 'u.user_id')
+                ->leftJoin('loaikhuyennghi as lkn', 'p.recommendation_code', '=', 'lkn.recommendation_code')
+                ->where('ra.paper_id', $id)
+                ->where('p.is_draft', 0)
+                ->whereNotNull('p.submitted_at')
                 ->select(
-                    'phanbien.review_id',
-                    'phanbien.score',
-                    'phanbien.recommendation',
-                    'phanbien.review_content',
-                    'phanbien.submitted_at'
+                    'p.review_id',
+                    'p.total_score',
+                    'p.recommendation_code',
+                    'p.comment_author',
+                    'p.submitted_at',
+                    'p.score_novelty',
+                    'p.score_relevance', 
+                    'p.score_technical_quality',
+                    'p.score_presentation',
+                    'p.score_references',
+                    'lkn.recommendation_name',
+                    'u.full_name as reviewer_name'
                 )
+                ->orderBy('p.submitted_at')
                 ->get();
         }
         
-        return view('author.papers.show', compact('paper', 'authors', 'assignments', 'reviews'));
+        return view('author.papers.show', compact(
+            'paper', 
+            'authors', 
+            'assignments', 
+            'reviews',
+            'editPermission',
+            'withdrawPermission'
+        ));
     }
 
     /**
@@ -273,33 +415,31 @@ class PaperController extends Controller
     {
         $userId = Auth::id();
         
-        // Get paper
+        // Get paper with conference deadline info
         $paper = DB::table('baibao')
             ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
             ->where('baibao.paper_id', $id)
             ->where('baibao.submitter_id', $userId)
-            ->select('baibao.*', 'hoithao.deadline_submission')
+            ->select(
+                'baibao.*', 
+                'hoithao.deadline_submission',
+                'hoithao.deadline_camera_ready'
+            )
             ->first();
         
         if (!$paper) {
             abort(404, 'Không tìm thấy bài báo hoặc bạn không có quyền truy cập.');
         }
         
-        // Check if can edit
-        if (!in_array($paper->status_code, ['DRAFT', 'SUBMITTED'])) {
+        // Check if can edit based on new logic
+        $editPermission = $this->canEditPaper($paper);
+        if (!$editPermission['can_edit']) {
             return redirect()
                 ->route('author.papers.show', $id)
-                ->withErrors(['error' => 'Không thể chỉnh sửa bài báo ở trạng thái này.']);
+                ->withErrors(['error' => $editPermission['reason']]);
         }
         
-        // Check deadline
-        if ($paper->deadline_submission < now()) {
-            return redirect()
-                ->route('author.papers.show', $id)
-                ->withErrors(['error' => 'Đã quá hạn nộp bài.']);
-        }
-        
-        // Get active conferences
+        // Get active conferences (only if before deadline)
         $conferences = DB::table('hoithao')
             ->where('status', 'ACTIVE')
             ->where('deadline_submission', '>', now())
@@ -340,17 +480,27 @@ class PaperController extends Controller
             'co_authors' => 'nullable|array',
         ]);
         
-        // Get paper
+        // Get paper with conference deadline info
         $paper = DB::table('baibao')
-            ->where('paper_id', $id)
-            ->where('submitter_id', $userId)
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->where('baibao.paper_id', $id)
+            ->where('baibao.submitter_id', $userId)
+            ->select(
+                'baibao.*',
+                'hoithao.deadline_submission',
+                'hoithao.deadline_camera_ready'
+            )
             ->first();
         
         if (!$paper) {
             abort(404);
         }
         
-        // Check if can edit
+        // Check if can edit based on new logic
+        $editPermission = $this->canEditPaper($paper);
+        if (!$editPermission['can_edit']) {
+            return back()->withErrors(['error' => $editPermission['reason']]);
+        }
         if (!in_array($paper->status_code, ['DRAFT', 'SUBMITTED'])) {
             return back()->withErrors(['error' => 'Không thể chỉnh sửa bài báo này.']);
         }
@@ -430,19 +580,26 @@ class PaperController extends Controller
             'reason' => 'nullable|string|max:500',
         ]);
         
-        // Get paper
+        // Get paper with conference deadline info
         $paper = DB::table('baibao')
-            ->where('paper_id', $id)
-            ->where('submitter_id', $userId)
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->where('baibao.paper_id', $id)
+            ->where('baibao.submitter_id', $userId)
+            ->select(
+                'baibao.*',
+                'hoithao.deadline_submission',
+                'hoithao.deadline_camera_ready'
+            )
             ->first();
         
         if (!$paper) {
             abort(404);
         }
         
-        // Cannot withdraw if already accepted
-        if ($paper->status_code === 'ACCEPTED') {
-            return back()->withErrors(['error' => 'Không thể rút bài báo đã được chấp nhận.']);
+        // Check if can withdraw based on new logic
+        $withdrawPermission = $this->canWithdrawPaper($paper);
+        if (!$withdrawPermission['can_withdraw']) {
+            return back()->withErrors(['error' => $withdrawPermission['reason']]);
         }
         
         // Update status
@@ -481,8 +638,3 @@ class PaperController extends Controller
         return Storage::download($paper->file_path, $paper->title . '.pdf');
     }
 }
-
-
-
-
-
