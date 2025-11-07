@@ -206,14 +206,21 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                     </svg>
                                 </a>
-                                @if(in_array($paper->status_code, ['DRAFT', 'SUBMITTED']))
-                                <a href="{{ route('author.papers.edit', $paper->paper_id) }}" 
-                                   class="text-orange-600 hover:text-orange-800 p-2 hover:bg-orange-50 rounded transition"
-                                   title="Chỉnh sửa">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                </a>
+                                @if($paper->can_edit)
+                                    <a href="{{ route('author.papers.edit', $paper->paper_id) }}" 
+                                       class="text-orange-600 hover:text-orange-800 p-2 hover:bg-orange-50 rounded transition"
+                                       title="Chỉnh sửa">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </a>
+                                @else
+                                    <span class="p-2 text-gray-400 cursor-not-allowed" 
+                                          title="{{ $paper->edit_reason }}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </span>
                                 @endif
                             </div>
                         </td>

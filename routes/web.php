@@ -348,6 +348,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return view('chair.reviewers.invite', ['conferences' => collect()]);
         })->name('test.invite');
         
+        // Bidding Settings
+        Route::get('/bidding-settings', [\App\Http\Controllers\Chair\BiddingSettingsController::class, 'index'])->name('bidding-settings');
+        Route::get('/conferences/{conferenceId}/bidding-settings', [\App\Http\Controllers\Chair\BiddingSettingsController::class, 'getSettings'])->name('bidding-settings.get');
+        Route::put('/conferences/{conferenceId}/bidding-settings', [\App\Http\Controllers\Chair\BiddingSettingsController::class, 'updateSettings'])->name('bidding-settings.update');
+        Route::get('/conferences/{conferenceId}/bidding-statistics', [\App\Http\Controllers\Chair\BiddingSettingsController::class, 'getStatistics'])->name('bidding-settings.statistics');
+        
         // Route with parameter should be last to avoid conflicts
         Route::get('/reviewers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showReviewer'])->name('reviewers.show');
         
