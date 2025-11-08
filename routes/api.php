@@ -101,8 +101,10 @@ Route::middleware(['auth:api'])->group(function () {
     Route::get('papers/{id}', [PaperController::class, 'show']);
     Route::put('papers/{id}', [PaperController::class, 'update']);
     Route::delete('papers/{id}', [PaperController::class, 'destroy']);
+    Route::post('papers/{id}/withdraw', [PaperController::class, 'withdraw']);
     Route::get('papers/{id}/download', [PaperController::class, 'download']);
     Route::get('my-papers', [PaperController::class, 'myPapers']);
+    Route::get('author/statistics', [PaperController::class, 'authorStatistics']);
 
     // Paper Version Management
     Route::get('papers/{paper_id}/versions', [PaperVersionController::class, 'index']);
