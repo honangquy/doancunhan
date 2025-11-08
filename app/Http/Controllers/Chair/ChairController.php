@@ -243,37 +243,36 @@ class ChairController extends Controller
         
         // Add review stats to each paper
         foreach ($papers as $paper) {
-            // Review counts
-            $reviewCounts = DB::table('phancongphanbien as pc')
-                ->leftJoin('phanbien as pb', 'pc.assignment_id', '=', 'pb.assignment_id')
-                ->where('pc.paper_id', $paper->paper_id)
+            // Get reviewer assignments with status counts
+            $assignments = DB::table('reviewer_assignments as ra')
+                ->leftJoin('phanbien as pb', 'ra.id', '=', 'pb.assignment_id')
+                ->where('ra.paper_id', $paper->paper_id)
                 ->selectRaw('
-                    COUNT(pc.assignment_id) as total_assigned,
-                    COUNT(pb.review_id) as completed,
+                    COUNT(ra.id) as total_assigned,
+                    SUM(CASE WHEN ra.status = "ACCEPTED" THEN 1 ELSE 0 END) as accepted,
+                    SUM(CASE WHEN ra.status = "DECLINED" THEN 1 ELSE 0 END) as declined,
+                    SUM(CASE WHEN ra.status = "PENDING" THEN 1 ELSE 0 END) as pending,
+                    COUNT(pb.review_id) as reviews_completed,
                     AVG(pb.score) as avg_score
                 ')
                 ->first();
             
-            $paper->reviews_total = $reviewCounts->total_assigned ?? 0;
-            $paper->reviews_completed = $reviewCounts->completed ?? 0;
-            $paper->avg_score = $reviewCounts->avg_score ? round($reviewCounts->avg_score, 1) : null;
+            $paper->reviewers_assigned = $assignments->total_assigned ?? 0;
+            $paper->reviewers_accepted = $assignments->accepted ?? 0;
+            $paper->reviewers_declined = $assignments->declined ?? 0;
+            $paper->reviewers_pending = $assignments->pending ?? 0;
+            $paper->reviews_completed = $assignments->reviews_completed ?? 0;
+            $paper->avg_score = $assignments->avg_score ? round($assignments->avg_score, 1) : null;
             
-            // Recommendation summary
-            if ($paper->reviews_completed > 0) {
-                $recommendations = DB::table('phanbien as pb')
-                    ->join('phancongphanbien as pc', 'pb.assignment_id', '=', 'pc.assignment_id')
-                    ->where('pc.paper_id', $paper->paper_id)
-                    ->select('pb.recommendation_code')
-                    ->get()
-                    ->pluck('recommendation_code')
-                    ->countBy()
-                    ->all();
-                
-                $paper->recommendations = $recommendations;
-            }
+            // Get list of reviewers
+            $paper->reviewers = DB::table('reviewer_assignments as ra')
+                ->join('nguoidung as nd', 'ra.user_id', '=', 'nd.user_id')
+                ->where('ra.paper_id', $paper->paper_id)
+                ->select('nd.full_name', 'ra.status')
+                ->get();
         }
         
-        // Statistics for sidebar
+        // Statistics for dashboard cards
         $statusCounts = DB::table('baibao')
             ->whereIn('conference_id', $conferenceIds)
             ->select('status_code', DB::raw('COUNT(*) as count'))
@@ -281,10 +280,17 @@ class ChairController extends Controller
             ->pluck('count', 'status_code')
             ->all();
         
+        $pendingCount = $statusCounts['SUBMITTED'] ?? 0;
+        $acceptedCount = $statusCounts['ACCEPTED'] ?? 0;
+        $rejectedCount = $statusCounts['REJECTED'] ?? 0;
+        
         return view('chair.papers.index', [
             'papers' => $papers,
             'conferences' => $conferences,
             'statusCounts' => $statusCounts,
+            'pendingCount' => $pendingCount,
+            'acceptedCount' => $acceptedCount,
+            'rejectedCount' => $rejectedCount,
             'filters' => $request->only(['conference', 'status', 'search'])
         ]);
     }

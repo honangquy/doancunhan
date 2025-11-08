@@ -100,7 +100,7 @@ class ReviewerInvitationController extends Controller
         if ($existingUser) {
             return response()->json([
                 'success' => false,
-                'message' => "Email đã tồn tại với role {$existingUser->role_name}. Vui lòng nhập email khác."
+                'message' => "Email đã tồn tại. Vui lòng nhập email khác."
             ], 400);
         }
 
