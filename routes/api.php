@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\PaperController;
 use App\Http\Controllers\Api\PaperVersionController;
 use App\Http\Controllers\Api\BiddingController;
 use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\COIController;
+// use App\Http\Controllers\Api\COIController; // TODO: Create this controller
 use App\Http\Controllers\Api\AssignmentController;
 use App\Http\Controllers\Api\AdminController;
 
@@ -130,13 +130,13 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('reviews/{review_id}/finalize', [ReviewController::class, 'finalize']); // Finalize review
     Route::get('review/statistics', [ReviewController::class, 'statistics']); // Review statistics (Admin)
 
-    // COI Management (Phase 5)
-    Route::post('coi/declare', [COIController::class, 'declare']); // Declare COI manually
-    Route::get('papers/{paper_id}/coi', [COIController::class, 'paperCOIs']); // List paper COIs (Admin/Chair)
-    Route::get('coi', [COIController::class, 'index']); // List all COIs (Admin)
-    Route::post('coi/detect', [COIController::class, 'detect']); // Auto-detect COI (Admin)
-    Route::post('coi/{coi_id}/resolve', [COIController::class, 'resolve']); // Resolve COI (Chair)
-    Route::get('coi/statistics', [COIController::class, 'statistics']); // COI statistics (Admin)
+    // COI Management (Phase 5) - TODO: Implement COIController
+    // Route::post('coi/declare', [COIController::class, 'declare']); // Declare COI manually
+    // Route::get('papers/{paper_id}/coi', [COIController::class, 'paperCOIs']); // List paper COIs (Admin/Chair)
+    // Route::get('coi', [COIController::class, 'index']); // List all COIs (Admin)
+    // Route::post('coi/detect', [COIController::class, 'detect']); // Auto-detect COI (Admin)
+    // Route::post('coi/{coi_id}/resolve', [COIController::class, 'resolve']); // Resolve COI (Chair)
+    // Route::get('coi/statistics', [COIController::class, 'statistics']); // COI statistics (Admin)
 
     // Assignment System (Phase 5) - COMPLETE!
     Route::post('assignments', [AssignmentController::class, 'store']); // Manual assignment
@@ -157,6 +157,28 @@ Route::middleware(['auth:api'])->group(function () {
         // System Reports (2 APIs)
         Route::get('reports/conference/{id}', [AdminController::class, 'conferenceReport']); // Conference report
         Route::get('reports/overview', [AdminController::class, 'systemOverview']); // System overview
+    });
+
+    // Chair Management APIs for Flutter (NEW)
+    Route::prefix('chair')->group(function () {
+        // Dashboard & Overview
+        Route::get('dashboard', [\App\Http\Controllers\Api\ChairController::class, 'dashboard']); // Dashboard statistics
+        
+        // Paper Management
+        Route::get('papers', [\App\Http\Controllers\Api\ChairController::class, 'papers']); // List all papers with filters
+        Route::get('papers/{id}', [\App\Http\Controllers\Api\ChairController::class, 'showPaper']); // Paper detail with reviews
+        
+        // Reviewer Assignment
+        Route::get('papers/{id}/available-reviewers', [\App\Http\Controllers\Api\ChairController::class, 'getAvailableReviewers']); // Get available reviewers
+        Route::post('papers/{id}/assign-reviewer', [\App\Http\Controllers\Api\ChairController::class, 'assignReviewer']); // Assign reviewer
+        Route::delete('assignments/{id}', [\App\Http\Controllers\Api\ChairController::class, 'removeAssignment']); // Remove assignment
+        
+        // Decision Making
+        Route::post('papers/{id}/decision', [\App\Http\Controllers\Api\ChairController::class, 'makeDecision']); // Accept/Reject paper
+        
+        // Statistics & Reports
+        Route::get('conferences/{id}/review-statistics', [\App\Http\Controllers\Api\ChairController::class, 'reviewStatistics']); // Review statistics
+        Route::get('reviewers', [\App\Http\Controllers\Api\ChairController::class, 'listReviewers']); // List reviewers with performance
     });
 
     // Notifications (Phase 7)
