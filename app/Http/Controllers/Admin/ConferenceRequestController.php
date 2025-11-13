@@ -19,7 +19,7 @@ class ConferenceRequestController extends Controller
         $status = $request->get('status', 'all');
         $search = $request->get('search');
         
-        $query = YeuCauHoiThao::with(['user', 'requester'])
+        $query = YeuCauHoiThao::with(['user', 'requester', 'coChairs'])
             ->orderBy('created_at', 'desc');
             
         if ($status !== 'all') {
@@ -92,7 +92,7 @@ class ConferenceRequestController extends Controller
      */
     public function show($id)
     {
-        $request = YeuCauHoiThao::with(['user', 'requester'])->findOrFail($id);
+        $request = YeuCauHoiThao::with(['user', 'requester', 'coChairs'])->findOrFail($id);
         
         return view('admin.conference-requests.show', compact('request'));
     }

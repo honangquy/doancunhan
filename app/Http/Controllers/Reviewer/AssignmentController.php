@@ -71,6 +71,7 @@ class AssignmentController extends Controller
             ->where('reviewer_assignments.user_id', $userId)
             ->select(
                 'reviewer_assignments.*',
+                'b.paper_id as paper_id',           // ✅ FIX: Add paper_id for download route
                 'b.title as paper_title',
                 'b.abstract as paper_abstract',
                 'b.file_path as paper_file',

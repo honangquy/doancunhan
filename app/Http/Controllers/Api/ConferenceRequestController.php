@@ -25,7 +25,7 @@ class ConferenceRequestController extends Controller
         try {
             $user = auth()->user();
             
-            $query = YeuCauHoiThao::with(['hoiThao', 'requester', 'admin']);
+            $query = YeuCauHoiThao::with(['hoiThao', 'requester', 'approver', 'coChairs']);
 
             // Filter by status
             if ($request->has('status')) {
@@ -131,17 +131,34 @@ class ConferenceRequestController extends Controller
                 ]);
 
                 // Parse and store co-chairs
+                \Log::info('Processing co-chairs', [
+                    'has_co_chairs' => $request->has('co_chairs'),
+                    'co_chairs_value' => $request->co_chairs,
+                    'co_chairs_type' => gettype($request->co_chairs)
+                ]);
+
                 if ($request->has('co_chairs') && $request->co_chairs) {
-                    $coChairs = json_decode($request->co_chairs, true);
+                    // Handle both JSON string and array
+                    $coChairs = is_string($request->co_chairs) 
+                        ? json_decode($request->co_chairs, true) 
+                        : $request->co_chairs;
+                    
+                    \Log::info('Decoded co-chairs', ['coChairs' => $coChairs, 'is_array' => is_array($coChairs)]);
+                    
                     if (is_array($coChairs)) {
-                        foreach ($coChairs as $coChair) {
+                        foreach ($coChairs as $index => $coChair) {
+                            \Log::info("Processing co-chair #{$index}", $coChair);
+                            
                             if (!empty($coChair['fullname']) && !empty($coChair['email'])) {
-                                ThemVienBoSung::create([
+                                $created = ThemVienBoSung::create([
                                     'request_id' => $conferenceRequest->request_id,
                                     'fullname' => $coChair['fullname'],
                                     'email' => $coChair['email'],
                                     'affiliation' => $coChair['affiliation'] ?? null,
                                 ]);
+                                \Log::info("Co-chair created", ['co_chair_id' => $created->co_chair_id]);
+                            } else {
+                                \Log::warning("Co-chair skipped - missing required fields", $coChair);
                             }
                         }
                     }
@@ -185,7 +202,8 @@ class ConferenceRequestController extends Controller
             $conferenceRequest = YeuCauHoiThao::with([
                 'hoiThao',
                 'requester',
-                'admin'
+                'approver',
+                'coChairs'
             ])->findOrFail($id);
 
             // Check permission
@@ -634,7 +652,7 @@ class ConferenceRequestController extends Controller
                 'pending' => YeuCauHoiThao::where('status', 'PENDING')->count(),
                 'approved' => YeuCauHoiThao::where('status', 'APPROVED')->count(),
                 'rejected' => YeuCauHoiThao::where('status', 'REJECTED')->count(),
-                'recent_requests' => YeuCauHoiThao::with(['hoiThao:conference_id,title', 'requester:user_id,full_name'])
+                'recent_requests' => YeuCauHoiThao::with(['hoiThao:conference_id,title', 'requester:user_id,full_name', 'coChairs'])
                     ->orderBy('request_date', 'desc')
                     ->take(10)
                     ->get(),

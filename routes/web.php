@@ -162,6 +162,33 @@ Route::post('/submit-conference-request', function (\Illuminate\Http\Request $re
         
         \Log::info('Record created with ID: ' . $conferenceRequest->request_id);
         
+        // Parse and store co-chairs
+        if ($request->has('co_chairs') && $request->co_chairs) {
+            \Log::info('[WEB ROUTE] Processing co-chairs', ['co_chairs' => $request->co_chairs]);
+            
+            $coChairs = json_decode($request->co_chairs, true);
+            
+            if (is_array($coChairs) && count($coChairs) > 0) {
+                \Log::info('[WEB ROUTE] Decoded co-chairs', ['count' => count($coChairs)]);
+                
+                foreach ($coChairs as $index => $coChair) {
+                    if (!empty($coChair['fullname']) && !empty($coChair['email'])) {
+                        $created = \App\Models\ThemVienBoSung::create([
+                            'request_id' => $conferenceRequest->request_id,
+                            'fullname' => $coChair['fullname'],
+                            'email' => $coChair['email'],
+                            'affiliation' => $coChair['affiliation'] ?? null,
+                        ]);
+                        \Log::info("[WEB ROUTE] Co-chair #{$index} created", ['id' => $created->co_chair_id]);
+                    }
+                }
+            } else {
+                \Log::info('[WEB ROUTE] No valid co-chairs data');
+            }
+        } else {
+            \Log::info('[WEB ROUTE] No co-chairs in request');
+        }
+        
         return response()->json([
             'success' => true,
             'message' => 'Conference request submitted successfully',
