@@ -236,7 +236,7 @@ class BiddingController extends Controller
         }
 
         try {
-            $user = Auth::user(); $userId = $user ? $user->user_id : null;
+            $userId = Auth::id();
             $data = $request->all();
 
             // Verify reviewer access
@@ -333,7 +333,7 @@ class BiddingController extends Controller
         }
 
         try {
-            $user = Auth::user(); $userId = $user ? $user->user_id : null;
+            $userId = Auth::id();
             $biddings = $request->input('biddings');
 
             DB::beginTransaction();
@@ -409,7 +409,7 @@ class BiddingController extends Controller
     public function getAssignments()
     {
         try {
-            $user = Auth::user(); $userId = $user ? $user->user_id : null;
+            $userId = Auth::id();
 
             $assignments = DB::table('reviewer_assignments as ra')
                 ->join('baibao as b', 'ra.paper_id', '=', 'b.paper_id')
@@ -458,7 +458,7 @@ class BiddingController extends Controller
         }
 
         try {
-            $user = Auth::user(); $userId = $user ? $user->user_id : null;
+            $userId = Auth::id();
 
             $assignment = ReviewerAssignment::where('id', $assignmentId)
                 ->where('user_id', $userId)
@@ -504,7 +504,7 @@ class BiddingController extends Controller
     public function getBiddingStatistics($conferenceId = null)
     {
         try {
-            $user = Auth::user(); $userId = $user ? $user->user_id : null;
+            $userId = Auth::id();
 
             $query = ReviewerBidding::where('user_id', $userId);
             

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
@@ -263,6 +264,126 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/coi/search-papers', [\App\Http\Controllers\Reviewer\COIController::class, 'searchPapers'])->name('coi.search-papers');
     });
     
+    // Web-based Notification Routes (for authenticated users)
+    Route::middleware('auth')->prefix('web')->group(function () {
+        Route::get('/notifications', function () {
+            $user = Auth::user();
+            
+            \Log::info('Notification request', [
+                'user' => $user ? $user->user_id : 'null',
+                'name' => $user ? $user->full_name : 'null'
+            ]);
+            
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $notifications = DB::table('user_notifications')
+                ->where('user_id', $user->user_id)
+                ->orderBy('created_at', 'desc')
+                ->limit(20)
+                ->get()
+                ->map(function ($notif) {
+                    return [
+                        'id' => $notif->notification_id,
+                        'title' => $notif->title,
+                        'message' => $notif->message,
+                        'time' => \Carbon\Carbon::parse($notif->created_at)->diffForHumans(),
+                        'created_at' => $notif->created_at,
+                        'is_read' => (bool)$notif->is_read,
+                    ];
+                });
+
+            $unreadCount = DB::table('user_notifications')
+                ->where('user_id', $user->user_id)
+                ->where('is_read', false)
+                ->count();
+
+            return response()->json([
+                'notifications' => $notifications,
+                'unreadCount' => $unreadCount
+            ]);
+        })->name('web.notifications');
+
+        Route::patch('/notifications/{id}/read', function ($id) {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $updated = DB::table('user_notifications')
+                ->where('notification_id', $id)
+                ->where('user_id', $user->user_id)
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now()
+                ]);
+
+            return response()->json(['success' => $updated > 0]);
+        })->name('web.notifications.read');
+
+        Route::patch('/notifications/read-all', function () {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $updated = DB::table('user_notifications')
+                ->where('user_id', $user->user_id)
+                ->where('is_read', false)
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now()
+                ]);
+
+            return response()->json(['success' => true, 'updated' => $updated]);
+        })->name('web.notifications.read_all');
+        
+        // Notification detail page
+        Route::get('/notifications/{id}', function ($id) {
+            $user = Auth::user();
+            if (!$user) {
+                return redirect()->route('login');
+            }
+
+            $notification = DB::table('user_notifications')
+                ->where('notification_id', $id)
+                ->where('user_id', $user->user_id)
+                ->first();
+
+            if (!$notification) {
+                abort(404, 'Notification not found');
+            }
+
+            // Mark as read if not already
+            if (!$notification->is_read) {
+                DB::table('user_notifications')
+                    ->where('notification_id', $id)
+                    ->update([
+                        'is_read' => true,
+                        'read_at' => now()
+                    ]);
+            }
+
+            // Determine user role for color scheme
+            $roles = DB::table('vaitronguoidung')
+                ->where('user_id', $user->user_id)
+                ->pluck('role_code')
+                ->toArray();
+            
+            $colorScheme = 'blue'; // Default
+            if (in_array('CHAIR', $roles)) {
+                $colorScheme = 'orange';
+            } elseif (in_array('REVIEWER', $roles)) {
+                $colorScheme = 'purple';
+            } elseif (in_array('AUTHOR', $roles)) {
+                $colorScheme = 'blue';
+            }
+
+            return view('notifications.show', compact('notification', 'colorScheme'));
+        })->name('web.notifications.show');
+    });
+    
     // Chair Routes
     Route::prefix('chair')->middleware('role:CHAIR')->name('chair.')->group(function () {
         // Dashboard
@@ -348,6 +469,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return view('chair.reviewers.invite', ['conferences' => collect()]);
         })->name('test.invite');
         
+        // Conference Reminder Management
+        Route::get('/reminders', [\App\Http\Controllers\Chair\ConferenceReminderController::class, 'index'])->name('reminders.index');
+        Route::get('/reminders/{conferenceId}/logs', [\App\Http\Controllers\Chair\ConferenceReminderController::class, 'logs'])->name('reminders.logs');
+        Route::post('/reminders/test-send', [\App\Http\Controllers\Chair\ConferenceReminderController::class, 'testSend'])->name('reminders.test-send');
+        
         // Bidding Settings
         Route::get('/bidding-settings', [\App\Http\Controllers\Chair\BiddingSettingsController::class, 'index'])->name('bidding-settings');
         Route::get('/conferences/{conferenceId}/bidding-settings', [\App\Http\Controllers\Chair\BiddingSettingsController::class, 'getSettings'])->name('bidding-settings.get');
@@ -369,6 +495,331 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Legacy routes for backward compatibility
         Route::get('/assignments/{paperId}/assign', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'assign'])->name('assignments.assign');
         Route::post('/assignments/store', [\App\Http\Controllers\Chair\ReviewerAssignmentController::class, 'store'])->name('assignments.store');
+        
+        // Announcement/Notification Management
+        Route::get('/announcements', function() {
+            return view('chair.announcements.index');
+        })->name('announcements.index');
+        
+        Route::get('/announcements/data/list', function(Request $request) {
+            $query = DB::table('thongbao as tb')
+                ->join('hoithao as ht', 'tb.conference_id', '=', 'ht.conference_id')
+                ->select(
+                    'tb.announcement_id as id',
+                    'tb.title as tieuDe',
+                    'tb.content as noiDung',
+                    'tb.audience as doiTuong',
+                    'tb.channels',
+                    'tb.status as trangThai',
+                    'tb.scheduled_at as thoiGianHenGui',
+                    'tb.sent_at as thoiGianDaGui',
+                    'tb.created_at as taoLuc',
+                    'ht.title as tenHoiThao'
+                )
+                ->orderBy('tb.created_at', 'desc');
+            
+            // Filter by conference
+            if ($request->conference_id) {
+                $query->where('tb.conference_id', $request->conference_id);
+            }
+            
+            // Filter by status
+            if ($request->status) {
+                $query->where('tb.status', $request->status);
+            }
+            
+            // Search
+            if ($request->search) {
+                $query->where(function($q) use ($request) {
+                    $q->where('tb.title', 'like', '%' . $request->search . '%')
+                      ->orWhere('tb.content', 'like', '%' . $request->search . '%');
+                });
+            }
+            
+            $announcements = $query->get()->map(function($item) {
+                $item->channels = json_decode($item->channels, true) ?? [];
+                return $item;
+            });
+            
+            // Calculate stats
+            $stats = [
+                'total' => DB::table('thongbao')->count(),
+                'sent' => DB::table('thongbao')->where('status', 'SENT')->count(),
+                'scheduled' => DB::table('thongbao')->where('status', 'SCHEDULED')->count(),
+                'failed' => DB::table('thongbao')->where('status', 'FAILED')->count(),
+            ];
+            
+            return response()->json([
+                'announcements' => $announcements,
+                'stats' => $stats
+            ]);
+        })->name('announcements.data.list');
+        
+        Route::get('/announcements/create', function() {
+            return view('chair.announcements.create');
+        })->name('announcements.create');
+        
+        Route::get('/announcements/{id}/statistics', function($id) {
+            return view('chair.announcements.statistics', ['id' => $id]);
+        })->name('announcements.statistics');
+        
+        // AJAX endpoints for announcements
+        Route::get('/announcements/data/conferences', function() {
+            $userId = Auth::id();
+            
+            if (!$userId) {
+                return response()->json(['error' => 'Not authenticated', 'data' => []], 401);
+            }
+            
+            $conferences = DB::table('hoithao as ht')
+                ->join('vaitronguoidung as vtn', function($join) use ($userId) {
+                    $join->on('vtn.conference_id', '=', 'ht.conference_id')
+                         ->where('vtn.user_id', '=', $userId)
+                         ->where('vtn.role_code', '=', 'CHAIR');
+                })
+                ->select('ht.conference_id as id', 'ht.title as ten_hoi_thao', 'ht.start_date', 'ht.end_date', 'ht.status')
+                ->orderBy('ht.start_date', 'desc')
+                ->get();
+            
+            return response()->json(['data' => $conferences]);
+        })->name('announcements.data.conferences');
+        
+        Route::post('/announcements/data/recipient-count', function(Request $request) {
+            try {
+                $conferenceId = $request->input('conference_id');
+                $audience = $request->input('audience');
+                
+                \Log::info('Counting recipients', [
+                    'conference_id' => $conferenceId,
+                    'audience' => $audience
+                ]);
+                
+                if (!$conferenceId || !$audience) {
+                    return response()->json(['count' => 0]);
+                }
+                
+                $count = 0;
+                
+                switch ($audience) {
+                    case 'ALL':
+                        // Tất cả users có liên quan đến conference
+                        $count = DB::table('vaitronguoidung')
+                            ->where('conference_id', $conferenceId)
+                            ->distinct()
+                            ->count('user_id');
+                        break;
+                        
+                    case 'AUTHORS':
+                        // Tác giả = users có bài báo trong conference
+                        $count = DB::table('baibao')
+                            ->where('conference_id', $conferenceId)
+                            ->whereNotNull('submitter_id')
+                            ->distinct()
+                            ->count('submitter_id');
+                        break;
+                        
+                    case 'REVIEWERS':
+                        // Phản biện = users có role REVIEWER
+                        $count = DB::table('vaitronguoidung')
+                            ->where('conference_id', $conferenceId)
+                            ->where('role_code', 'REVIEWER')
+                            ->count();
+                        break;
+                        
+                    case 'CHAIRS':
+                        // Chairs = users có role CHAIR
+                        $count = DB::table('vaitronguoidung')
+                            ->where('conference_id', $conferenceId)
+                            ->where('role_code', 'CHAIR')
+                            ->count();
+                        break;
+                }
+                
+                \Log::info('Recipients counted', ['count' => $count]);
+                
+                return response()->json(['count' => $count]);
+                
+            } catch (\Exception $e) {
+                \Log::error('Failed to count recipients: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json([
+                    'count' => 0,
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        })->name('announcements.data.recipient-count');
+        
+        Route::post('/announcements/data/recipient-list', function(Request $request) {
+            try {
+                $conferenceId = $request->input('conference_id');
+                $audience = $request->input('audience');
+                
+                \Log::info('Loading recipient list', [
+                    'conference_id' => $conferenceId,
+                    'audience' => $audience
+                ]);
+                
+                if (!$conferenceId || !$audience) {
+                    return response()->json(['users' => []]);
+                }
+                
+                $users = collect();
+                
+                switch ($audience) {
+                    case 'ALL':
+                        // Tất cả users có liên quan đến conference
+                        $users = DB::table('nguoidung as u')
+                            ->join('vaitronguoidung as vtn', 'vtn.user_id', '=', 'u.user_id')
+                            ->where('vtn.conference_id', $conferenceId)
+                            ->select('u.user_id', 'u.full_name', 'u.email')
+                            ->distinct()
+                            ->get();
+                        break;
+                        
+                    case 'AUTHORS':
+                        // Tác giả = users có bài báo trong conference
+                        $users = DB::table('nguoidung as u')
+                            ->join('baibao as bb', 'bb.submitter_id', '=', 'u.user_id')
+                            ->where('bb.conference_id', $conferenceId)
+                            ->select('u.user_id', 'u.full_name', 'u.email')
+                            ->distinct()
+                            ->get();
+                        break;
+                        
+                    case 'REVIEWERS':
+                        // Phản biện = users có role REVIEWER
+                        $users = DB::table('nguoidung as u')
+                            ->join('vaitronguoidung as vtn', 'vtn.user_id', '=', 'u.user_id')
+                            ->where('vtn.conference_id', $conferenceId)
+                            ->where('vtn.role_code', 'REVIEWER')
+                            ->select('u.user_id', 'u.full_name', 'u.email')
+                            ->distinct()
+                            ->get();
+                        break;
+                        
+                    case 'CHAIRS':
+                        // Chairs = users có role CHAIR
+                        $users = DB::table('nguoidung as u')
+                            ->join('vaitronguoidung as vtn', 'vtn.user_id', '=', 'u.user_id')
+                            ->where('vtn.conference_id', $conferenceId)
+                            ->where('vtn.role_code', 'CHAIR')
+                            ->select('u.user_id', 'u.full_name', 'u.email')
+                            ->distinct()
+                            ->get();
+                        break;
+                }
+                
+                \Log::info('Recipients loaded', ['count' => $users->count()]);
+                
+                return response()->json(['users' => $users]);
+                
+            } catch (\Exception $e) {
+                \Log::error('Failed to load recipient list: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json([
+                    'users' => [],
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        })->name('announcements.data.recipient-list');
+        
+        Route::post('/announcements/store', function(Request $request) {
+            try {
+                $validated = $request->validate([
+                    'conference_id' => 'required|exists:hoithao,conference_id',
+                    'title' => 'required|string|max:255',
+                    'body' => 'required|string',
+                    'audience' => 'required|in:ALL,AUTHORS,REVIEWERS,CHAIRS',
+                    'channels' => 'required|array',
+                    'channels.*' => 'in:email,system',
+                    'send_immediately' => 'boolean',
+                    'scheduled_at' => 'nullable|date|after:now'
+                ]);
+                
+                \Log::info('Creating announcement', [
+                    'conference_id' => $validated['conference_id'],
+                    'title' => $validated['title'],
+                    'audience' => $validated['audience'],
+                    'scheduled_at' => $validated['scheduled_at'] ?? null
+                ]);
+                
+                $user = Auth::user();
+                $conferenceId = $validated['conference_id'];
+                
+                // Chuẩn bị channels (chuyển thành uppercase và JSON)
+                $channels = array_map('strtoupper', $validated['channels']);
+                $channelsJson = json_encode($channels);
+                
+                // Xác định status và thời gian
+                $sendImmediately = $validated['send_immediately'] ?? true;
+                $scheduledAt = $validated['scheduled_at'] ?? null;
+                
+                $status = 'DRAFT';
+                if ($sendImmediately && !$scheduledAt) {
+                    $status = 'SENT';
+                } elseif ($scheduledAt) {
+                    $status = 'SCHEDULED';
+                }
+                
+                // Lưu thông báo vào database
+                $announcementId = DB::table('thongbao')->insertGetId([
+                    'conference_id' => $conferenceId,
+                    'created_by' => $user->user_id,
+                    'title' => $validated['title'],
+                    'content' => $validated['body'],
+                    'audience' => $validated['audience'],
+                    'scheduled_at' => $scheduledAt,
+                    'sent_at' => ($status === 'SENT') ? now() : null,
+                    'status' => $status,
+                    'channels' => $channelsJson,
+                    'created_at' => now()
+                ]);
+                
+                \Log::info("Announcement created with ID: {$announcementId}, Status: {$status}");
+                
+                // Nếu gửi ngay lập tức
+                if ($status === 'SENT') {
+                    // Dispatch job gửi thông báo
+                    \App\Jobs\SendAnnouncementJob::dispatch($announcementId, $channels);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Thông báo đang được gửi đi...'
+                    ]);
+                }
+                
+                // Nếu lên lịch
+                if ($status === 'SCHEDULED') {
+                    return response()->json([
+                        'success' => true,
+                        'message' => "Thông báo đã được lên lịch gửi vào " . \Carbon\Carbon::parse($scheduledAt)->format('d/m/Y H:i')
+                    ]);
+                }
+                
+                // Nếu là draft
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Thông báo đã được lưu nháp'
+                ]);
+                
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Dữ liệu không hợp lệ',
+                    'errors' => $e->errors()
+                ], 422);
+            } catch (\Exception $e) {
+                \Log::error('Failed to create announcement: ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('announcements.store');
     });
     
     // Admin Routes

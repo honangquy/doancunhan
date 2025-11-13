@@ -15,7 +15,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Chạy job xử lý thông báo đã lên lịch mỗi phút
+        $schedule->job(new \App\Jobs\ProcessScheduledAnnouncementsJob)->everyMinute();
+        
+        // Xử lý email nhắc lịch hội thảo mỗi ngày lúc 7:00 sáng
+        $schedule->command('reminders:process-conference')->dailyAt('07:00');
     }
 
     /**

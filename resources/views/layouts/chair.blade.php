@@ -109,6 +109,14 @@
                     <span>Quản lý bài báo</span>
                 </a>
 
+                <a href="{{ route('chair.announcements.index') }}" 
+                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.announcements*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                    </svg>
+                    <span>Quản lý thông báo</span>
+                </a>
+
                 <!-- Phân công Dropdown Menu -->
                 <div x-data="{ open: {{ request()->routeIs('chair.reviewers*') || request()->routeIs('chair.assignments*') || request()->routeIs('chair.coi*') ? 'true' : 'false' }} }" class="space-y-1">
                     <!-- Main Menu Item -->
@@ -173,6 +181,14 @@
                     <span>Cài đặt Bidding</span>
                 </a>
 
+                <a href="{{ route('chair.reminders.index') }}" 
+                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.reminders*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Reminder Tự Động</span>
+                </a>
+
                 <a href="#" 
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition hover:bg-orange-500">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,12 +227,160 @@
                     <p class="text-sm text-gray-600">@yield('page-subtitle', '')</p>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button class="p-2 hover:bg-gray-100 rounded-lg transition relative">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </button>
+                    <!-- Notification Bell -->
+                    <div class="relative" x-data="{
+                        showNotifications: false,
+                        notifications: [],
+                        unreadCount: 0,
+                        loading: false,
+                        
+                        async loadNotifications() {
+                            this.loading = true;
+                            try {
+                                console.log('Loading notifications from /web/notifications');
+                                const response = await fetch('/web/notifications');
+                                console.log('Response status:', response.status);
+                                
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    console.log('Notifications loaded:', data);
+                                    this.notifications = data.notifications;
+                                    this.unreadCount = data.unreadCount;
+                                } else {
+                                    const errorText = await response.text();
+                                    console.error('Failed to load notifications:', response.status, errorText);
+                                }
+                            } catch (error) {
+                                console.error('Error loading notifications:', error);
+                            } finally {
+                                this.loading = false;
+                            }
+                        },
+                        
+                        async markAsRead(id) {
+                            try {
+                                const response = await fetch(`/web/notifications/${id}/read`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                    }
+                                });
+                                if (response.ok) {
+                                    this.loadNotifications();
+                                }
+                            } catch (error) {
+                                console.error('Error marking notification as read:', error);
+                            }
+                        },
+                        
+                        async markAllAsRead() {
+                            try {
+                                const response = await fetch('/web/notifications/read-all', {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                    }
+                                });
+                                if (response.ok) {
+                                    this.loadNotifications();
+                                }
+                            } catch (error) {
+                                console.error('Error marking all notifications as read:', error);
+                            }
+                        }
+                    }" x-init="loadNotifications()">
+                        <button @click="showNotifications = !showNotifications; if(showNotifications && unreadCount > 0) loadNotifications()"
+                                class="p-2 hover:bg-gray-100 rounded-lg transition relative">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+                            <span x-show="unreadCount > 0" 
+                                  x-text="unreadCount"
+                                  class="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                            </span>
+                        </button>
+                        
+                        <!-- Notifications Dropdown -->
+                        <div x-show="showNotifications"
+                             x-transition:enter="transition ease-out duration-300"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-200"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             @click.away="showNotifications = false"
+                             class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl z-50 border border-gray-100"
+                             style="display: none;">
+                            <div class="p-4 border-b border-gray-100 flex justify-between items-center">
+                                <h3 class="font-semibold text-gray-800">Thông báo</h3>
+                                <button @click="markAllAsRead()" 
+                                        x-show="unreadCount > 0"
+                                        class="text-xs text-orange-600 hover:text-orange-700 font-medium">
+                                    Đánh dấu tất cả đã đọc
+                                </button>
+                            </div>
+                            
+                            <div class="max-h-96 overflow-y-auto">
+                                <template x-if="loading">
+                                    <div class="p-8 text-center">
+                                        <svg class="animate-spin h-8 w-8 mx-auto text-orange-600" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <p class="mt-2 text-sm text-gray-500">Đang tải...</p>
+                                    </div>
+                                </template>
+                                
+                                <template x-if="!loading && notifications.length === 0">
+                                    <div class="p-8 text-center">
+                                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                        </svg>
+                                        <p class="text-gray-500 text-sm">Không có thông báo mới</p>
+                                    </div>
+                                </template>
+                                
+                                <template x-for="notif in notifications" :key="notif.id">
+                                    <a :href="`/web/notifications/${notif.id}`"
+                                       class="block p-4 hover:bg-gray-50 transition border-b border-gray-50 last:border-0"
+                                       :class="{ 'bg-orange-50': !notif.is_read }">
+                                        <div class="flex items-start space-x-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-10 h-10 rounded-full flex items-center justify-center"
+                                                     :class="notif.is_read ? 'bg-gray-200' : 'bg-orange-100'">
+                                                    <svg class="w-5 h-5" :class="notif.is_read ? 'text-gray-500' : 'text-orange-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-900" x-text="notif.title"></p>
+                                                <p class="text-xs text-gray-600 mt-1 line-clamp-2" x-text="notif.message"></p>
+                                                <div class="flex items-center justify-between mt-1">
+                                                    <p class="text-xs text-gray-400" x-text="notif.time"></p>
+                                                    <span class="text-xs text-orange-600 font-medium">Xem chi tiết →</span>
+                                                </div>
+                                            </div>
+                                            <template x-if="!notif.is_read">
+                                                <div class="flex-shrink-0">
+                                                    <div class="w-2 h-2 bg-orange-600 rounded-full"></div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </a>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <div class="p-3 border-t border-gray-100 text-center">
+                                <a href="#" class="text-sm text-orange-600 hover:text-orange-700 font-medium">
+                                    Xem tất cả thông báo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                             <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">

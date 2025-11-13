@@ -69,6 +69,74 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('refresh', [AuthController::class, 'refresh']);
     });
 
+    // Notification routes
+    Route::get('notifications', function () {
+        $user = auth()->guard('api')->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $notifications = DB::table('user_notifications')
+            ->where('user_id', $user->user_id)
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get()
+            ->map(function ($notif) {
+                return [
+                    'id' => $notif->notification_id,
+                    'title' => $notif->title,
+                    'message' => $notif->message,
+                    'time' => \Carbon\Carbon::parse($notif->created_at)->diffForHumans(),
+                    'created_at' => $notif->created_at,
+                    'is_read' => (bool)$notif->is_read,
+                ];
+            });
+
+        $unreadCount = DB::table('user_notifications')
+            ->where('user_id', $user->user_id)
+            ->where('is_read', false)
+            ->count();
+
+        return response()->json([
+            'notifications' => $notifications,
+            'unreadCount' => $unreadCount
+        ]);
+    });
+
+    Route::patch('notifications/{id}/read', function ($id) {
+        $user = auth()->guard('api')->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $updated = DB::table('user_notifications')
+            ->where('notification_id', $id)
+            ->where('user_id', $user->user_id)
+            ->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
+
+        return response()->json(['success' => $updated > 0]);
+    });
+
+    Route::patch('notifications/read-all', function () {
+        $user = auth()->guard('api')->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $updated = DB::table('user_notifications')
+            ->where('user_id', $user->user_id)
+            ->where('is_read', false)
+            ->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
+
+        return response()->json(['success' => true, 'updated' => $updated]);
+    });
+
     // Conference Management
     Route::post('conferences', [ConferenceController::class, 'store']);
     Route::put('conferences/{id}', [ConferenceController::class, 'update']);
