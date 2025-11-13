@@ -100,20 +100,36 @@ class ConferenceRequestController extends Controller
                 ]);
 
                 // Parse and store co-chairs
+                \Log::info('[WEB] Processing co-chairs', [
+                    'has_co_chairs' => $request->has('co_chairs'),
+                    'co_chairs_value' => $request->co_chairs,
+                    'co_chairs_type' => gettype($request->co_chairs)
+                ]);
+
                 if ($request->has('co_chairs') && $request->co_chairs) {
                     $coChairs = json_decode($request->co_chairs, true);
+                    
+                    \Log::info('[WEB] Decoded co-chairs', ['coChairs' => $coChairs, 'is_array' => is_array($coChairs)]);
+                    
                     if (is_array($coChairs)) {
-                        foreach ($coChairs as $coChair) {
+                        foreach ($coChairs as $index => $coChair) {
+                            \Log::info("[WEB] Processing co-chair #{$index}", $coChair);
+                            
                             if (!empty($coChair['fullname']) && !empty($coChair['email'])) {
-                                ThemVienBoSung::create([
+                                $created = ThemVienBoSung::create([
                                     'request_id' => $conferenceRequest->request_id,
                                     'fullname' => $coChair['fullname'],
                                     'email' => $coChair['email'],
                                     'affiliation' => $coChair['affiliation'] ?? null,
                                 ]);
+                                \Log::info("[WEB] Co-chair created successfully", ['co_chair_id' => $created->co_chair_id]);
+                            } else {
+                                \Log::warning("[WEB] Co-chair skipped - missing required fields", $coChair);
                             }
                         }
                     }
+                } else {
+                    \Log::info('[WEB] No co-chairs to process');
                 }
 
                 DB::commit();

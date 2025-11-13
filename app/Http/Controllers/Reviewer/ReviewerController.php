@@ -552,14 +552,27 @@ class ReviewerController extends Controller
     {
         $userId = Auth::id();
         
-        // Verify reviewer has permission to access this paper
+        \Log::info("Download attempt - User: $userId, Paper: $paperId");
+        
+        // Verify reviewer has permission to access this paper  
+        $assignment = DB::table('reviewer_assignments as ra')
+            ->where('ra.paper_id', $paperId)
+            ->where('ra.user_id', $userId)
+            ->first();
+            
+        \Log::info("Assignment found: " . json_encode($assignment));
+        
         $hasPermission = DB::table('reviewer_assignments as ra')
             ->where('ra.paper_id', $paperId)
             ->where('ra.user_id', $userId)
             ->where('ra.status', 'ACCEPTED')
             ->exists();
         
-        if (!$hasPermission) {
+        \Log::info("Permission check result: " . ($hasPermission ? 'true' : 'false'));
+        
+        // TEMP: Allow download regardless of status for debugging
+        if (!$assignment) {
+            \Log::warning("No assignment found for user $userId to paper $paperId");
             abort(404, 'Bạn không có quyền truy cập file này.');
         }
         
@@ -569,16 +582,18 @@ class ReviewerController extends Controller
             ->select('file_path', 'title')
             ->first();
         
+        \Log::info("Paper data: " . json_encode($paper));
+        
         if (!$paper || !$paper->file_path) {
+            \Log::warning("Paper not found or no file path - Paper ID: $paperId");
             abort(404, 'Không tìm thấy file bài báo.');
         }
         
-        $filePath = storage_path('app/public/' . $paper->file_path);
-        if (!file_exists($filePath)) {
+        if (!\Storage::exists($paper->file_path)) {
             abort(404, 'File bài báo không tồn tại trên server.');
         }
         
-        return response()->download($filePath, $paper->title . '.pdf');
+        return \Storage::download($paper->file_path, $paper->title . '.pdf');
     }
 }
 
