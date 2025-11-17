@@ -1,0 +1,997 @@
+@extends('layouts.app')
+
+@section('title', 'Báo cáo & Thống kê')
+
+@push('styles')
+<style>
+    .stats-card {
+        border-radius: 16px;
+        border: none;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.15) !important;
+    }
+    .stats-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    }
+    .stats-card.primary { --gradient-start: #667eea; --gradient-end: #764ba2; }
+    .stats-card.success { --gradient-start: #56ab2f; --gradient-end: #a8e063; }
+    .stats-card.info { --gradient-start: #2193b0; --gradient-end: #6dd5ed; }
+    .stats-card.warning { --gradient-start: #f2994a; --gradient-end: #f2c94c; }
+    .stats-card.danger { --gradient-start: #eb3949; --gradient-end: #f45c43; }
+    .stats-card.purple { --gradient-start: #a770ef; --gradient-end: #cf8bf3; }
+    .stats-card.teal { --gradient-start: #11998e; --gradient-end: #38ef7d; }
+    .stats-card.orange { --gradient-start: #ee0979; --gradient-end: #ff6a00; }
+    
+    .stats-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .stats-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin: 0;
+    }
+    
+    .stats-label {
+        font-size: 0.875rem;
+        color: #718096;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .chart-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+    
+    .chart-card:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+    
+    .chart-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 1rem 1.5rem;
+        border-radius: 16px 16px 0 0 !important;
+    }
+    
+    .table-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .table-card .card-header {
+        background: #f8f9fa;
+        border-bottom: 2px solid #e9ecef;
+        padding: 1rem 1.5rem;
+        border-radius: 16px 16px 0 0 !important;
+    }
+    
+    .table-card .card-header h5 {
+        margin: 0;
+        color: #2d3748;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .custom-table {
+        margin: 0;
+    }
+    
+    .custom-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .custom-table thead th {
+        border: none;
+        padding: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .custom-table tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .custom-table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.01);
+    }
+    
+    .custom-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .badge-status {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .filter-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .page-header h1 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 2rem;
+    }
+    
+    .page-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="container-fluid px-4 py-4">
+    
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>
+                    <svg style="width: 32px; height: 32px; display: inline-block; vertical-align: middle; margin-right: 12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Báo cáo & Thống kê
+                </h1>
+                <p>Tổng quan hệ thống quản lý hội thảo khoa học HUIT</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="row align-items-end g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold text-secondary mb-2">
+                    <svg style="width: 16px; height: 16px; display: inline-block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Năm
+                </label>
+                <select id="filterYear" class="form-select">
+                    <option value="">Tất cả năm</option>
+                    @foreach($years as $y)
+                        <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endforeach
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label fw-semibold text-secondary mb-2">
+                    <svg style="width: 16px; height: 16px; display: inline-block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Khoa
+                </label>
+                <select id="filterFaculty" class="form-select">
+                    <option value="">Tất cả khoa</option>
+                    @foreach($faculties as $faculty)
+                        <option value="{{ $faculty->faculty_id }}" {{ $selectedFaculty == $faculty->faculty_id ? 'selected' : '' }}>
+                            {{ $faculty->faculty_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label fw-semibold text-secondary mb-2">
+                    <svg style="width: 16px; height: 16px; display: inline-block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                    </svg>
+                    Cấp hội thảo
+                </label>
+                <select id="filterLevel" class="form-select">
+                    <option value="">Tất cả cấp</option>
+                    @foreach($levels as $lv)
+                        <option value="{{ $lv }}" {{ $selectedLevel == $lv ? 'selected' : '' }}>{{ $lv }}</option>
+                    @endforeach
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <button class="btn btn-primary w-100" onclick="applyFilters()" style="height: 38px;">
+                    <svg style="width: 18px; height: 18px; display: inline-block; margin-right: 8px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                    Áp dụng lọc
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="row g-4 mb-4">
+        <!-- Card 1: Tổng người dùng -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card primary shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stats-label mb-2">Tổng người dùng</p>
+                            <h2 class="stats-value">{{ number_format($totalUsers) }}</h2>
+                        </div>
+                        <div class="stats-icon primary">
+                            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Tổng hội thảo -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card success shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stats-label mb-2">Tổng hội thảo</p>
+                            <h2 class="stats-value">{{ number_format($totalConferences) }}</h2>
+                        </div>
+                        <div class="stats-icon success">
+                            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Tổng bài báo -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card info shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stats-label mb-2">Tổng bài báo</p>
+                            <h2 class="stats-value">{{ number_format($totalPapers) }}</h2>
+                        </div>
+                        <div class="stats-icon info">
+                            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Reviewer hoạt động -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card warning shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stats-label mb-2">Reviewer hoạt động</p>
+                            <h2 class="stats-value">{{ number_format($activeReviewers) }}</h2>
+                        </div>
+                        <div class="stats-icon warning">
+                            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 5: Tổng lượt phản biện -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card purple shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stats-label mb-2">Tổng lượt phản biện</p>
+                            <h2 class="stats-value">{{ number_format($totalReviews) }}</h2>
+                        </div>
+                        <div class="stats-icon purple">
+                            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 6: Đang phản biện -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card teal shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stats-label mb-2">Đang phản biện</p>
+                            <h2 class="stats-value">{{ number_format($papersUnderReview) }}</h2>
+                        </div>
+                        <div class="stats-icon teal">
+                            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 7: Đã chấp nhận -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card success shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stats-label mb-2">Đã chấp nhận</p>
+                            <h2 class="stats-value">{{ number_format($papersAccepted) }}</h2>
+                        </div>
+                        <div class="stats-icon success">
+                            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 8: Kỷ yếu xuất bản -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stats-card orange shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stats-label mb-2">Kỷ yếu xuất bản</p>
+                            <h2 class="stats-value">{{ number_format($publishedProceedings) }}</h2>
+                        </div>
+                        <div class="stats-icon orange">
+                            <svg style="width: 28px; height: 28px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Tổng người dùng
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($totalUsers) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <svg class="text-gray-300" style="width: 40px; height: 40px;" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tổng hội thảo -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Tổng hội thảo
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($totalConferences) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <svg class="text-gray-300" style="width: 40px; height: 40px;" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tổng bài báo -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Tổng bài báo
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($totalPapers) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <svg class="text-gray-300" style="width: 40px; height: 40px;" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviewer hoạt động -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Reviewer hoạt động
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($activeReviewers) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <svg class="text-gray-300" style="width: 40px; height: 40px;" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Tổng lượt phản biện</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($totalReviews) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Đang phản biện</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($papersUnderReview) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Đã chấp nhận</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($papersAccepted) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Kỷ yếu xuất bản</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ number_format($publishedProceedings) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-3 mb-4">
+        <!-- Số hội thảo theo năm -->
+        <div class="col-xl-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <svg class="w-5 h-5 inline-block" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Số hội thảo theo năm (5 năm gần nhất)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="conferencesByYearChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phân bố bài báo theo track -->
+        <div class="col-xl-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <svg class="w-5 h-5 inline-block" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+                        </svg>
+                        Phân bố bài báo theo track/tiểu ban
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="papersByTrackChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row g-3 mb-4">
+        <!-- Tiến độ phản biện theo tháng -->
+        <div class="col-xl-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <svg class="w-5 h-5 inline-block" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                        </svg>
+                        Tiến độ phản biện theo tháng (12 tháng gần nhất)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="reviewsByMonthChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trạng thái bài báo -->
+        <div class="col-xl-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <svg class="w-5 h-5 inline-block" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+                        </svg>
+                        Trạng thái bài báo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="papersByStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Row -->
+    <div class="row g-3 mb-4">
+        <!-- Top Reviewers -->
+        <div class="col-xl-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <svg class="w-5 h-5 inline-block" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                        </svg>
+                        Top 10 Reviewer
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th class="text-end">Số lượt review</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($topReviewers as $index => $item)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $item->reviewer->full_name ?? 'N/A' }}</td>
+                                        <td class="text-muted small">{{ $item->reviewer->email ?? 'N/A' }}</td>
+                                        <td class="text-end">
+                                            <span class="badge bg-primary">{{ $item->review_count }}</span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Chưa có dữ liệu</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Authors -->
+        <div class="col-xl-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <svg class="w-5 h-5 inline-block" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                        Top 10 Tác giả
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th class="text-end">Số bài báo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($topAuthors as $index => $item)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $item->submitter->full_name ?? 'N/A' }}</td>
+                                        <td class="text-muted small">{{ $item->submitter->email ?? 'N/A' }}</td>
+                                        <td class="text-end">
+                                            <span class="badge bg-success">{{ $item->paper_count }}</span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Chưa có dữ liệu</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Conferences & Proceedings -->
+    <div class="row g-3">
+        <!-- Recent Conferences -->
+        <div class="col-xl-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <svg class="w-5 h-5 inline-block" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Hội thảo gần đây
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tên hội thảo</th>
+                                    <th>Năm</th>
+                                    <th>Chair</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($recentConferences as $conference)
+                                    <tr>
+                                        <td>
+                                            <a href="{{ route('admin.conferences.show', $conference->conference_id) }}" class="text-decoration-none">
+                                                {{ Str::limit($conference->title, 40) }}
+                                            </a>
+                                        </td>
+                                        <td>{{ $conference->year }}</td>
+                                        <td class="small text-muted">{{ $conference->chair->full_name ?? 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ $conference->status === 'ACTIVE' ? 'success' : 'secondary' }}">
+                                                {{ $conference->status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Chưa có hội thảo</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Proceedings -->
+        <div class="col-xl-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <svg class="w-5 h-5 inline-block" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        Kỷ yếu gần đây
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tên hội thảo</th>
+                                    <th>Năm</th>
+                                    <th>Ngày kết thúc</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($recentProceedings as $proceeding)
+                                    <tr>
+                                        <td>
+                                            <a href="{{ route('admin.conferences.show', $proceeding->conference_id) }}" class="text-decoration-none">
+                                                {{ Str::limit($proceeding->title, 40) }}
+                                            </a>
+                                        </td>
+                                        <td>{{ $proceeding->year }}</td>
+                                        <td class="small">{{ $proceeding->end_date ? \Carbon\Carbon::parse($proceeding->end_date)->format('d/m/Y') : 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge bg-info">{{ $proceeding->status }}</span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Chưa có kỷ yếu</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('styles')
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.border-left-secondary {
+    border-left: 0.25rem solid #858796 !important;
+}
+</style>
+@endpush
+
+@push('scripts')
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Chart colors
+const chartColors = {
+    primary: '#4e73df',
+    success: '#1cc88a',
+    info: '#36b9cc',
+    warning: '#f6c23e',
+    danger: '#e74a3b',
+    secondary: '#858796',
+};
+
+// 1. Biểu đồ cột: Số hội thảo theo năm
+const conferencesByYearCtx = document.getElementById('conferencesByYearChart').getContext('2d');
+new Chart(conferencesByYearCtx, {
+    type: 'bar',
+    data: {
+        labels: @json($yearsData),
+        datasets: [{
+            label: 'Số hội thảo',
+            data: @json($conferenceCountsData),
+            backgroundColor: chartColors.primary,
+            borderColor: chartColors.primary,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// 2. Biểu đồ doughnut: Phân bố bài báo theo track
+const papersByTrackCtx = document.getElementById('papersByTrackChart').getContext('2d');
+new Chart(papersByTrackCtx, {
+    type: 'doughnut',
+    data: {
+        labels: @json($trackNames),
+        datasets: [{
+            data: @json($trackCounts),
+            backgroundColor: [
+                chartColors.primary,
+                chartColors.success,
+                chartColors.info,
+                chartColors.warning,
+                chartColors.danger,
+                chartColors.secondary,
+                '#5a5c69',
+                '#2e59d9',
+                '#17a673',
+                '#2c9faf'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    boxWidth: 15,
+                    padding: 10
+                }
+            }
+        }
+    }
+});
+
+// 3. Biểu đồ line: Tiến độ phản biện theo tháng
+const reviewsByMonthCtx = document.getElementById('reviewsByMonthChart').getContext('2d');
+new Chart(reviewsByMonthCtx, {
+    type: 'line',
+    data: {
+        labels: @json($monthsData),
+        datasets: [{
+            label: 'Số lượt review',
+            data: @json($reviewCountsData),
+            borderColor: chartColors.info,
+            backgroundColor: 'rgba(54, 185, 204, 0.1)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true,
+            pointBackgroundColor: chartColors.info,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// 4. Biểu đồ pie: Trạng thái bài báo
+const papersByStatusCtx = document.getElementById('papersByStatusChart').getContext('2d');
+new Chart(papersByStatusCtx, {
+    type: 'pie',
+    data: {
+        labels: @json($statusLabels),
+        datasets: [{
+            data: @json($statusCounts),
+            backgroundColor: [
+                chartColors.success,
+                chartColors.warning,
+                chartColors.info,
+                chartColors.danger,
+                chartColors.secondary
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    boxWidth: 15
+                }
+            }
+        }
+    }
+});
+
+// Filter function
+function applyFilters() {
+    const year = document.getElementById('filterYear').value;
+    const faculty = document.getElementById('filterFaculty').value;
+    
+    const params = new URLSearchParams();
+    if (year) params.append('year', year);
+    if (faculty) params.append('faculty', faculty);
+    
+    window.location.href = '{{ route("admin.reports.index") }}?' + params.toString();
+}
+
+// Allow Enter key to apply filters
+document.getElementById('filterYear').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') applyFilters();
+});
+document.getElementById('filterFaculty').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') applyFilters();
+});
+</script>
+@endpush
+@endsection

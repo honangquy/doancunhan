@@ -45,7 +45,7 @@
         <!-- Footer -->
         <div class="mt-8 text-center">
             <p class="text-sm text-blue-100">
-                © {{ date('Y') }} HUIT - Trường Đại học Công nghiệp TP.HCM
+                © {{ date('Y') }} HUIT - Trường Đại học Công Thương
             </p>
         </div>
     </div>

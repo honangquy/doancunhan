@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\ReviewController;
 // use App\Http\Controllers\Api\COIController; // TODO: Create this controller
 use App\Http\Controllers\Api\AssignmentController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\AnnouncementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +138,18 @@ Route::middleware(['auth:api'])->group(function () {
         return response()->json(['success' => true, 'updated' => $updated]);
     });
 
+    // Announcement Management (Chair + User)
+    Route::prefix('announcements')->group(function () {
+        Route::get('/', [AnnouncementController::class, 'index']); // List announcements
+        Route::post('/', [AnnouncementController::class, 'store']); // Create announcement (Chair)
+        Route::get('/conferences/list', [AnnouncementController::class, 'getConferences']); // Conference list for Chair
+        Route::post('/preview-recipients', [AnnouncementController::class, 'previewRecipients']); // Preview recipient count
+        Route::get('/{id}', [AnnouncementController::class, 'show']); // Announcement detail
+        Route::put('/{id}', [AnnouncementController::class, 'update']); // Update announcement (Chair)
+        Route::delete('/{id}', [AnnouncementController::class, 'destroy']); // Delete announcement (Chair)
+        Route::post('/{id}/mark-read', [AnnouncementController::class, 'markAsRead']); // Mark as read (User)
+    });
+
     // Conference Management
     Route::post('conferences', [ConferenceController::class, 'store']);
     Route::put('conferences/{id}', [ConferenceController::class, 'update']);
@@ -214,6 +227,14 @@ Route::middleware(['auth:api'])->group(function () {
     Route::get('my-assignments', [AssignmentController::class, 'myAssignments']); // My assignments (Reviewer)
     Route::put('assignments/{assignment_id}/accept', [AssignmentController::class, 'acceptAssignment']); // Accept/reject
     Route::get('assignment/statistics', [AssignmentController::class, 'statistics']); // Assignment statistics
+
+    // Reviewer Revision Tracking (Mobile App Integration)
+    Route::prefix('reviewer')->group(function () {
+        Route::get('papers-with-revisions', [\App\Http\Controllers\Api\ReviewerRevisionController::class, 'getPapersWithRevisions']); // Danh sách bài có revision
+        Route::get('papers/{paper_id}/revision-history', [\App\Http\Controllers\Api\ReviewerRevisionController::class, 'getRevisionHistory']); // Lịch sử revision
+        Route::post('papers/{paper_id}/confirm-revision', [\App\Http\Controllers\Api\ReviewerRevisionController::class, 'confirmRevision']); // Xác nhận revision
+        Route::get('papers/{paper_id}/compare-versions', [\App\Http\Controllers\Api\ReviewerRevisionController::class, 'compareVersions']); // So sánh versions
+    });
 
     // Admin & Reports (Phase 6) - 100% COMPLETE! 🎉
     Route::prefix('admin')->group(function () {

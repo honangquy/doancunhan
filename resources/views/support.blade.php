@@ -848,7 +848,7 @@
             <div class="grid md:grid-cols-3 gap-8">
                 <div>
                     <h3 class="text-white font-bold mb-4">HUIT Conferences</h3>
-                    <p class="text-sm">Trường Đại học Công nghiệp TP.HCM</p>
+                    <p class="text-sm">Trường Đại học Công Thương TP.HCM</p>
                     <p class="text-sm">Nền tảng quản lý hội thảo khoa học đa cấp</p>
                 </div>
                 <div>

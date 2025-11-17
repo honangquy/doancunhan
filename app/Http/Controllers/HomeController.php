@@ -307,11 +307,31 @@ class HomeController extends Controller
 
     public function news()
     {
+        // Get statistics
+        $statistics = $this->getStatistics();
+        
+        // Get recent conferences
+        $recentConferences = $this->getRecentConferences();
+        
+        // Get recent news/announcements
+        $recentNews = DB::table('news')
+            ->where('status', 'PUBLISHED')
+            ->where(function($q) {
+                $q->whereNull('published_at')
+                  ->orWhere('published_at', '<=', now());
+            })
+            ->orderBy('published_at', 'desc')
+            ->limit(6)
+            ->get();
+        
         // Get user-specific data if authenticated
         $userData = Auth::check() ? $this->getUserData() : null;
         
-        return view('news.index', [
+        return view('news', [
             'title' => 'Tin tức & Sự kiện',
+            'statistics' => $statistics,
+            'recentConferences' => $recentConferences,
+            'recentNews' => $recentNews,
             'userData' => $userData
         ]);
     }

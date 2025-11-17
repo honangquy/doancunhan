@@ -33,7 +33,7 @@ class CreateSampleConference extends Command
             $conference->title = 'Hội thảo Khoa học CNTT HUIT 2025';
             $conference->description = 'Hội thảo khoa học thường niên về Công nghệ thông tin'; 
             $conference->detailed_description = 'Hội thảo tạo ra diễn đàn học thuật để các nhà nghiên cứu, giảng viên, sinh viên trao đổi nghiên cứu mới nhất trong lĩnh vực CNTT';
-            $conference->location = 'Trường Đại học Công nghiệp TP.HCM';
+            $conference->location = 'Trường Đại học Công Thương';
             $conference->contact_email = 'conference@huit.edu.vn';
             $conference->contact_phone = '028 3894 0390';
             $conference->chair_name = 'PGS.TS. Nguyễn Văn A';

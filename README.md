@@ -6,7 +6,7 @@
 [![Progress](https://img.shields.io/badge/Progress-100%25-brightgreen)](https://github.com)
 [![APIs](https://img.shields.io/badge/APIs-73-brightgreen)](https://github.com)
 
-> Hệ thống quản lý hội thảo khoa học toàn diện cho Trường Đại học Công nghệ TP.HCM (HUIT)
+> Hệ thống quản lý hội thảo khoa học toàn diện cho Trường Đại học Công Thương (HUIT)
 
 ---
 

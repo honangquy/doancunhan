@@ -35,6 +35,13 @@ use App\Http\Controllers\ConferenceRequestController;
 // Public Routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Public News Routes (Article listing)
+Route::get('/tin-tuc', [\App\Http\Controllers\NewsController::class, 'index'])->name('articles.index');
+Route::get('/tin-tuc/{slug}', [\App\Http\Controllers\NewsController::class, 'show'])->name('articles.show');
+
+// News Page (Dashboard-style)
+Route::get('/news', [HomeController::class, 'news'])->name('news.index');
+
 // AJAX Routes for Homepage
 Route::get('/api/search-conferences', [HomeController::class, 'searchConferences'])->name('api.search.conferences');
 Route::get('/api/conference-counts', [HomeController::class, 'getConferenceCounts'])->name('api.conference.counts');
@@ -75,7 +82,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/my-join-requests', [\App\Http\Controllers\ConferenceController::class, 'myJoinRequests'])->name('join-requests.index');
 });
 
-Route::get('/news', [HomeController::class, 'news'])->name('news.index');
 Route::get('/process', [HomeController::class, 'process'])->name('process');
 Route::get('/support', [HomeController::class, 'support'])->name('support');
 
@@ -507,6 +513,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/conferences/{conferenceId}/bidding-settings', [\App\Http\Controllers\Chair\BiddingSettingsController::class, 'updateSettings'])->name('bidding-settings.update');
         Route::get('/conferences/{conferenceId}/bidding-statistics', [\App\Http\Controllers\Chair\BiddingSettingsController::class, 'getStatistics'])->name('bidding-settings.statistics');
         
+        // News & Events Management
+        Route::resource('news', \App\Http\Controllers\Chair\NewsController::class);
+        
         // Route with parameter should be last to avoid conflicts
         Route::get('/reviewers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showReviewer'])->name('reviewers.show');
         
@@ -885,7 +894,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/conferences/bulk-delete', [AdminConferenceRequestController::class, 'bulkDelete'])->name('conferences.bulk-delete');
         
         // Reports & Statistics
-        Route::get('/reports', [DashboardController::class, 'adminReports'])->name('reports.index');
+        Route::get('/reports', [\App\Http\Controllers\Admin\AdminReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/data', [\App\Http\Controllers\Admin\AdminReportController::class, 'data'])->name('reports.data');
+        
+        // News & Events Management
+        Route::resource('news', \App\Http\Controllers\Admin\NewsController::class);
         
         // User Management
         Route::get('/users', [DashboardController::class, 'adminUsers'])->name('users.index');
