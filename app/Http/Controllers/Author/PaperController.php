@@ -26,7 +26,8 @@ class PaperController extends Controller
         $cameraReadyDeadline = $paper->deadline_camera_ready ? Carbon::parse($paper->deadline_camera_ready) : null;
         
         // Kiểm tra xem có reviewer nào đã hoàn thành review chưa
-        if ($this->hasCompletedReviews($paper->paper_id)) {
+        // NGOẠI LỆ: Cho phép edit nếu status là REVISION_REQUIRED
+        if ($this->hasCompletedReviews($paper->paper_id) && $paper->status_code !== 'REVISION_REQUIRED') {
             return ['can_edit' => false, 'reason' => 'Không thể chỉnh sửa khi đã có reviewer hoàn thành phản biện.'];
         }
         
@@ -41,10 +42,25 @@ class PaperController extends Controller
         }
         
         // Giai đoạn 3: Có kết quả review
-        if (in_array($paper->status_code, ['ACCEPTED', 'REJECTED'])) {
+        if (in_array($paper->status_code, ['ACCEPTED', 'REJECTED', 'REVISION_REQUIRED'])) {
             // Nếu bị từ chối - KHÔNG cho phép chỉnh sửa
             if ($paper->status_code === 'REJECTED') {
                 return ['can_edit' => false, 'reason' => 'Bài báo đã bị từ chối, không thể chỉnh sửa.'];
+            }
+            
+            // Nếu yêu cầu sửa lại - cho phép chỉnh sửa trong deadline revision
+            if ($paper->status_code === 'REVISION_REQUIRED') {
+                // Kiểm tra property tồn tại và có giá trị
+                if (property_exists($paper, 'revision_deadline') && !empty($paper->revision_deadline)) {
+                    $revisionDeadline = Carbon::parse($paper->revision_deadline);
+                    if ($now->lt($revisionDeadline)) {
+                        return ['can_edit' => true, 'reason' => ''];
+                    } else {
+                        return ['can_edit' => false, 'reason' => 'Đã quá hạn sửa lại bài báo.'];
+                    }
+                } else {
+                    return ['can_edit' => true, 'reason' => ''];
+                }
             }
             
             // Nếu được chấp nhận - chỉ cho phép trong thời hạn camera-ready
@@ -336,6 +352,14 @@ class PaperController extends Controller
             abort(404, 'Không tìm thấy bài báo hoặc bạn không có quyền truy cập.');
         }
         
+        // DEBUG: Log paper properties (remove after fixing)
+        \Log::info('Paper object properties:', [
+            'has_revision_deadline' => property_exists($paper, 'revision_deadline'),
+            'revision_deadline_value' => $paper->revision_deadline ?? 'not_set',
+            'status_code' => $paper->status_code ?? 'not_set',
+            'all_properties' => array_keys(get_object_vars($paper))
+        ]);
+        
         // Check permissions for edit and withdraw
         $editPermission = $this->canEditPaper($paper);
         $withdrawPermission = $this->canWithdrawPaper($paper);
@@ -372,7 +396,7 @@ class PaperController extends Controller
         
         // Get completed reviews (only if paper is under review or later)
         $reviews = [];
-        if (in_array($paper->status_code, ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED'])) {
+        if (in_array($paper->status_code, ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED', 'REVISION_REQUIRED'])) {
             $reviews = DB::table('phanbien as p')
                 ->join('reviewer_assignments as ra', 'p.assignment_id', '=', 'ra.id')
                 ->leftJoin('nguoidung as u', 'ra.user_id', '=', 'u.user_id')
@@ -501,9 +525,6 @@ class PaperController extends Controller
         if (!$editPermission['can_edit']) {
             return back()->withErrors(['error' => $editPermission['reason']]);
         }
-        if (!in_array($paper->status_code, ['DRAFT', 'SUBMITTED'])) {
-            return back()->withErrors(['error' => 'Không thể chỉnh sửa bài báo này.']);
-        }
         
         DB::beginTransaction();
         
@@ -527,11 +548,57 @@ class PaperController extends Controller
                 $filename = $id . '_' . time() . '.pdf';
                 $path = $file->storeAs('papers/' . $validated['conference_id'], $filename);
                 $updateData['file_path'] = $path;
+                
+                // Tạo phiên bản mới nếu đang ở trạng thái revision
+                if ($paper->status_code === 'REVISION_REQUIRED') {
+                    // Lấy version cao nhất hiện tại
+                    $currentVersion = DB::table('phienbanbaibao')
+                        ->where('paper_id', $id)
+                        ->max('version_no') ?: 0;
+                    
+                    // Tạo phiên bản mới
+                    DB::table('phienbanbaibao')->insert([
+                        'paper_id' => $id,
+                        'version_no' => $currentVersion + 1,
+                        'file_path' => $path,
+                        'submitted_at' => now(),
+                        'note' => 'Revision submitted'
+                    ]);
+                }
             }
             
             DB::table('baibao')
                 ->where('paper_id', $id)
                 ->update($updateData);
+            
+            // Nếu đang ở trạng thái REVISION_REQUIRED và có file mới
+            if ($paper->status_code === 'REVISION_REQUIRED' && $request->hasFile('paper_file')) {
+                // Chuyển trạng thái về UNDER_REVIEW
+                DB::table('baibao')
+                    ->where('paper_id', $id)
+                    ->update([
+                        'status_code' => 'UNDER_REVIEW',
+                        'decision' => null,
+                        'decision_date' => null,
+                        'decision_comments' => null,
+                        'revision_deadline' => null
+                    ]);
+                
+                // Reset các reviewer đã hoàn thành về PENDING cho revision round mới
+                DB::table('reviewer_assignments')
+                    ->where('paper_id', $id)
+                    ->where('status', 'COMPLETED')
+                    ->whereNotNull('review_submitted_at')
+                    ->update([
+                        'status' => 'PENDING',
+                        'assigned_at' => now(),
+                        'responded_at' => null,
+                        'review_submitted_at' => null,
+                        'updated_at' => now()
+                    ]);
+                
+                // TODO: Gửi email thông báo cho reviewers
+            }
             
             // Update co-authors (delete all except submitter, then re-add)
             DB::table('tacgiabaibao')
@@ -556,9 +623,14 @@ class PaperController extends Controller
             
             DB::commit();
             
+            $message = 'Bài báo đã được cập nhật thành công!';
+            if ($paper->status_code === 'REVISION_REQUIRED' && $request->hasFile('paper_file')) {
+                $message .= ' Bài báo đã được gửi lại để phản biện.';
+            }
+            
             return redirect()
                 ->route('author.papers.show', $id)
-                ->with('success', 'Bài báo đã được cập nhật thành công!');
+                ->with('success', $message);
                 
         } catch (\Exception $e) {
             DB::rollBack();

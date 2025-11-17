@@ -1110,7 +1110,7 @@ class ChairController extends Controller
                 'ht.conference_id',
                 'nd.full_name as author_name',
                 'nd.email as author_email',
-                'tt.status_name_vi as status_name'
+                'tt.status_name as status_name'
             )
             ->first();
         
@@ -1119,10 +1119,10 @@ class ChairController extends Controller
         }
         
         // Check if all reviews are completed
-        $pendingReviews = DB::table('phancongphanbien as pc')
-            ->leftJoin('phanbien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
-            ->where('pc.paper_id', $paperId)
-            ->whereNull('pn.review_id')
+        $pendingReviews = DB::table('reviewer_assignments as ra')
+            ->where('ra.paper_id', $paperId)
+            ->where('ra.status', '!=', 'COMPLETED')
+            ->whereNull('ra.review_submitted_at')
             ->count();
         
         if ($pendingReviews > 0) {
@@ -1131,21 +1131,23 @@ class ChairController extends Controller
         }
         
         // Get reviews summary
-        $reviewsData = DB::table('phancongphanbien as pc')
-            ->join('phanbien as pn', 'pc.assignment_id', '=', 'pn.assignment_id')
-            ->join('nguoidung as nd', 'pc.reviewer_id', '=', 'nd.user_id')
-            ->where('pc.paper_id', $paperId)
+        $reviewsData = DB::table('reviewer_assignments as ra')
+            ->join('phanbien as pn', 'ra.id', '=', 'pn.assignment_id')
+            ->join('nguoidung as nd', 'ra.user_id', '=', 'nd.user_id')
+            ->where('ra.paper_id', $paperId)
+            ->where('ra.status', 'COMPLETED')
+            ->whereNotNull('ra.review_submitted_at')
             ->select(
                 'nd.full_name as reviewer_name',
-                'pn.score',
-                'pn\.recommendation_code',
-                'pn.summary_comments'
+                'pn.total_score as score',
+                'pn.recommendation_code',
+                'pn.detailed_comments as summary_comments'
             )
             ->get();
         
         // Calculate statistics
         $totalReviews = $reviewsData->count();
-        $avgScore = $reviewsData->avg('score');
+        $avgScore = $reviewsData->whereNotNull('score')->avg('score') ?: 0;
         $acceptCount = $reviewsData->where('recommendation_code', 'ACCEPT')->count();
         $rejectCount = $reviewsData->where('recommendation_code', 'REJECT')->count();
         $reviseCount = $reviewsData->where('recommendation_code', 'REVISE')->count();
@@ -1187,7 +1189,13 @@ class ChairController extends Controller
             'reviewsData',
             'stats',
             'existingDecision'
-        ));
+        ))->with([
+            'totalReviews' => $totalReviews,
+            'avgScore' => $avgScore,
+            'acceptCount' => $acceptCount,
+            'rejectCount' => $rejectCount,
+            'reviseCount' => $reviseCount
+        ]);
     }
 
     /**
@@ -1248,7 +1256,7 @@ class ChairController extends Controller
                 'REVISE' => 'Cần sửa lại'
             ];
             $status = DB::table('trangthaibaibao')
-                ->where('status_name_vi', $statusNames[$validated['decision']])
+                ->where('status_name', $statusNames[$validated['decision']])
                 ->first();
         }
         
@@ -1259,7 +1267,7 @@ class ChairController extends Controller
             DB::table('baibao')
                 ->where('paper_id', $paperId)
                 ->update([
-                    'status_id' => $status ? $status->status_id : null,
+                    'status_code' => $newStatusCode,
                     'decision' => $validated['decision'],
                     'decision_comments' => $validated['comments'],
                     'decision_date' => now(),
@@ -1271,13 +1279,16 @@ class ChairController extends Controller
             // Mail::to($paper->author_email)->send(new DecisionNotification($paper, $validated));
             
             // Log action
-            DB::table('ActivityLog')->insert([
+            DB::table('activity_logs')->insert([
                 'user_id' => $userId,
+                'log_type' => 'DECISION',
                 'action' => 'DECISION_MADE',
-                'entity_type' => 'PAPER',
-                'entity_id' => $paperId,
+                'model_type' => 'Paper',
+                'model_id' => $paperId,
                 'description' => "Made decision: {$validated['decision']} for paper #{$paperId}",
-                'created_at' => now()
+                'severity' => 'low',
+                'created_at' => now(),
+                'updated_at' => now()
             ]);
             
             DB::commit();
