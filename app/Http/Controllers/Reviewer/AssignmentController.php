@@ -47,6 +47,16 @@ class AssignmentController extends Controller
             ->orderBy('reviewer_assignments.assigned_at', 'desc')
             ->get();
 
+        // Phát hiện bài báo revision (kiểm tra có phiên bản trước không)
+        $assignments->each(function ($assignment) {
+            // Kiểm tra xem paper này có nhiều hơn 1 version không
+            $versionCount = \DB::table('phienbanbaibao')
+                ->where('paper_id', $assignment->paper_id)
+                ->count();
+            
+            $assignment->is_revision = $versionCount > 1;
+        });
+
         return view('reviewer.assignments.index', compact('assignments'));
     }
 

@@ -13,10 +13,16 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('user_notification_prefs', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('user_notification_prefs')) {
+            Schema::create('user_notification_prefs', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('user_id');
+                $table->foreign('user_id')->references('user_id')->on('nguoidung')->onDelete('cascade');
+                $table->timestamps();
+                
+                $table->unique('user_id');
+            });
+        }
     }
 
     /**

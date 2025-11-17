@@ -36,7 +36,7 @@ class ConferenceReminderController extends Controller
             ->get();
         
         // Lấy tất cả templates reminder
-        $templates = NotificationTemplate::whereIn('code', [
+        $templates = NotificationTemplate::whereIn('template_code', [
             'SUBMISSION_REMINDER_7D',
             'SUBMISSION_REMINDER_3D',
             'REVIEW_REMINDER_7D',
@@ -44,7 +44,7 @@ class ConferenceReminderController extends Controller
             'CAMERA_READY_REMINDER_3D',
             'CONFERENCE_START_7D',
             'CONFERENCE_END_1D'
-        ])->get()->keyBy('code');
+        ])->get()->keyBy('template_code');
         
         // Đếm số lượng reminder đã gửi (từ logs)
         $reminderStats = $this->getReminderStats($conferences->pluck('conference_id'));

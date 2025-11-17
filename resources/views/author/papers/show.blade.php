@@ -55,6 +55,7 @@
                                 'UNDER_REVIEW' => 'bg-yellow-100 text-yellow-800',
                                 'ACCEPTED' => 'bg-green-100 text-green-800',
                                 'REJECTED' => 'bg-red-100 text-red-800',
+                                'REVISION_REQUIRED' => 'bg-orange-100 text-orange-800',
                                 'WITHDRAWN' => 'bg-gray-300 text-gray-600',
                             ];
                             $colorClass = $statusColors[$paper->status_code] ?? 'bg-gray-200 text-gray-800';
@@ -68,6 +69,74 @@
                     <p class="text-gray-600 text-sm mt-1">
                         Nộp ngày: {{ \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y H:i') }}
                     </p>
+                    
+                    @if($paper->decision && in_array($paper->status_code, ['ACCEPTED', 'REJECTED', 'REVISION_REQUIRED']))
+                    <div class="mt-4 p-4 rounded-lg 
+                        @if($paper->decision === 'ACCEPT') bg-green-50 border border-green-200
+                        @elseif($paper->decision === 'REJECT') bg-red-50 border border-red-200  
+                        @elseif($paper->decision === 'REVISE') bg-orange-50 border border-orange-200
+                        @endif">
+                        <h3 class="font-semibold mb-2
+                            @if($paper->decision === 'ACCEPT') text-green-800
+                            @elseif($paper->decision === 'REJECT') text-red-800
+                            @elseif($paper->decision === 'REVISE') text-orange-800
+                            @endif">
+                            <svg class="w-5 h-5 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                @if($paper->decision === 'ACCEPT')
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                @elseif($paper->decision === 'REJECT')
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                @elseif($paper->decision === 'REVISE')
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                @endif
+                            </svg>
+                            Quyết định của Chair: 
+                            @if($paper->decision === 'ACCEPT') Chấp nhận
+                            @elseif($paper->decision === 'REJECT') Từ chối
+                            @elseif($paper->decision === 'REVISE') Yêu cầu sửa lại
+                            @endif
+                        </h3>
+                        
+                        @if($paper->decision_date)
+                        <p class="text-sm text-gray-600 mb-2">
+                            Ngày quyết định: {{ \Carbon\Carbon::parse($paper->decision_date)->format('d/m/Y H:i') }}
+                        </p>
+                        @endif
+                        
+                        @if($paper->decision_comments)
+                        <div class="mb-3">
+                            <h4 class="font-medium text-gray-700 mb-1">Nhận xét của Chair:</h4>
+                            <p class="text-sm text-gray-700 bg-white p-3 rounded border">{{ $paper->decision_comments }}</p>
+                        </div>
+                        @endif
+                        
+                        @if($paper->decision === 'REVISE' && $paper->revision_deadline)
+                        <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
+                            <h4 class="font-medium text-yellow-800 mb-1">
+                                <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                                Hạn chỉnh sửa:
+                            </h4>
+                            <p class="text-sm text-yellow-700">
+                                {{ \Carbon\Carbon::parse($paper->revision_deadline)->format('d/m/Y') }}
+                                @php
+                                    $now = \Carbon\Carbon::now();
+                                    $deadline = \Carbon\Carbon::parse($paper->revision_deadline);
+                                    $daysLeft = $now->diffInDays($deadline, false);
+                                @endphp
+                                @if($daysLeft > 0)
+                                    (còn {{ $daysLeft }} ngày)
+                                @elseif($daysLeft === 0)
+                                    (hôm nay là hạn cuối)
+                                @else
+                                    (đã quá hạn {{ abs($daysLeft) }} ngày)
+                                @endif
+                            </p>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
                 </div>
                 
                 <div class="flex flex-col space-y-2 ml-4">
@@ -170,7 +239,7 @@
                 </div>
 
                 <!-- Reviews Section -->
-                @if(in_array($paper->status_code, ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED']) && $reviews->count() > 0)
+                @if(in_array($paper->status_code, ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED', 'REVISION_REQUIRED']) && $reviews->count() > 0)
                 <div class="card p-6">
                     <div class="section border-yellow-500">
                         <h2 class="text-xl font-bold text-gray-900 mb-4">Kết quả phản biện</h2>

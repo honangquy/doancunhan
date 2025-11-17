@@ -13,10 +13,19 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('notification_outbox', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('notification_outbox')) {
+            Schema::create('notification_outbox', function (Blueprint $table) {
+                $table->id();
+                $table->string('recipient_email');
+                $table->string('subject');
+                $table->text('body_html');
+                $table->text('body_text')->nullable();
+                $table->enum('status', ['PENDING', 'SENT', 'FAILED'])->default('PENDING');
+                $table->timestamp('scheduled_at')->nullable();
+                $table->timestamp('sent_at')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

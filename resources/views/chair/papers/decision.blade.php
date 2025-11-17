@@ -1,16 +1,9 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    @include('partials.favicon')
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Quyết định - {{ $paper->title }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-</head>
-<body class="bg-gray-50">
-    <div class="main-content max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+@extends('layouts.chair')
+
+@section('title', 'Quyết định cuối cùng')
+
+@section('content')
+    <div class="max-w-5xl mx-auto"
          x-data="{
             decision: '{{ old('decision', $existingDecision->decision ?? '') }}',
             comments: '{{ old('comments', $existingDecision->decision_comments ?? '') }}',
@@ -41,189 +34,194 @@
             }
          }">
         
-        <!-- Back Button -->
-        <div class="mb-6">
-            <button onclick="if(window.Alpine && Alpine.$data(document.body).viewPaperDetail) { 
-                    Alpine.$data(document.body).viewPaperDetail({{ $paper->paper_id }}); 
-                } else { 
-                    window.location.href = '{{ route('chair.papers.show', $paper->paper_id) }}'; 
-                }"
-                class="flex items-center text-gray-600 hover:text-gray-900 transition">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Quay lại chi tiết bài báo
-            </button>
-        </div>
-
-        <!-- Page Header -->
+        <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                ⚖️ Quyết định cuối cùng
-            </h1>
-            <p class="text-gray-600">Đưa ra quyết định chấp nhận/từ chối/sửa lại cho bài báo</p>
+            <div class="flex items-center space-x-3 mb-4">
+                <a href="{{ route('chair.papers.show', $paper->paper_id) }}" 
+                   class="inline-flex items-center text-gray-600 hover:text-gray-900">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Quay lại
+                </a>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">
+                    <svg class="w-6 h-6 inline-block mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Quyết định cuối cùng
+                </h1>
+                <p class="text-gray-600">Hãy đưa ra quyết định cho bài báo dựa trên các nhận xét của reviewer</p>
+            </div>
         </div>
 
-        <!-- Paper Summary -->
+        <!-- Paper Info -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div class="flex items-start justify-between mb-4">
-                <div class="flex-1">
-                    <div class="flex items-center space-x-3 mb-2">
-                        <span class="text-sm font-medium text-gray-500">#{{ $paper->paper_id }}</span>
-                        @if($paper->status_name)
-                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {{ $paper->status_name }}
-                        </span>
-                        @endif
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <svg class="w-5 h-5 inline-block mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Thông tin bài báo
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Tiêu đề:</span>
+                            <p class="text-gray-900 font-medium">{{ $paper->title }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Tác giả:</span>
+                            <p class="text-gray-900">{{ $paper->author_name }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Email:</span>
+                            <p class="text-gray-900">{{ $paper->author_email }}</p>
+                        </div>
                     </div>
-                    <h2 class="text-xl font-semibold text-gray-900 mb-2">{{ $paper->title }}</h2>
-                    <div class="flex items-center space-x-4 text-sm text-gray-600">
-                        <span>📚 {{ $paper->conference_title }}</span>
-                        <span>👤 {{ $paper->author_name }}</span>
+                </div>
+                
+                <div>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Hội thảo:</span>
+                            <p class="text-gray-900">{{ $paper->conference_title }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Trạng thái:</span>
+                            <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                {{ $paper->status_name }}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Reviews Summary -->
+        @if($reviewsData && $reviewsData->count() > 0)
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">📊 Tổng quan nhận xét</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <svg class="w-5 h-5 inline-block mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Tổng quan nhận xét
+            </h3>
             
             <!-- Statistics -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                <div class="bg-blue-50 rounded-lg p-4 text-center">
-                    <p class="text-sm text-blue-600 mb-1">Tổng số</p>
-                    <p class="text-2xl font-bold text-blue-700">{{ $stats['total'] }}</p>
+                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                    <div class="text-lg font-bold text-blue-600">{{ $totalReviews }}</div>
+                    <div class="text-xs text-gray-600">Tổng số</div>
                 </div>
-                <div class="bg-purple-50 rounded-lg p-4 text-center">
-                    <p class="text-sm text-purple-600 mb-1">Điểm TB</p>
-                    <p class="text-2xl font-bold {{ $stats['avg_score'] >= 7 ? 'text-green-600' : ($stats['avg_score'] >= 5 ? 'text-yellow-600' : 'text-red-600') }}">
-                        {{ number_format($stats['avg_score'], 1) }}
-                    </p>
+                <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                    <div class="text-lg font-bold text-yellow-600">{{ number_format($avgScore, 1) }}</div>
+                    <div class="text-xs text-gray-600">Điểm TB</div>
                 </div>
-                <div class="bg-green-50 rounded-lg p-4 text-center">
-                    <p class="text-sm text-green-600 mb-1">Chấp nhận</p>
-                    <p class="text-2xl font-bold text-green-700">{{ $stats['accept_count'] }}</p>
+                <div class="text-center p-3 bg-green-50 rounded-lg">
+                    <div class="text-lg font-bold text-green-600">{{ $acceptCount }}</div>
+                    <div class="text-xs text-gray-600">Chấp nhận</div>
                 </div>
-                <div class="bg-yellow-50 rounded-lg p-4 text-center">
-                    <p class="text-sm text-yellow-600 mb-1">Sửa lại</p>
-                    <p class="text-2xl font-bold text-yellow-700">{{ $stats['revise_count'] }}</p>
+                <div class="text-center p-3 bg-red-50 rounded-lg">
+                    <div class="text-lg font-bold text-red-600">{{ $rejectCount }}</div>
+                    <div class="text-xs text-gray-600">Từ chối</div>
                 </div>
-                <div class="bg-red-50 rounded-lg p-4 text-center">
-                    <p class="text-sm text-red-600 mb-1">Từ chối</p>
-                    <p class="text-2xl font-bold text-red-700">{{ $stats['reject_count'] }}</p>
+                <div class="text-center p-3 bg-gray-50 rounded-lg">
+                    <div class="text-lg font-bold text-gray-600">{{ $totalReviews - $acceptCount - $rejectCount }}</div>
+                    <div class="text-xs text-gray-600">Khác</div>
                 </div>
-            </div>
-
-            <!-- Consensus Indicator -->
-            <div class="mb-6">
-                <p class="text-sm font-medium text-gray-700 mb-2">Mức độ đồng thuận:</p>
-                @if($stats['consensus'] === 'strong_accept')
-                <div class="bg-green-100 border-l-4 border-green-500 p-4 rounded">
-                    <p class="text-green-800 font-medium">🎉 Đồng thuận cao - Nên chấp nhận</p>
-                    <p class="text-green-700 text-sm mt-1">Phần lớn reviewer đồng ý chấp nhận bài báo này.</p>
-                </div>
-                @elseif($stats['consensus'] === 'accept')
-                <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded">
-                    <p class="text-green-700 font-medium">✓ Nghiêng về chấp nhận</p>
-                    <p class="text-green-600 text-sm mt-1">Đa số reviewer có ý kiến tích cực.</p>
-                </div>
-                @elseif($stats['consensus'] === 'strong_reject')
-                <div class="bg-red-100 border-l-4 border-red-500 p-4 rounded">
-                    <p class="text-red-800 font-medium">⚠️ Đồng thuận cao - Nên từ chối</p>
-                    <p class="text-red-700 text-sm mt-1">Phần lớn reviewer đề nghị từ chối bài báo.</p>
-                </div>
-                @elseif($stats['consensus'] === 'reject')
-                <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded">
-                    <p class="text-red-700 font-medium">✗ Nghiêng về từ chối</p>
-                    <p class="text-red-600 text-sm mt-1">Đa số reviewer có ý kiến tiêu cực.</p>
-                </div>
-                @else
-                <div class="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded">
-                    <p class="text-yellow-800 font-medium">⚡ Ý kiến trái chiều</p>
-                    <p class="text-yellow-700 text-sm mt-1">Reviewer có ý kiến khác nhau. Cần xem xét kỹ từng nhận xét.</p>
-                </div>
-                @endif
             </div>
 
             <!-- Individual Reviews -->
-            <div>
-                <p class="text-sm font-medium text-gray-700 mb-3">📝 Nhận xét từng reviewer:</p>
-                <div class="space-y-2">
-                    @foreach($reviewsData as $review)
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div class="flex-1">
-                            <p class="font-medium text-gray-900">{{ $review->reviewer_name }}</p>
-                            @if($review->summary_comments)
-                            <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ Str::limit($review->summary_comments, 100) }}</p>
-                            @endif
-                        </div>
-                        <div class="flex items-center space-x-4 ml-4">
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">Điểm</p>
-                                <p class="text-lg font-bold {{ $review->overall_score >= 7 ? 'text-green-600' : ($review->overall_score >= 5 ? 'text-yellow-600' : 'text-red-600') }}">
-                                    {{ number_format($review->overall_score, 1) }}
-                                </p>
-                            </div>
-                            <div>
-                                @if($review->recommendation === 'ACCEPT')
-                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                                    ✓ ACCEPT
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Chi tiết đánh giá từng reviewer:</h4>
+                @foreach($reviewsData as $review)
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium text-gray-900">{{ $review->reviewer_name }}</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-600">Điểm: {{ $review->score }}</span>
+                                <span class="px-2 py-1 text-xs rounded-full
+                                    {{ $review->recommendation_code === 'ACCEPT' ? 'bg-green-100 text-green-800' : 
+                                       ($review->recommendation_code === 'REJECT' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                    {{ $review->recommendation_code }}
                                 </span>
-                                @elseif($review->recommendation === 'REJECT')
-                                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
-                                    ✗ REJECT
-                                </span>
-                                @else
-                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
-                                    ↻ REVISE
-                                </span>
-                                @endif
                             </div>
                         </div>
+                        @if($review->summary_comments)
+                            <p class="text-sm text-gray-700">{{ Str::limit($review->summary_comments, 200) }}</p>
+                        @endif
                     </div>
-                    @endforeach
-                </div>
+                @endforeach
             </div>
         </div>
+        @else
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <span class="text-yellow-800 font-medium">Chưa có đánh giá nào hoàn thành</span>
+            </div>
+        </div>
+        @endif
 
         <!-- Decision Form -->
         @if($existingDecision)
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mb-6">
-            <p class="text-yellow-800 font-medium">⚠️ Quyết định đã tồn tại</p>
-            <p class="text-yellow-700 text-sm mt-1">Bài báo này đã có quyết định trước đó. Bạn có thể cập nhật quyết định mới.</p>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-blue-800 font-medium">Bạn đã đưa ra quyết định cho bài báo này trước đó.</span>
+            </div>
         </div>
         @endif
 
         <form id="decisionForm" method="POST" action="{{ route('chair.papers.decision.store', $paper->paper_id) }}" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             @csrf
             
-            <!-- Errors -->
-            @if($errors->any())
-            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded mb-6">
-                <p class="text-red-800 font-medium">Có lỗi xảy ra:</p>
-                <ul class="list-disc list-inside text-red-700 text-sm mt-2">
-                    @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">
+                <svg class="w-5 h-5 inline-block mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Quyết định của chair
+            </h3>
 
-            <h3 class="text-lg font-bold text-gray-900 mb-6">Quyết định của chủ tịch</h3>
+            @if($errors->any())
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-center mb-2">
+                        <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="font-medium text-red-800">Có lỗi xảy ra:</span>
+                    </div>
+                    <ul class="list-disc list-inside text-red-700">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
             <!-- Decision Radio Buttons -->
             <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-3">
-                    Quyết định <span class="text-red-500">*</span>
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-4">Quyết định *</label>
                 <div class="space-y-3">
                     <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer transition"
                            :class="decision === 'ACCEPT' ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-green-300'">
                         <input type="radio" name="decision" value="ACCEPT" x-model="decision" class="w-5 h-5 text-green-600">
                         <div class="ml-3 flex-1">
-                            <p class="font-medium text-gray-900">✓ Chấp nhận (Accept)</p>
-                            <p class="text-sm text-gray-600">Bài báo đạt yêu cầu và được chấp nhận tham gia hội thảo</p>
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <p class="font-medium text-gray-900">Chấp nhận (Accept)</p>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-7">Bài báo đạt chất lượng và được chấp nhận</p>
                         </div>
                     </label>
 
@@ -231,8 +229,13 @@
                            :class="decision === 'REVISE' ? 'border-yellow-500 bg-yellow-50' : 'border-gray-300 hover:border-yellow-300'">
                         <input type="radio" name="decision" value="REVISE" x-model="decision" class="w-5 h-5 text-yellow-600">
                         <div class="ml-3 flex-1">
-                            <p class="font-medium text-gray-900">↻ Yêu cầu sửa lại (Revise)</p>
-                            <p class="text-sm text-gray-600">Bài báo cần sửa đổi theo nhận xét của reviewer</p>
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                <p class="font-medium text-gray-900">Yêu cầu sửa lại (Revise)</p>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-7">Bài báo cần sửa đổi theo nhận xét của reviewer</p>
                         </div>
                     </label>
 
@@ -240,109 +243,90 @@
                            :class="decision === 'REJECT' ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-red-300'">
                         <input type="radio" name="decision" value="REJECT" x-model="decision" class="w-5 h-5 text-red-600">
                         <div class="ml-3 flex-1">
-                            <p class="font-medium text-gray-900">✗ Từ chối (Reject)</p>
-                            <p class="text-sm text-gray-600">Bài báo không đạt yêu cầu và bị từ chối</p>
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                <p class="font-medium text-gray-900">Từ chối (Reject)</p>
+                            </div>
+                            <p class="text-sm text-gray-600 ml-7">Bài báo không đạt yêu cầu và bị từ chối</p>
                         </div>
                     </label>
                 </div>
             </div>
 
             <!-- Revision Deadline (only if REVISE) -->
-            <div x-show="decision === 'REVISE'" x-collapse class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Deadline sửa lại <span class="text-red-500">*</span>
+            <div x-show="decision === 'REVISE'" x-transition class="mb-6">
+                <label for="deadline_revision" class="block text-sm font-medium text-gray-700 mb-2">
+                    Hạn chót sửa lại *
                 </label>
                 <input type="date" 
+                       id="deadline_revision" 
                        name="deadline_revision" 
                        x-model="deadlineRevision"
-                       :min="new Date().toISOString().split('T')[0]"
-                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                <p class="text-xs text-gray-500 mt-1">Thời hạn để tác giả gửi bản sửa đổi</p>
+                       min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <p class="mt-1 text-sm text-gray-600">Thời gian tác giả có thể sửa lại bài báo</p>
             </div>
 
             <!-- Comments -->
             <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Nhận xét của chủ tịch <span class="text-red-500">*</span>
+                <label for="comments" class="block text-sm font-medium text-gray-700 mb-2">
+                    Nhận xét của chair *
+                    <span class="text-xs text-gray-500">(tối thiểu 50 ký tự)</span>
                 </label>
-                <textarea name="comments" 
+                <textarea id="comments" 
+                          name="comments" 
+                          rows="6" 
                           x-model="comments"
-                          rows="8" 
-                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
-                          placeholder="Nhập nhận xét chi tiết của bạn về bài báo. Giải thích lý do quyết định và các điểm cần cải thiện (nếu có)..."></textarea>
-                <div class="flex items-center justify-between mt-2">
-                    <p class="text-xs text-gray-500">Tối thiểu 50 ký tự, tối đa 5000 ký tự</p>
-                    <p class="text-sm font-medium"
+                          placeholder="Hãy viết nhận xét chi tiết cho quyết định của bạn. Điều này sẽ giúp tác giả hiểu rõ lý do và cách cải thiện bài báo..."
+                          class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          required></textarea>
+                <div class="flex justify-between items-center mt-2">
+                    <p class="text-sm" 
                        :class="commentLength >= 50 ? 'text-green-600' : 'text-red-600'">
-                        <span x-text="commentLength"></span> / 50
-                        <span x-show="commentLength >= 50">✓</span>
+                        <span x-text="commentLength"></span>/50 ký tự tối thiểu
                     </p>
+                    <p class="text-xs text-gray-500"><span x-text="commentLength"></span>/5000</p>
                 </div>
             </div>
 
-            <!-- Important Notes -->
-            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded mb-6">
-                <p class="text-orange-800 font-medium mb-2">⚠️ Lưu ý quan trọng:</p>
-                <ul class="list-disc list-inside text-orange-700 text-sm space-y-1">
-                    <li>Tác giả sẽ nhận được email thông báo về quyết định này</li>
-                    <li>Nhận xét của bạn sẽ được gửi cho tác giả</li>
-                    <li>Quyết định có thể được cập nhật nếu cần thiết</li>
-                    <li>Vui lòng kiểm tra kỹ trước khi gửi</li>
-                </ul>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex items-center justify-end space-x-4">
-                <button type="button"
-                        onclick="if(window.Alpine && Alpine.$data(document.body).viewPaperDetail) { 
-                            Alpine.$data(document.body).viewPaperDetail({{ $paper->paper_id }}); 
-                        } else { 
-                            window.location.href = '{{ route('chair.papers.show', $paper->paper_id) }}'; 
-                        }"
-                        class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition">
+            <!-- Submit Buttons -->
+            <div class="flex justify-end space-x-4">
+                <a href="{{ route('chair.papers.show', $paper->paper_id) }}" 
+                   class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                     Hủy
-                </button>
-                <button type="button"
+                </a>
+                <button type="button" 
                         @click="submitForm()"
                         :disabled="!isValid"
-                        :class="isValid ? 'bg-orange-600 hover:bg-orange-700 cursor-pointer' : 'bg-gray-400 cursor-not-allowed'"
-                        class="px-6 py-3 text-white rounded-lg font-medium transition">
-                    💾 Lưu quyết định
+                        :class="isValid ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : 'bg-gray-400 cursor-not-allowed'"
+                        class="px-6 py-2 rounded-lg text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50">
+                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                    Lưu quyết định
                 </button>
             </div>
         </form>
 
         <!-- Confirmation Modal -->
-        <div x-show="showConfirm" 
-             x-cloak
-             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div @click.away="showConfirm = false" 
-                 class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Xác nhận quyết định</h3>
-                    <p class="text-gray-600 mb-4">Bạn có chắc chắn muốn lưu quyết định này?</p>
-                    <div class="bg-gray-50 rounded-lg p-4 text-left mb-4">
-                        <p class="text-sm text-gray-600 mb-1">Quyết định:</p>
-                        <p class="font-bold text-gray-900" x-text="decision === 'ACCEPT' ? '✓ Chấp nhận' : (decision === 'REJECT' ? '✗ Từ chối' : '↻ Sửa lại')"></p>
-                    </div>
-                </div>
-                <div class="flex space-x-3">
-                    <button @click="showConfirm = false"
-                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition">
+        <div x-show="showConfirm" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Xác nhận quyết định</h3>
+                <p class="text-gray-600 mb-6">Bạn có chắc chắn muốn đưa ra quyết định này không? Hành động này không thể hoàn tác.</p>
+                
+                <div class="flex justify-end space-x-4">
+                    <button @click="showConfirm = false" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                         Hủy
                     </button>
-                    <button @click="confirmSubmit()"
-                            class="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition">
+                    <button @click="confirmSubmit()" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         Xác nhận
                     </button>
                 </div>
             </div>
         </div>
     </div>
-</body>
-</html>
+@endsection
