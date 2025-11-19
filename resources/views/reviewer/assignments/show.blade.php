@@ -131,13 +131,82 @@
                     </svg>
                     <span>Thao tác phản biện</span>
                 </h3>
+                <!-- Paper Versions -->
+                @if(isset($versions) && $versions->count() > 0)
+                <div class="mb-6" x-data="{ expandedVersions: false }">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Phiên bản bài báo ({{ $versions->count() }})
+                        </h4>
+                        @if($versions->count() >= 2)
+                        <button @click="expandedVersions = !expandedVersions" 
+                                class="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center space-x-1">
+                            <span x-text="expandedVersions ? 'Thu gọn' : 'Xem tất cả'"></span>
+                            <svg class="w-3 h-3 transition-transform" :class="expandedVersions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        @endif
+                    </div>
+                    <div class="space-y-3">
+                        @foreach($versions as $index => $version)
+                        <div class="bg-white rounded-lg border-2 {{ $index === 0 ? 'border-purple-300' : 'border-gray-200' }} overflow-hidden"
+                             @if($index !== 0) x-show="expandedVersions" @endif
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 transform scale-95"
+                             x-transition:enter-end="opacity-100 transform scale-100">
+                            <!-- Header -->
+                            <div class="px-3 py-2 {{ $index === 0 ? 'bg-purple-50' : 'bg-gray-50' }} border-b flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 {{ $index === 0 ? 'bg-purple-100' : 'bg-blue-50' }} rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 {{ $index === 0 ? 'text-purple-600' : 'text-blue-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-1">
+                                            <span class="text-sm font-bold">V{{ $version->version_no }}</span>
+                                            @if($index === 0)
+                                                <span class="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">MỚI NHẤT</span>
+                                            @endif
+                                            @if($version->version_no > 1)
+                                                <span class="px-1.5 py-0.5 bg-orange-100 text-orange-800 text-xs font-bold rounded">REVISION</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-gray-600">{{ \Carbon\Carbon::parse($version->submitted_at)->format('d/m/Y H:i') }}</div>
+                                    </div>
+                                </div>
+                                <a href="{{ route('reviewer.papers.download', $assignment->paper_id) }}?version={{ $version->version_no }}" 
+                                   target="_blank"
+                                   class="px-2 py-1 text-xs font-semibold text-white {{ $index === 0 ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700' }} rounded">
+                                    Tải
+                                </a>
+                            </div>
+                            <!-- Content -->
+                            <div class="p-3 space-y-3 text-sm">
+                                <div><label class="text-xs font-semibold text-gray-500 uppercase">Tiêu đề</label><p class="mt-1 text-gray-900">{{ $paper->title }}</p></div>
+                                <div><label class="text-xs font-semibold text-gray-500 uppercase">Tóm tắt</label><p class="mt-1 text-gray-700 text-xs">{{ $paper->abstract }}</p></div>
+                                <div><label class="text-xs font-semibold text-gray-500 uppercase">Từ khóa</label><div class="mt-1 flex flex-wrap gap-1">@foreach(explode(',', $paper->keywords) as $kw)<span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">{{ trim($kw) }}</span>@endforeach</div></div>
+                                @if($authors->count() > 0)
+                                <div><label class="text-xs font-semibold text-gray-500 uppercase">Tác giả ({{ $authors->count() }})</label><div class="mt-1 space-y-1">@foreach($authors as $au)<div class="flex items-center space-x-2 p-1.5 bg-gray-50 rounded"><div class="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{{ substr($au->full_name, 0, 1) }}</div><div class="flex-1 min-w-0"><div class="text-xs font-medium flex items-center space-x-1"><span>{{ $au->full_name }}</span>@if($au->is_contact)<span class="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">Contact</span>@endif</div><div class="text-xs text-gray-500">{{ $au->email }}</div></div></div>@endforeach</div></div>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                
                 <div class="flex space-x-4">
-                    @if($assignment->paper_file)
+                    @if($assignment->paper_file || (isset($versions) && $versions->count() > 0))
                         <a href="{{ route('reviewer.papers.download', $assignment->paper_id) }}" class="inline-flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                             </svg>
-                            <span>Tải bài báo</span>
+                            <span>Tải phiên bản mới nhất</span>
                         </a>
                     @else
                         <span class="inline-flex items-center space-x-2 px-6 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-50">
@@ -153,6 +222,104 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                         </svg>
                         <span>Nộp phản biện</span>
+                    </a>
+                </div>
+            </div>
+            @endif
+            
+            @if($assignment->status == 'COMPLETED')
+            <div class="bg-blue-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Đã hoàn thành phản biện</span>
+                </h3>
+                
+                <!-- Paper Versions -->
+                @if(isset($versions) && $versions->count() > 0)
+                <div class="mb-6" x-data="{ expandedVersions: false }">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-semibold text-gray-700 flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Phiên bản bài báo ({{ $versions->count() }})
+                        </h4>
+                        @if($versions->count() >= 2)
+                        <button @click="expandedVersions = !expandedVersions" 
+                                class="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center space-x-1">
+                            <span x-text="expandedVersions ? 'Thu gọn' : 'Xem tất cả'"></span>
+                            <svg class="w-3 h-3 transition-transform" :class="expandedVersions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        @endif
+                    </div>
+                    <div class="space-y-3">
+                        @foreach($versions as $index => $version)
+                        <div class="bg-white rounded-lg border-2 {{ $index === 0 ? 'border-purple-300' : 'border-gray-200' }} overflow-hidden"
+                             @if($index !== 0) x-show="expandedVersions" @endif
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 transform scale-95"
+                             x-transition:enter-end="opacity-100 transform scale-100">
+                            <!-- Header -->
+                            <div class="px-3 py-2 {{ $index === 0 ? 'bg-purple-50' : 'bg-gray-50' }} border-b flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-8 h-8 {{ $index === 0 ? 'bg-purple-100' : 'bg-blue-50' }} rounded-lg flex items-center justify-center">
+                                        <svg class="w-4 h-4 {{ $index === 0 ? 'text-purple-600' : 'text-blue-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-1">
+                                            <span class="text-sm font-bold">V{{ $version->version_no }}</span>
+                                            @if($index === 0)
+                                                <span class="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">MỚI NHẤT</span>
+                                            @endif
+                                            @if($version->version_no > 1)
+                                                <span class="px-1.5 py-0.5 bg-orange-100 text-orange-800 text-xs font-bold rounded">REVISION</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-gray-600">{{ \Carbon\Carbon::parse($version->submitted_at)->format('d/m/Y H:i') }}</div>
+                                    </div>
+                                </div>
+                                <a href="{{ route('reviewer.papers.download', $assignment->paper_id) }}?version={{ $version->version_no }}" 
+                                   target="_blank"
+                                   class="px-2 py-1 text-xs font-semibold text-white {{ $index === 0 ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700' }} rounded">
+                                    Tải
+                                </a>
+                            </div>
+                            <!-- Content -->
+                            <div class="p-3 space-y-3 text-sm">
+                                <div><label class="text-xs font-semibold text-gray-500 uppercase">Tiêu đề</label><p class="mt-1 text-gray-900">{{ $paper->title }}</p></div>
+                                <div><label class="text-xs font-semibold text-gray-500 uppercase">Tóm tắt</label><p class="mt-1 text-gray-700 text-xs">{{ $paper->abstract }}</p></div>
+                                <div><label class="text-xs font-semibold text-gray-500 uppercase">Từ khóa</label><div class="mt-1 flex flex-wrap gap-1">@foreach(explode(',', $paper->keywords) as $kw)<span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">{{ trim($kw) }}</span>@endforeach</div></div>
+                                @if($authors->count() > 0)
+                                <div><label class="text-xs font-semibold text-gray-500 uppercase">Tác giả ({{ $authors->count() }})</label><div class="mt-1 space-y-1">@foreach($authors as $au)<div class="flex items-center space-x-2 p-1.5 bg-gray-50 rounded"><div class="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{{ substr($au->full_name, 0, 1) }}</div><div class="flex-1 min-w-0"><div class="text-xs font-medium flex items-center space-x-1"><span>{{ $au->full_name }}</span>@if($au->is_contact)<span class="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">Contact</span>@endif</div><div class="text-xs text-gray-500">{{ $au->email }}</div></div></div>@endforeach</div></div>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                
+                <div class="flex space-x-4">
+                    @if($assignment->paper_file || (isset($versions) && $versions->count() > 0))
+                        <a href="{{ route('reviewer.papers.download', $assignment->paper_id) }}" class="inline-flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span>Xem lại bài báo</span>
+                        </a>
+                    @endif
+                    
+                    <a href="{{ route('reviewer.reviews') }}" class="inline-flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        <span>Xem danh sách phản biện</span>
                     </a>
                 </div>
             </div>

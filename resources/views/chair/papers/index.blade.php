@@ -185,6 +185,7 @@ document.addEventListener('alpine:init', () => {
                         <option value="ACCEPTED" {{ request('status') === 'ACCEPTED' ? 'selected' : '' }}>Đã chấp nhận</option>
                         <option value="REJECTED" {{ request('status') === 'REJECTED' ? 'selected' : '' }}>Đã từ chối</option>
                         <option value="UNDER_REVIEW" {{ request('status') === 'UNDER_REVIEW' ? 'selected' : '' }}>Đang phản biện</option>
+                        <option value="PENDING_CHAIR_REVIEW" {{ request('status') === 'PENDING_CHAIR_REVIEW' ? 'selected' : '' }}>Chờ Chair duyệt lại</option>
                     </select>
                 </div>
                 
@@ -369,6 +370,7 @@ document.addEventListener('alpine:init', () => {
                                                 'SUBMITTED' => 'bg-blue-100 text-blue-800',
                                                 'UNDER_REVIEW' => 'bg-yellow-100 text-yellow-800',
                                                 'REVIEWED' => 'bg-purple-100 text-purple-800',
+                                                'PENDING_CHAIR_REVIEW' => 'bg-purple-100 text-purple-800',
                                                 'ACCEPTED' => 'bg-green-100 text-green-800',
                                                 'REJECTED' => 'bg-red-100 text-red-800',
                                                 'WITHDRAWN' => 'bg-gray-100 text-gray-800'
@@ -377,6 +379,7 @@ document.addEventListener('alpine:init', () => {
                                                 'SUBMITTED' => 'Đã nộp',
                                                 'UNDER_REVIEW' => 'Đang duyệt',
                                                 'REVIEWED' => 'Đã phản biện',
+                                                'PENDING_CHAIR_REVIEW' => 'Chờ Chair duyệt',
                                                 'ACCEPTED' => 'Chấp nhận',
                                                 'REJECTED' => 'Từ chối',
                                                 'WITHDRAWN' => 'Đã rút'

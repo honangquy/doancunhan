@@ -56,6 +56,7 @@
                                 'ACCEPTED' => 'bg-green-100 text-green-800',
                                 'REJECTED' => 'bg-red-100 text-red-800',
                                 'REVISION_REQUIRED' => 'bg-orange-100 text-orange-800',
+                                'PENDING_CHAIR_REVIEW' => 'bg-purple-100 text-purple-800',
                                 'WITHDRAWN' => 'bg-gray-300 text-gray-600',
                             ];
                             $colorClass = $statusColors[$paper->status_code] ?? 'bg-gray-200 text-gray-800';
@@ -70,7 +71,7 @@
                         Nộp ngày: {{ \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y H:i') }}
                     </p>
                     
-                    @if($paper->decision && in_array($paper->status_code, ['ACCEPTED', 'REJECTED', 'REVISION_REQUIRED']))
+                    @if($paper->decision && in_array($paper->status_code, ['ACCEPTED', 'REJECTED', 'REVISION_REQUIRED', 'PENDING_CHAIR_REVIEW']))
                     <div class="mt-4 p-4 rounded-lg 
                         @if($paper->decision === 'ACCEPT') bg-green-50 border border-green-200
                         @elseif($paper->decision === 'REJECT') bg-red-50 border border-red-200  
