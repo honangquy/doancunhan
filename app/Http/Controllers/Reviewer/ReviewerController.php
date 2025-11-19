@@ -548,52 +548,95 @@ class ReviewerController extends Controller
     /**
      * Download paper file
      */
-    public function downloadPaper($paperId)
+    public function downloadPaper(Request $request, $paperId)
     {
         $userId = Auth::id();
+        $versionNo = $request->query('version');
         
-        \Log::info("Download attempt - User: $userId, Paper: $paperId");
+        \Log::info("Download attempt - User: $userId, Paper: $paperId, Version: $versionNo");
         
         // Verify reviewer has permission to access this paper  
         $assignment = DB::table('reviewer_assignments as ra')
             ->where('ra.paper_id', $paperId)
             ->where('ra.user_id', $userId)
             ->first();
-            
-        \Log::info("Assignment found: " . json_encode($assignment));
         
-        $hasPermission = DB::table('reviewer_assignments as ra')
-            ->where('ra.paper_id', $paperId)
-            ->where('ra.user_id', $userId)
-            ->where('ra.status', 'ACCEPTED')
-            ->exists();
-        
-        \Log::info("Permission check result: " . ($hasPermission ? 'true' : 'false'));
-        
-        // TEMP: Allow download regardless of status for debugging
         if (!$assignment) {
             \Log::warning("No assignment found for user $userId to paper $paperId");
             abort(404, 'Bạn không có quyền truy cập file này.');
         }
         
-        // Get paper details
-        $paper = DB::table('baibao')
-            ->where('paper_id', $paperId)
-            ->select('file_path', 'title')
-            ->first();
-        
-        \Log::info("Paper data: " . json_encode($paper));
-        
-        if (!$paper || !$paper->file_path) {
-            \Log::warning("Paper not found or no file path - Paper ID: $paperId");
-            abort(404, 'Không tìm thấy file bài báo.');
+        // Get file path based on version
+        if ($versionNo) {
+            // Download specific version
+            $version = DB::table('phienbanbaibao')
+                ->where('paper_id', $paperId)
+                ->where('version_no', $versionNo)
+                ->first();
+            
+            if (!$version) {
+                abort(404, 'Version not found');
+            }
+            
+            $filePath = $version->file_path;
+            
+            // If version file doesn't exist, try to fallback
+            if (!\Storage::exists($filePath)) {
+                \Log::warning("Version {$versionNo} file missing for paper {$paperId}: {$filePath}");
+                
+                // Try to use latest version file or baibao file as fallback
+                $fallbackFile = $this->findFallbackFile($paperId);
+                if ($fallbackFile) {
+                    \Log::info("Using fallback file: {$fallbackFile}");
+                    $filePath = $fallbackFile;
+                } else {
+                    abort(404, "File không tồn tại cho version {$versionNo}");
+                }
+            }
+        } else {
+            // Download latest version from baibao table
+            $paper = DB::table('baibao')
+                ->where('paper_id', $paperId)
+                ->select('file_path')
+                ->first();
+            
+            if (!$paper || !$paper->file_path) {
+                abort(404, 'Không tìm thấy file bài báo.');
+            }
+            
+            $filePath = $paper->file_path;
         }
         
-        if (!\Storage::exists($paper->file_path)) {
+        if (!\Storage::exists($filePath)) {
             abort(404, 'File bài báo không tồn tại trên server.');
         }
         
-        return \Storage::download($paper->file_path, $paper->title . '.pdf');
+        // Use original filename
+        $originalFileName = basename($filePath);
+        return \Storage::download($filePath, $originalFileName);
+    }
+    
+    private function findFallbackFile($paperId)
+    {
+        // Try baibao table first
+        $paper = DB::table('baibao')->where('paper_id', $paperId)->first();
+        if ($paper && $paper->file_path && \Storage::exists($paper->file_path)) {
+            return $paper->file_path;
+        }
+        
+        // Try latest version with existing file
+        $versions = DB::table('phienbanbaibao')
+            ->where('paper_id', $paperId)
+            ->orderBy('version_no', 'desc')
+            ->get();
+            
+        foreach ($versions as $version) {
+            if (\Storage::exists($version->file_path)) {
+                return $version->file_path;
+            }
+        }
+        
+        return null;
     }
 }
 

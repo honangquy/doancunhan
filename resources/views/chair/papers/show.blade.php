@@ -134,9 +134,202 @@
                 </div>
             </div>
 
-            <!-- File Attachment -->
+            <!-- Paper Versions Section -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Phiên bản bài báo
+                </h3>
+            @if((isset($versions) && $versions->count() > 0) || $paper->file_path)
+            <div x-data="{ expandedVersions: false }">
+                @if(isset($versions) && $versions->count() > 0)
+                <div class="mb-3 flex items-center justify-between">
+                    <span class="text-sm text-gray-600">
+                        Tổng số phiên bản: <strong>{{ $versions->count() }}</strong>
+                    </span>
+                    @if($versions->count() >= 2)
+                    <button @click="expandedVersions = !expandedVersions" 
+                            class="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center space-x-1">
+                        <span x-text="expandedVersions ? 'Thu gọn' : 'Xem tất cả'"></span>
+                        <svg class="w-4 h-4 transition-transform" :class="expandedVersions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    @endif
+                </div>
+                <div class="space-y-4">
+                    @foreach($versions as $index => $version)
+                    <div class="bg-white rounded-lg border-2 {{ $index === 0 ? 'border-purple-300' : 'border-gray-200' }} overflow-hidden"
+                         @if($index !== 0) x-show="expandedVersions" @endif
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 transform scale-95"
+                         x-transition:enter-end="opacity-100 transform scale-100">
+                        
+                        <!-- Version Header -->
+                        <div class="px-4 py-3 {{ $index === 0 ? 'bg-purple-50' : 'bg-gray-50' }} border-b border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 {{ $index === 0 ? 'bg-purple-100' : 'bg-blue-50' }} rounded-lg flex items-center justify-center">
+                                        <svg class="w-5 h-5 {{ $index === 0 ? 'text-purple-600' : 'text-blue-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center space-x-2">
+                                            <h4 class="text-base font-bold text-gray-900">Phiên bản {{ $version->version_no }}</h4>
+                                            @if($index === 0)
+                                                <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded-full">MỚI NHẤT</span>
+                                            @endif
+                                            @if($version->version_no > 1)
+                                                <span class="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-bold rounded-full">REVISION</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-gray-600 mt-0.5">
+                                            Nộp ngày: {{ \Carbon\Carbon::parse($version->submitted_at)->format('d/m/Y H:i') }}
+                                            @if($version->note) • {{ $version->note }} @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="{{ route('chair.papers.download', $paperId) }}?version={{ $version->version_no }}" 
+                                   target="_blank"
+                                   class="inline-flex items-center space-x-1 px-3 py-2 text-sm font-semibold text-white {{ $index === 0 ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700' }} rounded-lg transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <span>Tải xuống</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Version Content -->
+                        <div class="p-4 space-y-4">
+                            <!-- Title -->
+                            <div>
+                                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tiêu đề</label>
+                                <p class="mt-1 text-sm text-gray-900">{{ $paper->title }}</p>
+                            </div>
+
+                            <!-- Abstract -->
+                            <div>
+                                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tóm tắt</label>
+                                <p class="mt-1 text-sm text-gray-700 leading-relaxed">{{ $paper->abstract }}</p>
+                            </div>
+
+                            <!-- Keywords -->
+                            <div>
+                                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Từ khóa</label>
+                                <div class="mt-1 flex flex-wrap gap-2">
+                                    @foreach(explode(',', $paper->keywords) as $keyword)
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">{{ trim($keyword) }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Authors -->
+                            @if($authors->count() > 0)
+                            <div>
+                                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Đồng tác giả ({{ $authors->count() }})</label>
+                                <div class="mt-2 space-y-2">
+                                    @foreach($authors as $author)
+                                    <div class="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg">
+                                        <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                                            {{ substr($author->full_name, 0, 1) }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-sm font-medium text-gray-900 flex items-center space-x-2">
+                                                <span>{{ $author->full_name }}</span>
+                                                @if($author->is_contact)
+                                                    <span class="px-1.5 py-0.5 bg-green-100 text-green-800 text-xs rounded">Liên hệ chính</span>
+                                                @endif
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                {{ $author->email }}
+                                                @if($author->organization) • {{ $author->organization }} @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+
+                            <!-- File Info -->
+                            <div class="pt-3 border-t border-gray-200">
+                                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <span class="font-mono text-xs">{{ basename($version->file_path) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <!-- Fallback: Hiển thị file từ baibao nếu chưa có versions -->
+                <h3 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    File bài báo
+                </h3>
+                <div class="p-4 bg-white rounded-lg border-2 border-blue-300 bg-blue-50">
+                    <div class="flex items-start space-x-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <h4 class="text-base font-semibold text-gray-900">Bài báo gốc</h4>
+                                <span class="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">PHIÊN BẢN ĐẦU</span>
+                            </div>
+                            <div class="space-y-1 text-sm text-gray-600">
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <span><strong>Nộp ngày:</strong> {{ \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y H:i:s') }}</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <span class="font-mono text-xs truncate"><strong>File:</strong> {{ basename($paper->file_path) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <a href="{{ route('chair.papers.download', $paperId) }}" 
+                               target="_blank"
+                               class="inline-flex items-center space-x-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm hover:shadow-md">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span>Tải xuống</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            @else
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p>Chưa có file bài báo</p>
+                </div>
+            @endif
+            </div>
+
+            <!-- Legacy File Attachment Section (fallback) -->
+            @if(!isset($versions) || $versions->count() == 0)
             @if($paper->file_path)
-            <div class="mb-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                 <h3 class="text-md font-semibold text-gray-800 mb-2">File đính kèm</h3>
                 <div class="p-4 bg-gray-50 rounded-lg">
                     <div class="flex items-center space-x-3">
@@ -158,7 +351,7 @@
                 </div>
             </div>
             @endif
-        </div>
+            @endif
 
         <!-- Authors Section -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -326,18 +519,18 @@
                         
                         <button onclick="if(window.Alpine && Alpine.$data(document.body).viewDecision) { Alpine.$data(document.body).viewDecision({{ $paper->paper_id }}); } else { window.location.href = '{{ route('chair.papers.decision', $paper->paper_id) }}'; }"
                            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition">
-                            🔄 Cập nhật quyết định
+                            Cập nhật quyết định
                         </button>
                     @else
                         <p class="text-gray-600 mb-4">
-                            ✅ Tất cả nhận xét đã hoàn thành. Bạn có thể đưa ra quyết định cuối cùng cho bài báo này.
+                            Tất cả nhận xét đã hoàn thành. Bạn có thể đưa ra quyết định cuối cùng cho bài báo này.
                         </p>
                         <button onclick="if(window.Alpine && Alpine.$data(document.body).viewDecision) { Alpine.$data(document.body).viewDecision({{ $paper->paper_id }}); } else { window.location.href = '{{ route('chair.papers.decision', $paper->paper_id) }}'; }"
                            class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition flex items-center">
                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            ⚖️ Đưa ra quyết định cuối cùng
+                            Đưa ra quyết định cuối cùng
                         </button>
                     @endif
                 </div>

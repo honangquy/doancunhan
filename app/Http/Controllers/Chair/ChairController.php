@@ -413,6 +413,12 @@ class ChairController extends Controller
             ];
         }
         
+        // Get all paper versions
+        $versions = DB::table('phienbanbaibao')
+            ->where('paper_id', $paperId)
+            ->orderBy('version_no', 'desc')
+            ->get();
+        
         return view('chair.papers.show', [
             'paper' => $paper,
             'authors' => $authors,
@@ -420,8 +426,89 @@ class ChairController extends Controller
             'reviews' => $reviews,
             'reviewStats' => $reviewStats,
             'averageScores' => $averageScores,
-            'completedReviews' => $completedReviews
+            'completedReviews' => $completedReviews,
+            'versions' => $versions,
+            'paperId' => $paperId
         ]);
+    }
+
+    /**
+     * Download paper file (supports versions)
+     */
+    public function downloadPaper(Request $request, $paperId)
+    {
+        $versionNo = $request->query('version');
+        
+        if ($versionNo) {
+            // Download specific version
+            $version = DB::table('phienbanbaibao')
+                ->where('paper_id', $paperId)
+                ->where('version_no', $versionNo)
+                ->first();
+            
+            if (!$version) {
+                abort(404, 'Version not found');
+            }
+            
+            $filePath = $version->file_path;
+            
+            // If version file doesn't exist, try to fallback
+            if (!\Storage::exists($filePath)) {
+                \Log::warning("Version {$versionNo} file missing for paper {$paperId}: {$filePath}");
+                
+                // Try to use latest version file or baibao file as fallback
+                $fallbackFile = $this->findFallbackFile($paperId);
+                if ($fallbackFile) {
+                    \Log::info("Using fallback file: {$fallbackFile}");
+                    $filePath = $fallbackFile;
+                } else {
+                    abort(404, "File không tồn tại cho version {$versionNo}");
+                }
+            }
+        } else {
+            // Download latest version from baibao table
+            $paper = DB::table('baibao')
+                ->where('paper_id', $paperId)
+                ->first();
+            
+            if (!$paper || !$paper->file_path) {
+                abort(404, 'Paper file not found');
+            }
+            
+            $filePath = $paper->file_path;
+        }
+        
+        // Final check if file exists
+        if (!\Storage::exists($filePath)) {
+            abort(404, 'File không tồn tại trên server.');
+        }
+        
+        // Use original filename
+        $originalFileName = basename($filePath);
+        return \Storage::download($filePath, $originalFileName);
+    }
+    
+    private function findFallbackFile($paperId)
+    {
+        // Try baibao table first
+        $paper = DB::table('baibao')->where('paper_id', $paperId)->first();
+        if ($paper && $paper->file_path && \Storage::exists($paper->file_path)) {
+            return $paper->file_path;
+        }
+        
+        // Try latest version with existing file
+        $versions = DB::table('phienbanbaibao')
+            ->where('paper_id', $paperId)
+            ->orderBy('version_no', 'desc')
+            ->get();
+            
+        foreach ($versions as $version) {
+            if (\Storage::exists($version->file_path)) {
+                return $version->file_path;
+            }
+        }
+        
+        return null;
     }
 
     /**
@@ -1118,19 +1205,21 @@ class ChairController extends Controller
             abort(403, 'Unauthorized access to this paper');
         }
         
-        // Check if all reviews are completed
-        $pendingReviews = DB::table('reviewer_assignments as ra')
-            ->where('ra.paper_id', $paperId)
-            ->where('ra.status', '!=', 'COMPLETED')
-            ->whereNull('ra.review_submitted_at')
-            ->count();
-        
-        if ($pendingReviews > 0) {
-            return redirect()->route('chair.papers.show', $paperId)
-                ->with('error', "Không thể đưa ra quyết định. Còn {$pendingReviews} nhận xét chưa hoàn thành.");
+        // Check if all reviews are completed (chỉ check khi không phải PENDING_CHAIR_REVIEW)
+        if ($paper->status_code !== 'PENDING_CHAIR_REVIEW') {
+            $pendingReviews = DB::table('reviewer_assignments as ra')
+                ->where('ra.paper_id', $paperId)
+                ->where('ra.status', '!=', 'COMPLETED')
+                ->whereNull('ra.review_submitted_at')
+                ->count();
+            
+            if ($pendingReviews > 0) {
+                return redirect()->route('chair.papers.show', $paperId)
+                    ->with('error', "Không thể đưa ra quyết định. Còn {$pendingReviews} nhận xét chưa hoàn thành.");
+            }
         }
         
-        // Get reviews summary
+        // Get reviews summary (nếu có - cho bài revision sẽ dựa vào review cũ)
         $reviewsData = DB::table('reviewer_assignments as ra')
             ->join('phanbien as pn', 'ra.id', '=', 'pn.assignment_id')
             ->join('nguoidung as nd', 'ra.user_id', '=', 'nd.user_id')
@@ -1151,6 +1240,9 @@ class ChairController extends Controller
         $acceptCount = $reviewsData->where('recommendation_code', 'ACCEPT')->count();
         $rejectCount = $reviewsData->where('recommendation_code', 'REJECT')->count();
         $reviseCount = $reviewsData->where('recommendation_code', 'REVISE')->count();
+        
+        // Đánh dấu là revision submission
+        $isRevision = $paper->status_code === 'PENDING_CHAIR_REVIEW';
         
         // Calculate consensus
         $consensus = 'mixed';
@@ -1188,7 +1280,8 @@ class ChairController extends Controller
             'paper',
             'reviewsData',
             'stats',
-            'existingDecision'
+            'existingDecision',
+            'isRevision'
         ))->with([
             'totalReviews' => $totalReviews,
             'avgScore' => $avgScore,
