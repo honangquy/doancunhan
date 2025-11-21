@@ -10,19 +10,27 @@ class ThongBao extends Model
     use HasFactory;
 
     protected $table = 'thongbao';
-    protected $primaryKey = 'notification_id';
-    public $timestamps = false;
+    protected $primaryKey = 'announcement_id';
+    public $timestamps = true; // Enable Laravel timestamps
 
     protected $fillable = [
         'conference_id',
         'title',
         'content',
-        'created_at',
+        'audience',
+        'scheduled_at',
+        'sent_at',
+        'status',
+        'channels',
         'created_by',
     ];
 
     protected $casts = [
+        'scheduled_at' => 'datetime',
+        'sent_at' => 'datetime',
         'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'channels' => 'array', // JSON array
     ];
 
     // Relationships
