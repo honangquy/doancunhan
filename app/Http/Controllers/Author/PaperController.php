@@ -265,6 +265,15 @@ class PaperController extends Controller
                 DB::table('baibao')
                     ->where('paper_id', $paperId)
                     ->update(['file_path' => $path]);
+                
+                // Tạo version 1 (Initial submission)
+                DB::table('phienbanbaibao')->insert([
+                    'paper_id' => $paperId,
+                    'version_no' => 1,
+                    'file_path' => $path,
+                    'submitted_at' => now(),
+                    'note' => 'Initial submission'
+                ]);
             }
             
             // Add submitter as first author (contact author by default)
@@ -539,24 +548,18 @@ class PaperController extends Controller
             
             // Handle file upload if new file provided
             if ($request->hasFile('paper_file')) {
-                // Delete old file
-                if ($paper->file_path) {
-                    Storage::delete($paper->file_path);
-                }
-                
                 $file = $request->file('paper_file');
                 $filename = $id . '_' . time() . '.pdf';
                 $path = $file->storeAs('papers/' . $validated['conference_id'], $filename);
                 $updateData['file_path'] = $path;
                 
-                // Tạo phiên bản mới nếu đang ở trạng thái revision
+                // Lấy version cao nhất hiện tại
+                $currentVersion = DB::table('phienbanbaibao')
+                    ->where('paper_id', $id)
+                    ->max('version_no') ?: 0;
+                
                 if ($paper->status_code === 'REVISION_REQUIRED') {
-                    // Lấy version cao nhất hiện tại
-                    $currentVersion = DB::table('phienbanbaibao')
-                        ->where('paper_id', $id)
-                        ->max('version_no') ?: 0;
-                    
-                    // Tạo phiên bản mới
+                    // TẠO PHIÊN BẢN MỚI cho revision (KHÔNG xóa file cũ)
                     DB::table('phienbanbaibao')->insert([
                         'paper_id' => $id,
                         'version_no' => $currentVersion + 1,
@@ -564,6 +567,20 @@ class PaperController extends Controller
                         'submitted_at' => now(),
                         'note' => 'Revision submitted'
                     ]);
+                } else {
+                    // Nếu chưa review, DELETE file cũ và update version hiện tại
+                    if ($paper->file_path) {
+                        Storage::delete($paper->file_path);
+                    }
+                    
+                    // Cập nhật file_path cho version hiện tại (không tạo version mới)
+                    DB::table('phienbanbaibao')
+                        ->where('paper_id', $id)
+                        ->where('version_no', $currentVersion)
+                        ->update([
+                            'file_path' => $path,
+                            'submitted_at' => now()
+                        ]);
                 }
             }
             
@@ -573,31 +590,31 @@ class PaperController extends Controller
             
             // Nếu đang ở trạng thái REVISION_REQUIRED và có file mới
             if ($paper->status_code === 'REVISION_REQUIRED' && $request->hasFile('paper_file')) {
-                // Chuyển trạng thái về UNDER_REVIEW
+                // Chuyển trạng thái về PENDING_CHAIR_REVIEW để chair duyệt lại
                 DB::table('baibao')
                     ->where('paper_id', $id)
                     ->update([
-                        'status_code' => 'UNDER_REVIEW',
+                        'status_code' => 'PENDING_CHAIR_REVIEW',
                         'decision' => null,
                         'decision_date' => null,
                         'decision_comments' => null,
                         'revision_deadline' => null
                     ]);
                 
-                // Reset các reviewer đã hoàn thành về PENDING cho revision round mới
-                DB::table('reviewer_assignments')
-                    ->where('paper_id', $id)
-                    ->where('status', 'COMPLETED')
-                    ->whereNotNull('review_submitted_at')
-                    ->update([
-                        'status' => 'PENDING',
-                        'assigned_at' => now(),
-                        'responded_at' => null,
-                        'review_submitted_at' => null,
-                        'updated_at' => now()
-                    ]);
+                // Ghi log activity
+                DB::table('activity_logs')->insert([
+                    'user_id' => $userId,
+                    'log_type' => 'paper_update',
+                    'action' => 'REVISION_SUBMITTED',
+                    'description' => 'Tác giả đã nộp bản sửa lại, chờ chair duyệt',
+                    'model_type' => 'App\\Models\\BaiBao',
+                    'model_id' => $id,
+                    'severity' => 'medium',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
                 
-                // TODO: Gửi email thông báo cho reviewers
+                // TODO: Gửi email thông báo cho chair
             }
             
             // Update co-authors (delete all except submitter, then re-add)

@@ -52,8 +52,28 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
                     Quyết định cuối cùng
+                    @if($isRevision ?? false)
+                        <span class="ml-3 px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+                            <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            REVISION REVIEW
+                        </span>
+                    @endif
                 </h1>
-                <p class="text-gray-600">Hãy đưa ra quyết định cho bài báo dựa trên các nhận xét của reviewer</p>
+                @if($isRevision ?? false)
+                    <div class="mt-3 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <p class="text-purple-900 font-medium flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Đây là bài báo đã được tác giả sửa lại theo yêu cầu
+                        </p>
+                        <p class="text-purple-700 text-sm mt-1">Hãy xem xét bản sửa lại và đưa ra quyết định cuối cùng dựa trên các nhận xét trước đó của reviewers.</p>
+                    </div>
+                @else
+                    <p class="text-gray-600">Hãy đưa ra quyết định cho bài báo dựa trên các nhận xét của reviewer</p>
+                @endif
             </div>
         </div>
 

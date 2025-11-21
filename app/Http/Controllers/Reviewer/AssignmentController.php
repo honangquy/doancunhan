@@ -8,6 +8,7 @@ use App\Models\BaiBao;
 use App\Models\NguoiDung;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AssignmentController extends Controller
 {
@@ -47,15 +48,7 @@ class AssignmentController extends Controller
             ->orderBy('reviewer_assignments.assigned_at', 'desc')
             ->get();
 
-        // Phát hiện bài báo revision (kiểm tra có phiên bản trước không)
-        $assignments->each(function ($assignment) {
-            // Kiểm tra xem paper này có nhiều hơn 1 version không
-            $versionCount = \DB::table('phienbanbaibao')
-                ->where('paper_id', $assignment->paper_id)
-                ->count();
-            
-            $assignment->is_revision = $versionCount > 1;
-        });
+        // Note: Không cần đánh dấu revision nữa vì revision được chair review trực tiếp
 
         return view('reviewer.assignments.index', compact('assignments'));
     }
@@ -93,8 +86,27 @@ class AssignmentController extends Controller
                 'author.organization as author_organization'
             )
             ->firstOrFail();
+        
+        // Get all paper versions
+        $versions = DB::table('phienbanbaibao')
+            ->where('paper_id', $assignment->paper_id)
+            ->orderBy('version_no', 'desc')
+            ->get();
+        
+        // Get all authors
+        $authors = DB::table('tacgiabaibao as ta')
+            ->join('nguoidung as nd', 'ta.user_id', '=', 'nd.user_id')
+            ->where('ta.paper_id', $assignment->paper_id)
+            ->select('ta.author_order', 'ta.is_contact', 'ta.organization', 'nd.full_name', 'nd.email')
+            ->orderBy('ta.author_order')
+            ->get();
+        
+        // Get paper details
+        $paper = DB::table('baibao')
+            ->where('paper_id', $assignment->paper_id)
+            ->first();
 
-        return view('reviewer.assignments.show', compact('assignment'));
+        return view('reviewer.assignments.show', compact('assignment', 'versions', 'authors', 'paper'));
     }
 
     /**

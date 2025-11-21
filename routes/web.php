@@ -479,7 +479,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/papers', [\App\Http\Controllers\Chair\ChairController::class, 'papers'])->name('papers');
         Route::get('/papers/{id}', [\App\Http\Controllers\Chair\ChairController::class, 'showPaper'])->name('papers.show');
         Route::get('/papers/{id}/ajax', [\App\Http\Controllers\Chair\ChairController::class, 'showPaperAjax'])->name('papers.ajax');
-
+        Route::get('/papers/{id}/download', [\App\Http\Controllers\Chair\ChairController::class, 'downloadPaper'])->name('papers.download');
+        
         // Reviewer Assignment (Legacy)
         Route::get('/papers/{id}/assign', [\App\Http\Controllers\Chair\ChairController::class, 'assignReviewers'])->name('papers.assign');
         Route::post('/papers/{id}/assign', [\App\Http\Controllers\Chair\ChairController::class, 'storeAssignment'])->name('papers.assign.store');
