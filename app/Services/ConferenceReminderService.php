@@ -51,7 +51,7 @@ class ConferenceReminderService
                 
                 if ($reminderDate->isSameDay($today)) {
                     $template = DB::table('notification_templates')
-                        ->where('code', $config['template_code'])
+                        ->where('template_code', $config['template_code'])
                         ->first();
                     
                     if ($template) {
@@ -103,8 +103,8 @@ class ConferenceReminderService
                 'conference_url' => url("/conference/{$conference->conference_id}")
             ];
 
-            $body = $template->body;
-            $subject = $template->title;
+            $body = $template->body_html;
+            $subject = $template->subject;
             
             foreach ($variables as $key => $value) {
                 $placeholder = '{{' . $key . '}}';
@@ -121,7 +121,7 @@ class ConferenceReminderService
                     'conference_id' => $conference->conference_id,
                     'recipient' => $recipient->email,
                     'event_type' => $eventType,
-                    'template_code' => $template->code
+                    'template_code' => $template->template_code
                 ]);
 
                 $stats['reminders']++;

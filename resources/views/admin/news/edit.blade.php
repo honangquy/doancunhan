@@ -17,7 +17,7 @@
                 @csrf
                 @method('PUT')
                 @include('admin.news.form')
-                
+
                 <div class="d-flex justify-content-end gap-2 mt-4">
                     <a href="{{ route('admin.news.index') }}" class="btn btn-secondary">Hủy</a>
                     <button type="submit" class="btn btn-primary">

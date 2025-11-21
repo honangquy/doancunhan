@@ -30,7 +30,7 @@ class SampleDataSeeder extends Seeder
             'full_name' => 'Quản trị viên',
             'is_student' => false,
             'faculty_id' => 1,
-            'organization' => 'Trường Đại học Công nghệ TP.HCM - HUIT',
+            'organization' => 'Trường Đại học Công Thương TP. Hồ Chí Minhệ TP.HCM - HUIT',
             'locked' => false,
         ]);
 
@@ -49,10 +49,10 @@ class SampleDataSeeder extends Seeder
                 'full_name' => "Tác giả {$i}",
                 'is_student' => $i > 3,
                 'faculty_id' => ($i % 3) + 1,
-                'organization' => 'Trường Đại học Công nghệ TP.HCM',
+                'organization' => 'Trường Đại học Công Thương TP. Hồ Chí Minhệ TP.HCM',
                 'locked' => false,
             ]);
-            
+
             DB::table('VaiTroNguoiDung')->insert([
                 'user_id' => $i,
                 'role_code' => 'AUTHOR',
@@ -68,10 +68,10 @@ class SampleDataSeeder extends Seeder
                 'full_name' => "Phản biện viên {$i}",
                 'is_student' => false,
                 'faculty_id' => ($i % 3) + 1,
-                'organization' => 'Trường Đại học Công nghệ TP.HCM',
+                'organization' => 'Trường Đại học Công Thương TP. Hồ Chí Minhệ TP.HCM',
                 'locked' => false,
             ]);
-            
+
             DB::table('VaiTroNguoiDung')->insert([
                 'user_id' => $i,
                 'role_code' => 'REVIEWER',

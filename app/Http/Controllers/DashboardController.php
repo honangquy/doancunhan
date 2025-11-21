@@ -19,7 +19,14 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $role = strtolower($user->getPrimaryRole());
+        
+        // Get user's primary role from database
+        $roleRecord = DB::table('vaitronguoidung')
+            ->where('user_id', $user->user_id)
+            ->whereNull('conference_id')
+            ->first();
+        
+        $role = $roleRecord ? strtolower($roleRecord->role_code) : 'author';
 
         // Log dashboard access
         $this->logActivity(
@@ -46,7 +53,7 @@ class DashboardController extends Controller
     {
         // Use authenticated user ID
         $userId = Auth::id();
-        
+
         // Get user's papers with related data
         $papers = DB::table('baibao')
             ->where('submitter_id', $userId)
@@ -65,7 +72,7 @@ class DashboardController extends Controller
             )
             ->orderBy('baibao.created_at', 'desc')
             ->get();
-        
+
         // Calculate statistics
         $stats = [
             'total' => $papers->count(),
@@ -73,7 +80,7 @@ class DashboardController extends Controller
             'accepted' => $papers->where('status_code', 'ACCEPTED')->count(),
             'rejected' => $papers->where('status_code', 'REJECTED')->count(),
         ];
-        
+
         return view('author.dashboard', [
             'title' => 'Author Dashboard',
             'papers' => $papers,
@@ -85,8 +92,8 @@ class DashboardController extends Controller
     {
         // Use authenticated user ID
         $userId = Auth::id();
-        
-        // Get reviewer's assignments with paper and review data  
+
+        // Get reviewer's assignments with paper and review data
         $assignments = DB::table('reviewer_assignments as ra')
             ->where('ra.user_id', $userId)
             ->join('baibao', 'ra.paper_id', '=', 'baibao.paper_id')
@@ -111,7 +118,7 @@ class DashboardController extends Controller
             )
             ->orderBy('ra.assigned_at', 'desc')
             ->get();
-        
+
         // Get papers available for bidding
         $availablePapers = DB::table('baibao as b')
             ->join('hoithao as h', 'b.conference_id', '=', 'h.conference_id')
@@ -138,7 +145,7 @@ class DashboardController extends Controller
             'in_progress' => $assignments->where('assignment_status', 'ACCEPTED')->count(),
             'completed' => $assignments->whereNotNull('review_submitted_at')->count(),
         ];
-        
+
         return view('reviewer.dashboard', [
             'title' => 'Reviewer Dashboard',
             'assignments' => $assignments,
@@ -149,16 +156,16 @@ class DashboardController extends Controller
 
     public function chairDashboard()
     {
-        // Use authenticated user ID  
+        // Use authenticated user ID
         $userId = Auth::id();
         $userEmail = Auth::user()->email;
-        
+
         // Get chair's conference requests and approved conferences
         $conferenceRequests = DB::table('yeucauhoithao')
             ->where('chair_email', $userEmail)
             ->orderBy('created_at', 'desc')
             ->get();
-            
+
         // Get approved conferences that have been created from requests
         $approvedConferences = DB::table('hoithao')
             ->join('yeucauhoithao', function($join) use ($userEmail) {
@@ -168,9 +175,10 @@ class DashboardController extends Controller
             })
             ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status')
             ->get();
-        
+
         // Get the primary conference for this chair (prioritize conference with papers)
         $conference = null;
+        /** @var object $conf */
         foreach ($approvedConferences as $conf) {
             $paperCount = DB::table('baibao')->where('conference_id', $conf->conference_id)->count();
             if ($paperCount > 0) {
@@ -182,7 +190,7 @@ class DashboardController extends Controller
         if (!$conference) {
             $conference = $approvedConferences->first();
         }
-        
+
         $papers = collect();
         $stats = [
             'total_papers' => 0,
@@ -194,18 +202,21 @@ class DashboardController extends Controller
             'approved_conferences' => $approvedConferences->count(),
             'pending_requests' => $conferenceRequests->where('status', 'PENDING')->count()
         ];
-        
+
         if ($conference) {
+            // Store conference_id in session for other features (reports, etc.)
+            session(['current_conference_id' => $conference->conference_id]);
+
             // Get papers for this conference with reviewer assignment counts
             $papers = DB::table('baibao')
                 ->where('conference_id', $conference->conference_id)
                 ->join('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
                 ->join('nguoidung', 'baibao.submitter_id', '=', 'nguoidung.user_id')
-                ->leftJoin(DB::raw('(SELECT paper_id, COUNT(*) as reviewer_count, 
+                ->leftJoin(DB::raw('(SELECT paper_id, COUNT(*) as reviewer_count,
                     SUM(CASE WHEN status = "PENDING" THEN 1 ELSE 0 END) as pending_reviewers,
                     SUM(CASE WHEN status = "ACCEPTED" THEN 1 ELSE 0 END) as active_reviewers,
                     SUM(CASE WHEN review_submitted_at IS NOT NULL THEN 1 ELSE 0 END) as completed_reviews
-                    FROM reviewer_assignments GROUP BY paper_id) as ReviewerCounts'), 
+                    FROM reviewer_assignments GROUP BY paper_id) as ReviewerCounts'),
                     'baibao.paper_id', '=', 'ReviewerCounts.paper_id')
                 ->select(
                     'baibao.paper_id',
@@ -221,7 +232,7 @@ class DashboardController extends Controller
                 )
                 ->orderBy('baibao.created_at', 'desc')
                 ->get();
-            
+
             // Calculate statistics
             $stats = [
                 'total_papers' => $papers->count(),
@@ -238,7 +249,7 @@ class DashboardController extends Controller
                 'pending_requests' => $conferenceRequests->where('status', 'PENDING')->count()
             ];
         }
-        
+
         return view('chair.dashboard', [
             'title' => 'Chair Dashboard',
             'conference' => $conference,
@@ -260,10 +271,10 @@ class DashboardController extends Controller
             'total_papers' => DB::table('baibao')->count(),
             'pending_requests' => DB::table('join_requests')->where('status', 'PENDING')->count(),
         ];
-        
+
         // Get recent papers (simplified for now)
         $recentPapers = collect(); // Empty collection for now to avoid table errors
-        
+
         // Get user role distribution from VaiTroNguoiDung table
         $userRoles = DB::table('vaitronguoidung')
             ->select('role_code as role', DB::raw('count(distinct user_id) as count'))
@@ -325,7 +336,7 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
-        
+
         return view('admin.dashboard', [
             'title' => 'Admin Dashboard',
             'stats' => $stats,
@@ -634,10 +645,10 @@ class DashboardController extends Controller
                 'deleted_user_email' => $user->email,
                 'deleted_user_name' => $user->full_name
             ]);
-            
+
             // Delete user roles first
             DB::table('vaitronguoidung')->where('user_id', $id)->delete();
-            
+
             // Delete user
             DB::table('nguoidung')->where('user_id', $id)->delete();
 
@@ -943,7 +954,7 @@ class DashboardController extends Controller
 
             // Delete related records first
             DB::table('vaitronguoidung')->whereIn('user_id', $userIds)->delete();
-            
+
             // Delete users
             $deleted = DB::table('nguoidung')->whereIn('user_id', $userIds)->delete();
 
@@ -1018,7 +1029,7 @@ class DashboardController extends Controller
             // Delete related records first (papers, assignments, etc.)
             DB::table('baibao')->whereIn('conference_id', $conferenceIds)->delete();
             DB::table('phancong')->whereIn('conference_id', $conferenceIds)->delete();
-            
+
             // Delete conferences
             $deleted = DB::table('hoithao')->whereIn('conference_id', $conferenceIds)->delete();
 

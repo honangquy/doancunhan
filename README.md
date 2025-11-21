@@ -6,7 +6,7 @@
 [![Progress](https://img.shields.io/badge/Progress-100%25-brightgreen)](https://github.com)
 [![APIs](https://img.shields.io/badge/APIs-73-brightgreen)](https://github.com)
 
-> Hệ thống quản lý hội thảo khoa học toàn diện cho Trường Đại học Công Thương (HUIT)
+> Hệ thống quản lý hội thảo khoa học toàn diện cho Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT)
 
 ---
 
@@ -112,7 +112,7 @@ Phase 7: Frontend                ░░░░░░░░░░░░░░░�
 [![Progress](https://img.shields.io/badge/Progress-50%25-green)](https://github.com)
 [![APIs](https://img.shields.io/badge/APIs-42-brightgreen)](https://github.com)
 
-> Hệ thống quản lý hội thảo khoa học toàn diện cho Trường Đại học Công nghệ TP.HCM (HUIT)
+> Hệ thống quản lý hội thảo khoa học toàn diện cho Trường Đại học Công Thương TP. Hồ Chí Minhệ TP.HCM (HUIT)
 
 ---
 
@@ -434,7 +434,7 @@ Dự án đang trong giai đoạn phát triển. Contributions are welcome!
 
 ## 📞 Contact
 
-**Trường Đại học Công nghệ TP.HCM (HUIT)**
+**Trường Đại học Công Thương TP. Hồ Chí Minhệ TP.HCM (HUIT)**
 - 📧 Email: kvnc@huit.edu.vn
 - 📞 Phone: (028) 38xx xxxx
 - 📍 Address: 140 Lê Trọng Tấn, TP.HCM

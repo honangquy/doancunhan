@@ -14,7 +14,7 @@
 
     <!-- Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
     @stack('styles')
 </head>
 <body class="h-full bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500">
@@ -45,11 +45,11 @@
         <!-- Footer -->
         <div class="mt-8 text-center">
             <p class="text-sm text-blue-100">
-                © {{ date('Y') }} HUIT - Trường Đại học Công Thương
+                © {{ date('Y') }} HUIT - Trường Đại học Công Thương TP. Hồ Chí Minh
             </p>
         </div>
     </div>
-    
+
     @stack('scripts')
 </body>
 </html>

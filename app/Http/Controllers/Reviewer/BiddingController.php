@@ -12,6 +12,7 @@ use App\Models\ConferenceBiddingSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class BiddingController extends Controller
@@ -61,7 +62,7 @@ class BiddingController extends Controller
                 'conferences' => $conferences
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error getting reviewer conferences: ' . $e->getMessage());
+            Log::error('Error getting reviewer conferences: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tải danh sách hội thảo'
@@ -184,7 +185,7 @@ class BiddingController extends Controller
                 'filter_info' => $filterInfo
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error getting conference papers: ' . $e->getMessage());
+            Log::error('Error getting conference papers: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tải danh sách bài báo'
@@ -293,7 +294,7 @@ class BiddingController extends Controller
 
             // Log COI if declared
             if ($data['coi'] ?? false) {
-                \Log::info("COI declared by reviewer {$userId} for paper {$data['paper_id']}: " . $data['coi_reason']);
+                Log::info("COI declared by reviewer {$userId} for paper {$data['paper_id']}: " . $data['coi_reason']);
             }
 
             return response()->json([
@@ -301,7 +302,7 @@ class BiddingController extends Controller
                 'message' => 'Đã lưu bidding thành công!'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error submitting bidding: ' . $e->getMessage());
+            Log::error('Error submitting bidding: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi lưu bidding'
@@ -383,7 +384,7 @@ class BiddingController extends Controller
 
                 // Log COI if declared
                 if ($biddingData['coi'] ?? false) {
-                    \Log::info("COI declared by reviewer {$userId} for paper {$biddingData['paper_id']}: " . $biddingData['coi_reason']);
+                    Log::info("COI declared by reviewer {$userId} for paper {$biddingData['paper_id']}: " . $biddingData['coi_reason']);
                 }
             }
 
@@ -395,7 +396,7 @@ class BiddingController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error submitting bulk bidding: ' . $e->getMessage());
+            Log::error('Error submitting bulk bidding: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi lưu bidding'
@@ -431,7 +432,7 @@ class BiddingController extends Controller
                 'assignments' => $assignments
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error getting assignments: ' . $e->getMessage());
+            Log::error('Error getting assignments: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tải danh sách phân công'
@@ -483,14 +484,14 @@ class BiddingController extends Controller
                 : 'Đã từ chối phân công thành công!';
 
             // Log the response
-            \Log::info("Reviewer {$userId} responded to assignment {$assignmentId}: {$request->input('status')}");
+            Log::info("Reviewer {$userId} responded to assignment {$assignmentId}: {$request->input('status')}");
 
             return response()->json([
                 'success' => true,
                 'message' => $message
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error responding to assignment: ' . $e->getMessage());
+            Log::error('Error responding to assignment: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi phản hồi phân công'
@@ -531,7 +532,7 @@ class BiddingController extends Controller
                 'statistics' => $stats
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error getting bidding statistics: ' . $e->getMessage());
+            Log::error('Error getting bidding statistics: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tải thống kê'

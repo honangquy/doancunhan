@@ -11,20 +11,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         * {
             font-family: 'Inter', sans-serif;
         }
-        
+
         html {
             scroll-behavior: smooth;
         }
-        
+
         section {
             scroll-mt-16;
         }
-        
+
         .timeline-line {
             position: absolute;
             left: 50%;
@@ -39,7 +39,7 @@
             }
         }
     </style>
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -67,7 +67,7 @@
                         <div class="text-xs text-blue-200">Hệ thống quản lý hội thảo</div>
                     </div>
                 </a>
-                
+
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="{{ route('home') }}" class="hover:text-orange-300 transition-all duration-300 font-medium">Hội thảo</a>
@@ -75,7 +75,7 @@
                     <a href="{{ route('process') }}" class="text-orange-300 font-medium">Quy trình</a>
                     <a href="{{ route('support') }}" class="hover:text-orange-300 transition-all duration-300 font-medium">Hỗ trợ</a>
                     <a href="{{ route('home') }}#calendar" class="hover:text-orange-300 transition-all duration-300 font-medium">Lịch</a>
-                    
+
                     @auth
                         <!-- Notification Bell -->
                         <div class="relative" x-data="{
@@ -83,7 +83,7 @@
                             notifications: [],
                             unreadCount: 0,
                             loading: false,
-                            
+
                             async loadNotifications() {
                                 this.loading = true;
                                 try {
@@ -97,7 +97,7 @@
                                     this.loading = false;
                                 }
                             },
-                            
+
                             async markAsRead(id) {
                                 try {
                                     const response = await fetch(`/api/notifications/${id}/read`, {
@@ -114,7 +114,7 @@
                                     console.error('Error marking notification as read:', error);
                                 }
                             },
-                            
+
                             async markAllAsRead() {
                                 try {
                                     const response = await fetch('/api/notifications/read-all', {
@@ -137,12 +137,12 @@
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                                 </svg>
-                                <span x-show="unreadCount > 0" 
+                                <span x-show="unreadCount > 0"
                                       x-text="unreadCount"
                                       class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
                                 </span>
                             </button>
-                            
+
                             <!-- Notifications Dropdown -->
                             <div x-show="showNotifications"
                                  x-transition:enter="transition ease-out duration-300"
@@ -154,17 +154,17 @@
                                  @click.away="showNotifications = false"
                                  class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl z-50 border border-gray-100"
                                  style="display: none;">
-                                
+
                                 <!-- Notifications Header -->
                                 <div class="flex items-center justify-between p-4 border-b border-gray-100">
                                     <h3 class="font-semibold text-gray-800">Thông báo</h3>
-                                    <button @click="markAllAsRead()" 
+                                    <button @click="markAllAsRead()"
                                             x-show="unreadCount > 0"
                                             class="text-xs text-blue-600 hover:text-blue-700 font-medium">
                                         Đánh dấu đã đọc tất cả
                                     </button>
                                 </div>
-                                
+
                                 <!-- Loading -->
                                 <div x-show="loading" class="p-4 text-center">
                                     <div class="inline-flex items-center">
@@ -175,7 +175,7 @@
                                         <span class="text-sm text-gray-600">Đang tải...</span>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Notifications List -->
                                 <div x-show="!loading" class="max-h-96 overflow-y-auto">
                                     <template x-for="notification in notifications" :key="notification.id">
@@ -187,13 +187,13 @@
                                                 <span class="text-xs text-gray-500" x-text="notification.time_ago"></span>
                                             </div>
                                             <p class="text-sm text-gray-600 line-clamp-2" x-text="notification.message"></p>
-                                            
+
                                             <!-- Type Badge -->
                                             <div class="mt-2">
                                                 <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
                                                       :class="{
                                                           'bg-green-100 text-green-800': notification.type === 'paper_submitted',
-                                                          'bg-blue-100 text-blue-800': notification.type === 'review_assigned', 
+                                                          'bg-blue-100 text-blue-800': notification.type === 'review_assigned',
                                                           'bg-orange-100 text-orange-800': notification.type === 'deadline_reminder',
                                                           'bg-purple-100 text-purple-800': notification.type === 'status_update'
                                                       }"
@@ -207,7 +207,7 @@
                                             </div>
                                         </div>
                                     </template>
-                                    
+
                                     <!-- Empty State -->
                                     <div x-show="notifications.length === 0" class="p-8 text-center">
                                         <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -224,7 +224,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- User Dropdown -->
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" class="flex items-center space-x-2 hover:text-orange-300 transition-all duration-300 px-3 py-2 rounded-xl hover:bg-white/10">
@@ -238,15 +238,15 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                            
-                            <div x-show="open" 
+
+                            <div x-show="open"
                                  x-transition:enter="transition ease-out duration-300"
                                  x-transition:enter-start="opacity-0 scale-95"
                                  x-transition:enter-end="opacity-100 scale-100"
                                  x-transition:leave="transition ease-in duration-200"
                                  x-transition:leave-start="opacity-100 scale-100"
                                  x-transition:leave-end="opacity-0 scale-95"
-                                 @click.away="open = false" 
+                                 @click.away="open = false"
                                  class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 border border-gray-100"
                                  style="display: none;">
                                 @if(isset($userData) && $userData['dashboardUrl'])
@@ -299,7 +299,7 @@
                         </div>
                     @endauth
                 </div>
-                
+
                 <!-- Mobile Menu Button -->
                 <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,9 +307,9 @@
                     </svg>
                 </button>
             </div>
-            
+
             <!-- Mobile Menu -->
-            <div x-show="mobileMenuOpen" 
+            <div x-show="mobileMenuOpen"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0 -translate-y-2"
                  x-transition:enter-end="opacity-100 translate-y-0"
@@ -730,7 +730,7 @@
             <div class="max-w-4xl mx-auto text-center">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Tài liệu hướng dẫn</h2>
                 <p class="text-gray-600 mb-8">Tải về các tài liệu chi tiết cho từng vai trò</p>
-                
+
                 <div class="grid md:grid-cols-3 gap-4">
                     <a href="#" class="flex items-center justify-center space-x-3 bg-white hover:bg-blue-50 text-blue-700 px-6 py-4 rounded-xl font-semibold transition-all duration-300 shadow hover:shadow-lg">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -761,7 +761,7 @@
             <div class="grid md:grid-cols-3 gap-8">
                 <div>
                     <h3 class="text-white font-bold mb-4">HUIT Conferences</h3>
-                    <p class="text-sm">Trường Đại học Công Thương TP.HCM</p>
+                    <p class="text-sm">Trường Đại học Công Thương TP. Hồ Chí Minh TP.HCM</p>
                     <p class="text-sm mt-2">Nền tảng quản lý hội thảo khoa học đa cấp</p>
                 </div>
                 <div>

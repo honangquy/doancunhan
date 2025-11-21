@@ -5,31 +5,19 @@ namespace App\Http\Controllers\Chair;
 use App\Http\Controllers\Controller;
 use App\Models\News;
 use App\Models\HoiThao;
+use App\Models\User;
 use App\Models\VaiTroNguoiDung;
+use App\Notifications\NewsApprovalRequested;
+use App\Traits\ChairRoleHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class NewsController extends Controller
 {
-    /**
-     * Get the conference_id for the current CHAIR
-     */
-    private function getChairConferenceId()
-    {
-        $userId = auth()->id();
-        
-        // Get conference where user is CHAIR
-        $chairRole = VaiTroNguoiDung::where('user_id', $userId)
-                                    ->where('role_code', 'CHAIR')
-                                    ->first();
-        
-        if (!$chairRole || !$chairRole->conference_id) {
-            abort(403, 'Bạn chưa được gán làm Chair cho hội thảo nào.');
-        }
-        
-        return $chairRole->conference_id;
-    }
+    use ChairRoleHelper;
 
     /**
      * Display a listing of news for this chair's conference
@@ -37,8 +25,8 @@ class NewsController extends Controller
     public function index(Request $request)
     {
         $conferenceId = $this->getChairConferenceId();
-        
-        $query = News::with(['conference', 'creator'])
+
+        $query = News::with(['conference', 'createdBy'])
                      ->where('conference_id', $conferenceId)
                      ->orderBy('created_at', 'desc');
 
@@ -75,7 +63,7 @@ class NewsController extends Controller
     {
         $conferenceId = $this->getChairConferenceId();
         $conference = HoiThao::find($conferenceId);
-        
+
         return view('chair.news.create', compact('conference', 'conferenceId'));
     }
 
@@ -85,7 +73,7 @@ class NewsController extends Controller
     public function store(Request $request)
     {
         $conferenceId = $this->getChairConferenceId();
-        
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:news,slug',
@@ -94,6 +82,7 @@ class NewsController extends Controller
             'category' => 'required|in:NEWS,ANNOUNCEMENT,EVENT,GUIDE',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_featured' => 'nullable|boolean',
+            'status' => 'required|in:DRAFT,PENDING',
         ]);
 
         // Handle cover image upload
@@ -108,10 +97,6 @@ class NewsController extends Controller
         $validated['conference_id'] = $conferenceId;
         $validated['created_by'] = auth()->id();
         $validated['is_featured'] = $request->has('is_featured') ? true : false;
-        
-        // Chair creates news with PENDING status (waiting for admin approval)
-        // Or PUBLISHED if you want chair to publish directly
-        $validated['status'] = config('news.chair_auto_publish', false) ? 'PUBLISHED' : 'PENDING';
 
         // Auto-generate slug if not provided
         if (empty($validated['slug'])) {
@@ -119,6 +104,40 @@ class NewsController extends Controller
         }
 
         $news = News::create($validated);
+
+        // Send notification to admins if status is PENDING
+        if ($news->status === 'PENDING') {
+            $admins = User::whereHas('roles', function($q) {
+                $q->where('role_code', 'ADMIN');
+            })->get();
+
+            if ($admins->count() > 0) {
+                foreach ($admins as $admin) {
+                    \DB::table('notifications')->insert([
+                        'notifiable_type' => 'App\Models\User',
+                        'notifiable_id' => $admin->user_id,
+                        'user_id' => $admin->user_id,
+                        'type' => 'App\Notifications\NewsApprovalRequested',
+                        'title' => 'Yêu cầu duyệt tin tức mới',
+                        'message' => sprintf(
+                            'Bài: "%s" đang chờ phê duyệt. Người tạo: %s',
+                            $news->title,
+                            auth()->user()->full_name ?? 'N/A'
+                        ),
+                        'data' => json_encode([
+                            'url' => route('admin.news.show', $news->news_id),
+                            'level' => 'warning',
+                            'type' => 'news_approval',
+                            'created_by' => auth()->user()->full_name ?? 'Hệ thống',
+                            'news_id' => $news->news_id
+                        ]),
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('chair.news.index')
                         ->with('success', 'Tin tức đã được tạo thành công!');
@@ -130,13 +149,13 @@ class NewsController extends Controller
     public function show($id)
     {
         $conferenceId = $this->getChairConferenceId();
-        
+
         $news = News::where('news_id', $id)
                     ->where('conference_id', $conferenceId)
                     ->firstOrFail();
-        
-        $news->load(['conference', 'creator', 'updater']);
-        
+
+        $news->load(['conference', 'createdBy', 'updatedBy']);
+
         return view('chair.news.show', compact('news'));
     }
 
@@ -146,13 +165,13 @@ class NewsController extends Controller
     public function edit($id)
     {
         $conferenceId = $this->getChairConferenceId();
-        
+
         $news = News::where('news_id', $id)
                     ->where('conference_id', $conferenceId)
                     ->firstOrFail();
-        
+
         $conference = HoiThao::find($conferenceId);
-        
+
         return view('chair.news.edit', compact('news', 'conference', 'conferenceId'));
     }
 
@@ -162,11 +181,11 @@ class NewsController extends Controller
     public function update(Request $request, $id)
     {
         $conferenceId = $this->getChairConferenceId();
-        
+
         $news = News::where('news_id', $id)
                     ->where('conference_id', $conferenceId)
                     ->firstOrFail();
-        
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:news,slug,' . $news->news_id . ',news_id',
@@ -175,6 +194,7 @@ class NewsController extends Controller
             'category' => 'required|in:NEWS,ANNOUNCEMENT,EVENT,GUIDE',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_featured' => 'nullable|boolean',
+            'status' => 'required|in:DRAFT,PENDING',
         ]);
 
         // Handle cover image upload
@@ -193,7 +213,43 @@ class NewsController extends Controller
         $validated['updated_by'] = auth()->id();
         $validated['is_featured'] = $request->has('is_featured') ? true : false;
 
+        // Check if status changed to PENDING
+        $oldStatus = $news->status;
         $news->update($validated);
+
+        // Send notification to admins if status changed to PENDING
+        if ($news->status === 'PENDING' && $oldStatus !== 'PENDING') {
+            $admins = User::whereHas('roles', function($q) {
+                $q->where('role_code', 'ADMIN');
+            })->get();
+
+            if ($admins->count() > 0) {
+                foreach ($admins as $admin) {
+                    \DB::table('notifications')->insert([
+                        'notifiable_type' => 'App\Models\User',
+                        'notifiable_id' => $admin->user_id,
+                        'user_id' => $admin->user_id,
+                        'type' => 'App\Notifications\NewsApprovalRequested',
+                        'title' => 'Yêu cầu duyệt tin tức mới',
+                        'message' => sprintf(
+                            'Bài: "%s" đang chờ phê duyệt. Người tạo: %s',
+                            $news->title,
+                            auth()->user()->full_name ?? 'N/A'
+                        ),
+                        'data' => json_encode([
+                            'url' => route('admin.news.show', $news->news_id),
+                            'level' => 'warning',
+                            'type' => 'news_approval',
+                            'created_by' => auth()->user()->full_name ?? 'Hệ thống',
+                            'news_id' => $news->news_id
+                        ]),
+                        'read_at' => null,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('chair.news.index')
                         ->with('success', 'Tin tức đã được cập nhật thành công!');
@@ -205,11 +261,11 @@ class NewsController extends Controller
     public function destroy($id)
     {
         $conferenceId = $this->getChairConferenceId();
-        
+
         $news = News::where('news_id', $id)
                     ->where('conference_id', $conferenceId)
                     ->firstOrFail();
-        
+
         // Delete cover image if exists
         if ($news->cover_image && Storage::disk('public')->exists($news->cover_image)) {
             Storage::disk('public')->delete($news->cover_image);

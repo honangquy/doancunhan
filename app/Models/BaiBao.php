@@ -76,6 +76,38 @@ class BaiBao extends Model
         return $this->hasMany(Bidding::class, 'paper_id', 'paper_id');
     }
 
+    public function reviewerBiddings()
+    {
+        return $this->hasMany(ReviewerBidding::class, 'paper_id', 'paper_id');
+    }
+
+    public function reviewerAssignments()
+    {
+        return $this->hasMany(ReviewerAssignment::class, 'paper_id', 'paper_id');
+    }
+
+    public function activeAssignments()
+    {
+        return $this->hasMany(ReviewerAssignment::class, 'paper_id', 'paper_id')
+            ->whereIn('status', [ReviewerAssignment::STATUS_PENDING, ReviewerAssignment::STATUS_ACCEPTED]);
+    }
+
+    /**
+     * Get paper candidates (các reviewer được mời bidding bài này)
+     */
+    public function paperCandidates()
+    {
+        return $this->hasMany(ReviewerPaperCandidate::class, 'paper_id', 'paper_id');
+    }
+
+    /**
+     * Get locked biddings only (bidding đã được reviewer gửi)
+     */
+    public function lockedBiddings()
+    {
+        return $this->reviewerBiddings()->where('is_locked', true);
+    }
+
     public function lichSuTrangThais()
     {
         return $this->hasMany(LichSuTrangThai::class, 'paper_id', 'paper_id')
@@ -101,5 +133,49 @@ class BaiBao extends Model
     public function isRejected()
     {
         return $this->status_code === 'REJECTED';
+    }
+
+    /**
+     * Get count of assigned reviewers
+     */
+    public function getAssignedReviewerCountAttribute()
+    {
+        return $this->activeAssignments()->count();
+    }
+
+    /**
+     * Get bidding statistics for this paper
+     */
+    public function getBiddingStatsAttribute()
+    {
+        $biddings = $this->reviewerBiddings()->where('coi', false)->get();
+
+        return [
+            'total_bidders' => $biddings->count(),
+            'avg_bidding' => $biddings->avg('bidding_value'),
+            'eager_count' => $biddings->where('bidding_value', ReviewerBidding::BID_EAGER)->count(),
+            'able_count' => $biddings->where('bidding_value', ReviewerBidding::BID_ABLE)->count(),
+            'willing_count' => $biddings->where('bidding_value', ReviewerBidding::BID_WILLING)->count(),
+            'coi_count' => $this->reviewerBiddings()->where('coi', true)->count(),
+        ];
+    }
+
+    /**
+     * Check if paper needs more reviewers
+     */
+    public function needsMoreReviewers()
+    {
+        $maxReviewers = config('assignment.max_reviewers_per_paper', 3);
+        return $this->activeAssignments()->count() < $maxReviewers;
+    }
+
+    /**
+     * Get remaining reviewer slots
+     */
+    public function getRemainingReviewerSlotsAttribute()
+    {
+        $maxReviewers = config('assignment.max_reviewers_per_paper', 3);
+        $current = $this->activeAssignments()->count();
+        return max(0, $maxReviewers - $current);
     }
 }

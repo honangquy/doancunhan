@@ -5,7 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\News;
 use App\Models\HoiThao;
+use App\Models\User;
+use App\Notifications\NewsApprovalRequested;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -16,7 +20,7 @@ class NewsController extends Controller
      */
     public function index(Request $request)
     {
-        $query = News::with(['conference', 'creator'])
+        $query = News::with(['conference', 'createdBy'])
                      ->orderBy('created_at', 'desc');
 
         // Filter by category
@@ -58,7 +62,7 @@ class NewsController extends Controller
         $conferences = HoiThao::select('conference_id', 'title')
                               ->orderBy('title')
                               ->get();
-        
+
         return view('admin.news.create', compact('conferences'));
     }
 
@@ -99,6 +103,17 @@ class NewsController extends Controller
 
         $news = News::create($validated);
 
+        // Send notification to admins if status is PENDING
+        if ($news->status === 'PENDING') {
+            $admins = User::whereHas('roles', function($q) {
+                $q->where('role_code', 'ADMIN');
+            })->get();
+
+            if ($admins->count() > 0) {
+                Notification::send($admins, new NewsApprovalRequested($news));
+            }
+        }
+
         return redirect()->route('admin.news.index')
                         ->with('success', 'Tin tức đã được tạo thành công!');
     }
@@ -108,7 +123,7 @@ class NewsController extends Controller
      */
     public function show(News $news)
     {
-        $news->load(['conference', 'creator', 'updater']);
+        $news->load(['conference', 'createdBy', 'updatedBy']);
         return view('admin.news.show', compact('news'));
     }
 
@@ -120,7 +135,7 @@ class NewsController extends Controller
         $conferences = HoiThao::select('conference_id', 'title')
                               ->orderBy('title')
                               ->get();
-        
+
         return view('admin.news.edit', compact('news', 'conferences'));
     }
 
@@ -178,5 +193,104 @@ class NewsController extends Controller
 
         return redirect()->route('admin.news.index')
                         ->with('success', 'Tin tức đã được xóa thành công!');
+    }
+
+    /**
+     * Approve news (change status from PENDING to PUBLISHED)
+     */
+    public function approve($id)
+    {
+        $news = News::where('news_id', $id)->firstOrFail();
+
+        if ($news->status !== 'PENDING') {
+            return redirect()->back()
+                           ->with('error', 'Chỉ có thể duyệt tin tức đang ở trạng thái chờ duyệt.');
+        }
+
+        $news->update([
+            'status' => 'PUBLISHED',
+            'published_at' => now(),
+            'updated_by' => auth()->id()
+        ]);
+
+        // Notify the creator (Chair)
+        if ($news->createdBy) {
+            DB::table('notifications')->insert([
+                'notifiable_type' => 'App\Models\User',
+                'notifiable_id' => $news->createdBy->user_id,
+                'user_id' => $news->createdBy->user_id,
+                'type' => 'App\Notifications\NewsApproved',
+                'title' => 'Tin tức đã được duyệt',
+                'message' => sprintf(
+                    'Bài viết "%s" đã được Admin phê duyệt và xuất bản.',
+                    $news->title
+                ),
+                'data' => json_encode([
+                    'url' => route('chair.news.show', $news->news_id),
+                    'level' => 'success',
+                    'type' => 'news_approved',
+                    'approved_by' => auth()->user()->full_name ?? 'Admin',
+                    'news_id' => $news->news_id
+                ]),
+                'read_at' => null,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+
+        return redirect()->back()
+                        ->with('success', 'Tin tức đã được duyệt và xuất bản thành công!');
+    }
+
+    /**
+     * Reject news (change status from PENDING to DRAFT with reason)
+     */
+    public function reject(Request $request, $id)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500'
+        ]);
+
+        $news = News::where('news_id', $id)->firstOrFail();
+
+        if ($news->status !== 'PENDING') {
+            return redirect()->back()
+                           ->with('error', 'Chỉ có thể từ chối tin tức đang ở trạng thái chờ duyệt.');
+        }
+
+        $news->update([
+            'status' => 'DRAFT',
+            'updated_by' => auth()->id()
+        ]);
+
+        // Notify the creator (Chair) with rejection reason
+        if ($news->createdBy) {
+            DB::table('notifications')->insert([
+                'notifiable_type' => 'App\Models\User',
+                'notifiable_id' => $news->createdBy->user_id,
+                'user_id' => $news->createdBy->user_id,
+                'type' => 'App\Notifications\NewsRejected',
+                'title' => 'Tin tức bị từ chối',
+                'message' => sprintf(
+                    'Bài viết "%s" đã bị từ chối. Lý do: %s',
+                    $news->title,
+                    $request->rejection_reason
+                ),
+                'data' => json_encode([
+                    'url' => route('chair.news.edit', $news->news_id),
+                    'level' => 'error',
+                    'type' => 'news_rejected',
+                    'rejected_by' => auth()->user()->full_name ?? 'Admin',
+                    'rejection_reason' => $request->rejection_reason,
+                    'news_id' => $news->news_id
+                ]),
+                'read_at' => null,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+        }
+
+        return redirect()->back()
+                        ->with('success', 'Tin tức đã được từ chối và trả về trạng thái nháp.');
     }
 }

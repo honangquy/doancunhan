@@ -18,7 +18,7 @@ class ConferenceSetupController extends Controller
     public function index()
     {
         $userEmail = auth()->user()->email;
-        
+
         // Get approved conference requests for current chair by email
         $approvedRequests = DB::table('yeucauhoithao')
             ->where('chair_email', $userEmail)
@@ -30,7 +30,7 @@ class ConferenceSetupController extends Controller
             })
             ->orderBy('created_at', 'desc')
             ->get();
-            
+
         // Get already configured conferences
         $configuredConferences = DB::table('hoithao')
             ->join('yeucauhoithao', function($join) use ($userEmail) {
@@ -41,7 +41,7 @@ class ConferenceSetupController extends Controller
             ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status')
             ->orderBy('hoithao.conference_id', 'desc')
             ->get();
-        
+
         return view('chair.conferences.index', compact('approvedRequests', 'configuredConferences'));
     }
 
@@ -55,7 +55,7 @@ class ConferenceSetupController extends Controller
             ->where('status', 'APPROVED')
             ->whereDoesntHave('conference')
             ->firstOrFail();
-            
+
         return view('chair.conferences.configure', compact('request'));
     }
 
@@ -89,7 +89,7 @@ class ConferenceSetupController extends Controller
             'detailed_description' => 'required|string|max:2000',
             'submission_guidelines' => 'nullable|string|max:1000',
             'cfp_file' => 'required|file|mimes:pdf|max:10240', // 10MB PDF - required
-            
+
             // Dates
             'start_date' => 'required|date|after:today',
             'end_date' => 'required|date|after_or_equal:start_date',
@@ -97,17 +97,17 @@ class ConferenceSetupController extends Controller
             'deadline_review' => 'required|date|after:deadline_submission|before:start_date',
             'deadline_camera_ready' => 'required|date|after:deadline_review|before_or_equal:start_date',
             'result_announcement_deadline' => 'nullable|date|before_or_equal:start_date',
-            
+
             // Contact info
             'contact_email' => 'required|email|max:255',
             'contact_phone' => 'nullable|string|max:20',
             'chair_name' => 'required|string|max:255',
             'chair_email' => 'required|email|max:255',
-            
+
             // Configuration
             'reviewers_per_paper' => 'required|integer|min:1|max:10',
             'enable_coi_check' => 'boolean',
-            
+
             // Files and committees
             'banner' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
             'committees' => 'nullable|array',
@@ -116,7 +116,7 @@ class ConferenceSetupController extends Controller
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             // Handle banner upload
             $bannerPath = null;
@@ -128,6 +128,17 @@ class ConferenceSetupController extends Controller
             $cfpFilePath = null;
             if ($request->hasFile('cfp_file')) {
                 $cfpFilePath = $request->file('cfp_file')->store('conference-cfp', 'public');
+            }
+
+            // Lookup faculty_id from faculty_name
+            $facultyId = null;
+            if ($conferenceRequest->faculty_name) {
+                $faculty = \App\Models\Khoa::where('faculty_name', 'like', '%' . $conferenceRequest->faculty_name . '%')->first();
+                $facultyId = $faculty ? $faculty->faculty_id : null;
+            }
+            // Fallback to user's faculty_id if not found
+            if (!$facultyId) {
+                $facultyId = auth()->user()->faculty_id ?? null;
             }
 
             // Create conference
@@ -142,7 +153,7 @@ class ConferenceSetupController extends Controller
                 'detailed_description' => $validatedData['detailed_description'],
                 'submission_guidelines' => $validatedData['submission_guidelines'],
                 'cfp_file_path' => $cfpFilePath,
-                
+
                 // Dates
                 'start_date' => $validatedData['start_date'],
                 'end_date' => $validatedData['end_date'],
@@ -150,29 +161,31 @@ class ConferenceSetupController extends Controller
                 'deadline_review' => $validatedData['deadline_review'],
                 'deadline_camera_ready' => $validatedData['deadline_camera_ready'],
                 'result_announcement_deadline' => $validatedData['result_announcement_deadline'],
-                
+
                 // Contact info
                 'contact_email' => $validatedData['contact_email'],
                 'contact_phone' => $validatedData['contact_phone'],
-                
+
                 // Configuration
                 'reviewers_per_paper' => $validatedData['reviewers_per_paper'],
                 'enable_coi_check' => $validatedData['enable_coi_check'] ?? false,
-                
+
                 // System fields
                 'banner_path' => $bannerPath,
                 'chair_id' => auth()->user()->user_id,
                 'status' => 'PENDING_ADMIN_APPROVAL', // Needs admin approval to go live
                 'level_code' => $conferenceRequest->level_code,
-                'faculty_id' => $conferenceRequest->faculty_name,
+                'faculty_id' => $facultyId,
                 'conference_request_id' => $conferenceRequest->request_id,
-                'acronym' => $validatedData['acronym'],
             ]);
 
             // Update conference request with conference_id
             $conferenceRequest->update([
                 'conference_id' => $conference->conference_id
             ]);
+
+            // Note: CHAIR role is automatically created by HoiThaoObserver
+            // when the conference is created via HoiThao::create()
 
             // Create committees (tieuban)
             if (isset($validatedData['committees'])) {
@@ -193,7 +206,7 @@ class ConferenceSetupController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             // Log exception
             \Log::error('Conference setup failed', [
                 'error' => $e->getMessage(),
@@ -201,7 +214,7 @@ class ConferenceSetupController extends Controller
                 'requestId' => $requestId,
                 'userId' => auth()->user()->user_id
             ]);
-            
+
             // Delete uploaded files if database operation failed
             if ($bannerPath) {
                 Storage::disk('public')->delete($bannerPath);
@@ -209,7 +222,7 @@ class ConferenceSetupController extends Controller
             if ($cfpFilePath) {
                 Storage::disk('public')->delete($cfpFilePath);
             }
-            
+
             return back()->withErrors(['error' => 'Có lỗi xảy ra khi cấu hình hội thảo: ' . $e->getMessage()])->withInput();
         }
     }
@@ -220,7 +233,7 @@ class ConferenceSetupController extends Controller
     public function show($conferenceId)
     {
         $userEmail = auth()->user()->email;
-        
+
         $conference = DB::table('hoithao')
             ->join('yeucauhoithao', function($join) use ($userEmail) {
                 $join->on('hoithao.title', '=', 'yeucauhoithao.title')
@@ -228,15 +241,15 @@ class ConferenceSetupController extends Controller
                      ->where('yeucauhoithao.status', '=', 'APPROVED');
             })
             ->leftJoin('nguoidung', 'hoithao.chair_id', '=', 'nguoidung.user_id')
-            ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status', 
+            ->select('hoithao.*', 'yeucauhoithao.request_id', 'yeucauhoithao.status as request_status',
                      'nguoidung.full_name as chair_full_name', 'nguoidung.email as chair_email')
             ->where('hoithao.conference_id', $conferenceId)
             ->first();
-            
+
         if (!$conference) {
             return back()->withErrors(['error' => 'Có lỗi xảy ra khi cấu hình hội thảo: Hội thảo không tồn tại hoặc bạn không có quyền truy cập.']);
         }
-        
+
         // Get conference statistics
         $totalPapers = DB::table('baibao')->where('conference_id', $conferenceId)->count();
         $acceptedPapers = DB::table('baibao')->where('conference_id', $conferenceId)->where('status_code', 'ACCEPTED')->count();
@@ -246,7 +259,7 @@ class ConferenceSetupController extends Controller
             ->where('baibao.conference_id', $conferenceId)
             ->distinct('reviewer_assignments.user_id')
             ->count();
-            
+
         // Get recent papers with submitter info
         $recentPapers = DB::table('baibao')
             ->leftJoin('nguoidung', 'baibao.submitter_id', '=', 'nguoidung.user_id')
@@ -256,12 +269,12 @@ class ConferenceSetupController extends Controller
             ->orderBy('baibao.created_at', 'desc')
             ->limit(5)
             ->get();
-            
+
         // Get committees
         $committees = DB::table('tieuban')
             ->where('conference_id', $conferenceId)
             ->get();
-            
+
         return view('chair.conferences.show', compact('conference', 'totalPapers', 'acceptedPapers', 'pendingPapers', 'totalReviewers', 'recentPapers', 'committees'));
     }
 
@@ -271,7 +284,7 @@ class ConferenceSetupController extends Controller
     public function edit($conferenceId)
     {
         $userEmail = auth()->user()->email;
-        
+
         $conference = DB::table('hoithao')
             ->join('yeucauhoithao', function($join) use ($userEmail) {
                 $join->on('hoithao.title', '=', 'yeucauhoithao.title')
@@ -282,11 +295,11 @@ class ConferenceSetupController extends Controller
             ->where('hoithao.conference_id', $conferenceId)
             ->where('hoithao.status', '!=', 'ACTIVE') // Can only edit if not active
             ->first();
-            
+
         if (!$conference) {
             return back()->withErrors(['error' => 'Không thể chỉnh sửa hội thảo này hoặc hội thảo không tồn tại.']);
         }
-            
+
         return view('chair.conferences.edit', compact('conference'));
     }
 
@@ -296,7 +309,7 @@ class ConferenceSetupController extends Controller
     public function update(Request $request, $conferenceId)
     {
         $userEmail = auth()->user()->email;
-        
+
         // Check if user can edit this conference
         $canEdit = DB::table('hoithao')
             ->join('yeucauhoithao', function($join) use ($userEmail) {
@@ -307,7 +320,7 @@ class ConferenceSetupController extends Controller
             ->where('hoithao.conference_id', $conferenceId)
             ->where('hoithao.status', '!=', 'ACTIVE') // Can only edit if not active
             ->exists();
-            
+
         if (!$canEdit) {
             return back()->withErrors(['error' => 'Không thể chỉnh sửa hội thảo này.']);
         }
@@ -324,7 +337,7 @@ class ConferenceSetupController extends Controller
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             // Update conference
             DB::table('hoithao')
@@ -348,7 +361,7 @@ class ConferenceSetupController extends Controller
 
         } catch (\Exception $e) {
             DB::rollback();
-            
+
             return back()->withErrors(['error' => 'Có lỗi xảy ra khi cập nhật hội thảo: ' . $e->getMessage()])->withInput();
         }
     }

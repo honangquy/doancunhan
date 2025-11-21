@@ -70,74 +70,6 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('refresh', [AuthController::class, 'refresh']);
     });
 
-    // Notification routes
-    Route::get('notifications', function () {
-        $user = auth()->guard('api')->user();
-        if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        $notifications = DB::table('user_notifications')
-            ->where('user_id', $user->user_id)
-            ->orderBy('created_at', 'desc')
-            ->limit(20)
-            ->get()
-            ->map(function ($notif) {
-                return [
-                    'id' => $notif->notification_id,
-                    'title' => $notif->title,
-                    'message' => $notif->message,
-                    'time' => \Carbon\Carbon::parse($notif->created_at)->diffForHumans(),
-                    'created_at' => $notif->created_at,
-                    'is_read' => (bool)$notif->is_read,
-                ];
-            });
-
-        $unreadCount = DB::table('user_notifications')
-            ->where('user_id', $user->user_id)
-            ->where('is_read', false)
-            ->count();
-
-        return response()->json([
-            'notifications' => $notifications,
-            'unreadCount' => $unreadCount
-        ]);
-    });
-
-    Route::patch('notifications/{id}/read', function ($id) {
-        $user = auth()->guard('api')->user();
-        if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        $updated = DB::table('user_notifications')
-            ->where('notification_id', $id)
-            ->where('user_id', $user->user_id)
-            ->update([
-                'is_read' => true,
-                'read_at' => now()
-            ]);
-
-        return response()->json(['success' => $updated > 0]);
-    });
-
-    Route::patch('notifications/read-all', function () {
-        $user = auth()->guard('api')->user();
-        if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        $updated = DB::table('user_notifications')
-            ->where('user_id', $user->user_id)
-            ->where('is_read', false)
-            ->update([
-                'is_read' => true,
-                'read_at' => now()
-            ]);
-
-        return response()->json(['success' => true, 'updated' => $updated]);
-    });
-
     // Announcement Management (Chair + User)
     Route::prefix('announcements')->group(function () {
         Route::get('/', [AnnouncementController::class, 'index']); // List announcements
@@ -242,7 +174,7 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('users', [AdminController::class, 'listUsers']); // List all users
         Route::put('users/{id}', [AdminController::class, 'updateUser']); // Update user, lock/unlock
         Route::post('users/{id}/roles', [AdminController::class, 'manageRoles']); // Assign/revoke roles
-        
+
         // System Reports (2 APIs)
         Route::get('reports/conference/{id}', [AdminController::class, 'conferenceReport']); // Conference report
         Route::get('reports/overview', [AdminController::class, 'systemOverview']); // System overview
@@ -252,19 +184,19 @@ Route::middleware(['auth:api'])->group(function () {
     Route::prefix('chair')->group(function () {
         // Dashboard & Overview
         Route::get('dashboard', [\App\Http\Controllers\Api\ChairController::class, 'dashboard']); // Dashboard statistics
-        
+
         // Paper Management
         Route::get('papers', [\App\Http\Controllers\Api\ChairController::class, 'papers']); // List all papers with filters
         Route::get('papers/{id}', [\App\Http\Controllers\Api\ChairController::class, 'showPaper']); // Paper detail with reviews
-        
+
         // Reviewer Assignment
         Route::get('papers/{id}/available-reviewers', [\App\Http\Controllers\Api\ChairController::class, 'getAvailableReviewers']); // Get available reviewers
         Route::post('papers/{id}/assign-reviewer', [\App\Http\Controllers\Api\ChairController::class, 'assignReviewer']); // Assign reviewer
         Route::delete('assignments/{id}', [\App\Http\Controllers\Api\ChairController::class, 'removeAssignment']); // Remove assignment
-        
+
         // Decision Making
         Route::post('papers/{id}/decision', [\App\Http\Controllers\Api\ChairController::class, 'makeDecision']); // Accept/Reject paper
-        
+
         // Statistics & Reports
         Route::get('conferences/{id}/review-statistics', [\App\Http\Controllers\Api\ChairController::class, 'reviewStatistics']); // Review statistics
         Route::get('reviewers', [\App\Http\Controllers\Api\ChairController::class, 'listReviewers']); // List reviewers with performance
@@ -294,7 +226,7 @@ Route::post('test-conference-submit', function (Request $request) {
         'method' => $request->method(),
         'data' => $request->all()
     ]);
-    
+
     return response()->json([
         'success' => true,
         'message' => 'API route works without CSRF',
@@ -307,7 +239,7 @@ Route::post('test-conference-submit', function (Request $request) {
 Route::post('submit-conference-request', function (Request $request) {
     try {
         \Log::info('Conference request API called', $request->all());
-        
+
         // Validate request
         $validator = \Validator::make($request->all(), [
             'title' => 'required|string|max:500',
@@ -317,7 +249,7 @@ Route::post('submit-conference-request', function (Request $request) {
             'chair_email' => 'required|email|max:255',
             'proposal_file' => 'required|file|mimes:pdf|max:10240',
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -325,7 +257,7 @@ Route::post('submit-conference-request', function (Request $request) {
                 'errors' => $validator->errors()
             ], 422);
         }
-        
+
         // Handle file upload
         $fileName = null;
         if ($request->hasFile('proposal_file')) {
@@ -333,7 +265,7 @@ Route::post('submit-conference-request', function (Request $request) {
             $fileName = time() . '_' . $file->getClientOriginalName();
             $file->storeAs('conference-requests', $fileName, 'public');
         }
-        
+
         // Create conference request record
         $conferenceRequest = \App\Models\YeuCauHoiThao::create([
             'title' => $request->title,
@@ -348,16 +280,16 @@ Route::post('submit-conference-request', function (Request $request) {
             'status' => 'PENDING',
             'created_at' => now(),
         ]);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Conference request submitted successfully',
             'request_id' => $conferenceRequest->request_id,
         ]);
-        
+
     } catch (\Exception $e) {
         \Log::error('Conference request error: ' . $e->getMessage());
-        
+
         return response()->json([
             'success' => false,
             'message' => 'An error occurred while processing your request',
@@ -379,7 +311,7 @@ Route::prefix('test')->group(function () {
                 ->count()
         ];
     });
-    
+
     Route::get('papers', function () {
         return DB::table('baibao as b')
             ->select([
@@ -389,6 +321,29 @@ Route::prefix('test')->group(function () {
                 DB::raw('(SELECT COUNT(*) FROM reviewer_assignments WHERE paper_id = b.paper_id) as assignment_count')
             ])
             ->get();
+    });
+});
+
+// === Chair Assignment Management API ===
+Route::prefix('chair')->middleware(['auth:api'])->group(function () {
+    Route::prefix('assignments')->group(function () {
+        // Dashboard data
+        Route::get('conferences/{id}/assignments', [\App\Http\Controllers\Chair\AssignmentController::class, 'index']);
+
+        // Paper bidding details
+        Route::get('papers/{id}/bidding', [\App\Http\Controllers\Chair\AssignmentController::class, 'showPaperBidding']);
+
+        // Assign reviewers
+        Route::post('papers/{id}/assign', [\App\Http\Controllers\Chair\AssignmentController::class, 'assignReviewers']);
+
+        // Unassign reviewer
+        Route::delete('papers/{paperId}/reviewers/{reviewerId}', [\App\Http\Controllers\Chair\AssignmentController::class, 'unassignReviewer']);
+
+        // Auto-assign
+        Route::post('conferences/{id}/auto-assign', [\App\Http\Controllers\Chair\AssignmentController::class, 'autoAssignConference']);
+
+        // Statistics
+        Route::get('conferences/{id}/stats', [\App\Http\Controllers\Chair\AssignmentController::class, 'getAssignmentStats']);
     });
 });
 

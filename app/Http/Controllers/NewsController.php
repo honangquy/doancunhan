@@ -13,7 +13,7 @@ class NewsController extends Controller
      */
     public function index(Request $request)
     {
-        $query = News::with(['conference', 'creator'])
+        $query = News::with(['conference', 'createdBy'])
                      ->published()
                      ->orderBy('published_at', 'desc');
 
@@ -37,14 +37,14 @@ class NewsController extends Controller
         }
 
         $news = $query->paginate(12);
-        
+
         // Get featured news for sidebar
         $featuredNews = News::published()
                             ->featured()
                             ->orderBy('published_at', 'desc')
                             ->limit(5)
                             ->get();
-        
+
         // Get conferences for filter
         $conferences = HoiThao::select('conference_id', 'title')
                               ->orderBy('title')
@@ -58,11 +58,11 @@ class NewsController extends Controller
      */
     public function show($slug)
     {
-        $news = News::with(['conference', 'creator'])
+        $news = News::with(['conference', 'createdBy'])
                     ->where('slug', $slug)
                     ->published()
                     ->firstOrFail();
-        
+
         // Get related news (same category or conference)
         $relatedNews = News::published()
                            ->where('news_id', '!=', $news->news_id)

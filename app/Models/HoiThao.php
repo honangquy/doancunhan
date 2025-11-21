@@ -40,7 +40,7 @@ class HoiThao extends Model
         'submission_guidelines',
         'detailed_description',
         'location',
-        'contact_email', 
+        'contact_email',
         'contact_phone',
         'keywords',
         'acronym'
@@ -59,6 +59,37 @@ class HoiThao extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    // Mutators to ensure date fields are stored in Y-m-d format
+    public function setStartDateAttribute($value)
+    {
+        $this->attributes['start_date'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setEndDateAttribute($value)
+    {
+        $this->attributes['end_date'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setDeadlineSubmissionAttribute($value)
+    {
+        $this->attributes['deadline_submission'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setDeadlineReviewAttribute($value)
+    {
+        $this->attributes['deadline_review'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setDeadlineCameraReadyAttribute($value)
+    {
+        $this->attributes['deadline_camera_ready'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setResultAnnouncementDeadlineAttribute($value)
+    {
+        $this->attributes['result_announcement_deadline'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
 
     // Relationships
     public function chair()
@@ -112,6 +143,34 @@ class HoiThao extends Model
     }
 
     /**
+     * Get user roles for this conference
+     */
+    public function vaiTroNguoiDungs()
+    {
+        return $this->hasMany(VaiTroNguoiDung::class, 'conference_id', 'conference_id');
+    }
+
+    /**
+     * Get chairs for this conference
+     */
+    public function chairs()
+    {
+        return $this->vaiTroNguoiDungs()
+            ->where('role_code', 'CHAIR')
+            ->with('user');
+    }
+
+    /**
+     * Get reviewers for this conference
+     */
+    public function reviewers()
+    {
+        return $this->vaiTroNguoiDungs()
+            ->where('role_code', 'REVIEWER')
+            ->with('user');
+    }
+
+    /**
      * Get join requests for this conference.
      */
     public function joinRequests()
@@ -133,11 +192,11 @@ class HoiThao extends Model
     public function approvedJoinRequests($role = null)
     {
         $query = $this->joinRequests()->where('status', JoinRequest::STATUS_APPROVED);
-        
+
         if ($role) {
             $query->where('role', $role);
         }
-        
+
         return $query;
     }
 
@@ -149,10 +208,10 @@ class HoiThao extends Model
             // Nếu không có deadline, kiểm tra status field
             return $this->status === 'open' || $this->status === 'OPEN' || $this->status === 'ACTIVE';
         }
-        
+
         $now = Carbon::now();
         $submissionDeadline = Carbon::parse($this->deadline_submission);
-        
+
         // Hội thảo được coi là "mở" nếu còn hạn nộp bài
         return $now->lt($submissionDeadline);
     }
@@ -185,14 +244,14 @@ class HoiThao extends Model
         if (!$this->deadline_submission) {
             return null;
         }
-        
+
         $now = now()->startOfDay();
         $deadline = \Carbon\Carbon::parse($this->deadline_submission)->startOfDay();
-        
+
         if ($deadline < $now) {
             return 0;
         }
-        
+
         return $now->diffInDays($deadline);
     }
 

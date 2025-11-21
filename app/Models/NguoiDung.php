@@ -90,7 +90,7 @@ class NguoiDung extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->full_name;
     }
 
-    // Accessor for standard Laravel id attribute  
+    // Accessor for standard Laravel id attribute
     public function getIdAttribute()
     {
         return $this->user_id;
@@ -126,11 +126,11 @@ class NguoiDung extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function hasRole($roleCode, $conferenceId = null)
     {
         $query = $this->vaiTros()->where('role_code', $roleCode);
-        
+
         if ($conferenceId !== null) {
             $query->where('conference_id', $conferenceId);
         }
-        
+
         return $query->exists();
     }
 
@@ -201,11 +201,11 @@ class NguoiDung extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function removeRole($roleCode, $conferenceId = null)
     {
         $query = $this->vaiTros()->where('role_code', $roleCode);
-        
+
         if ($conferenceId !== null) {
             $query->where('conference_id', $conferenceId);
         }
-        
+
         return $query->delete();
     }
 
@@ -216,22 +216,22 @@ class NguoiDung extends Authenticatable implements JWTSubject, MustVerifyEmail
         if ($this->isAdmin()) {
             return 'ADMIN';
         }
-        
+
         // Check if user is CHAIR in any conference
         if ($this->vaiTros()->where('role_code', 'CHAIR')->exists()) {
             return 'CHAIR';
         }
-        
+
         // Check if user is REVIEWER in any conference
         if ($this->vaiTros()->where('role_code', 'REVIEWER')->exists()) {
             return 'REVIEWER';
         }
-        
+
         // Check if user is AUTHOR
         if ($this->vaiTros()->where('role_code', 'AUTHOR')->exists()) {
             return 'AUTHOR';
         }
-        
+
         // Default to USER (for users without any specific role)
         return 'USER';
     }
@@ -243,7 +243,18 @@ class NguoiDung extends Authenticatable implements JWTSubject, MustVerifyEmail
             ->distinct('role_code')
             ->pluck('role_code')
             ->toArray();
-        
+
         return empty($roles) ? 'USER' : implode(', ', $roles);
+    }
+
+    /**
+     * Check if user has specific role for a conference
+     */
+    public function hasRoleForConference($roleCode, $conferenceId)
+    {
+        return $this->vaiTros()
+            ->where('role_code', $roleCode)
+            ->where('conference_id', $conferenceId)
+            ->exists();
     }
 }

@@ -11,16 +11,16 @@ class News extends Model
     use HasFactory;
 
     protected $table = 'news';
-    protected $primaryKey = 'news_id';
+    protected $primaryKey = 'news_id'; // Changed from 'id'
 
     protected $fillable = [
         'title',
         'slug',
+        'category', // Changed from 'type'
+        'conference_id',
         'summary',
         'content',
-        'cover_image',
-        'category',
-        'conference_id',
+        'cover_image', // Changed from 'thumbnail_path'
         'is_featured',
         'status',
         'published_at',
@@ -43,7 +43,7 @@ class News extends Model
         static::creating(function ($news) {
             if (empty($news->slug)) {
                 $news->slug = Str::slug($news->title);
-                
+
                 // Ensure unique slug
                 $originalSlug = $news->slug;
                 $count = 1;
@@ -63,10 +63,10 @@ class News extends Model
             // Update slug if title changed
             if ($news->isDirty('title') && empty($news->slug)) {
                 $news->slug = Str::slug($news->title);
-                
+
                 $originalSlug = $news->slug;
                 $count = 1;
-                while (static::where('slug', $news->slug)->where('news_id', '!=', $news->news_id)->exists()) {
+                while (static::where('slug', $news->slug)->where($news->getKeyName(), '!=', $news->getKey())->exists()) {
                     $news->slug = $originalSlug . '-' . $count;
                     $count++;
                 }
@@ -88,17 +88,17 @@ class News extends Model
     }
 
     /**
-     * Relationship: News belongs to a creator (NguoiDung)
+     * Relationship: News belongs to a creator (User)
      */
-    public function creator()
+    public function createdBy()
     {
         return $this->belongsTo(NguoiDung::class, 'created_by', 'user_id');
     }
 
     /**
-     * Relationship: News belongs to an updater (NguoiDung)
+     * Relationship: News belongs to an updater (User)
      */
-    public function updater()
+    public function updatedBy()
     {
         return $this->belongsTo(NguoiDung::class, 'updated_by', 'user_id');
     }
@@ -113,14 +113,6 @@ class News extends Model
                          $q->whereNull('published_at')
                            ->orWhere('published_at', '<=', now());
                      });
-    }
-
-    /**
-     * Scope: Get featured news
-     */
-    public function scopeFeatured($query)
-    {
-        return $query->where('is_featured', true);
     }
 
     /**
@@ -153,18 +145,7 @@ class News extends Model
         if ($this->cover_image) {
             return asset('storage/' . $this->cover_image);
         }
-        return asset('images/default-news-cover.jpg');
-    }
-
-    /**
-     * Get excerpt from content
-     */
-    public function getExcerptAttribute()
-    {
-        if ($this->summary) {
-            return $this->summary;
-        }
-        return Str::limit(strip_tags($this->content), 200);
+        return asset('images/default-news.jpg');
     }
 
     /**
@@ -201,11 +182,11 @@ class News extends Model
     public function getStatusColorAttribute()
     {
         $colors = [
-            'DRAFT' => 'gray',
-            'PENDING' => 'yellow',
-            'PUBLISHED' => 'green',
-            'ARCHIVED' => 'red'
+            'DRAFT' => 'secondary',
+            'PENDING' => 'warning',
+            'PUBLISHED' => 'success',
+            'ARCHIVED' => 'dark'
         ];
-        return $colors[$this->status] ?? 'gray';
+        return $colors[$this->status] ?? 'secondary';
     }
 }

@@ -11,22 +11,22 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         * {
             font-family: 'Inter', sans-serif;
         }
-        
+
         html {
             scroll-behavior: smooth;
         }
-        
+
         /* Offset for sticky navbar when scrolling to anchors */
         .scroll-mt-16 {
             scroll-margin-top: 4rem;
         }
     </style>
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -67,14 +67,14 @@
             <div class="flex items-center space-x-6">
                 <!-- HUIT Logo - Left -->
                 <a href="{{ route('home') }}" class="flex-shrink-0 hover:opacity-90 transition">
-                    <img src="https://huit.edu.vn/Images/Documents/N00CT/logo-huit-web-chinh-moi-mau-xanh-02.svg?h=80" 
-                         alt="HUIT Logo" 
+                    <img src="https://huit.edu.vn/Images/Documents/N00CT/logo-huit-web-chinh-moi-mau-xanh-02.svg?h=80"
+                         alt="HUIT Logo"
                          class="h-12 w-auto">
                 </a>
                 <!-- University Name - Center -->
                 <div class="flex-1 flex flex-col items-center text-center space-y-1">
                     <span class="text-lg md:text-xl font-bold text-blue-600 uppercase tracking-wide">BỘ CÔNG THƯƠNG</span>
-                    <span class="text-xl md:text-2xl lg:text-3xl font-bold text-blue-700 uppercase">TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TP. HỒ CHÍ MINH</span>
+                    <span class="text-xl md:text-2xl lg:text-3xl font-bold text-blue-700 uppercase">Trường Đại học Công Thương TP. Hồ Chí Minh</span>
                 </div>
             </div>
         </div>
@@ -92,7 +92,7 @@
                         <div class="text-xs text-blue-200">Hệ thống quản lý hội thảo</div>
                     </div>
                 </a>
-                
+
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#conferences" class="hover:text-orange-300 transition-all duration-300 font-medium">Hội thảo</a>
@@ -100,7 +100,7 @@
                     <a href="{{ route('process') }}" class="hover:text-orange-300 transition-all duration-300 font-medium">Quy trình</a>
                     <a href="{{ route('support') }}" class="hover:text-orange-300 transition-all duration-300 font-medium">Hỗ trợ</a>
                     <a href="#calendar" class="hover:text-orange-300 transition-all duration-300 font-medium">Lịch</a>
-                    
+
                     @auth
                         <!-- Notification Bell -->
                         <div class="relative" x-data="{
@@ -108,7 +108,7 @@
                             notifications: [],
                             unreadCount: 0,
                             loading: false,
-                            
+
                             async loadNotifications() {
                                 this.loading = true;
                                 try {
@@ -122,7 +122,7 @@
                                     this.loading = false;
                                 }
                             },
-                            
+
                             async markAsRead(id) {
                                 try {
                                     const response = await fetch(`/api/notifications/${id}/read`, {
@@ -139,7 +139,7 @@
                                     console.error('Error marking notification as read:', error);
                                 }
                             },
-                            
+
                             async markAllAsRead() {
                                 try {
                                     const response = await fetch('/api/notifications/read-all', {
@@ -162,12 +162,12 @@
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                                 </svg>
-                                <span x-show="unreadCount > 0" 
+                                <span x-show="unreadCount > 0"
                                       x-text="unreadCount"
                                       class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
                                 </span>
                             </button>
-                            
+
                             <!-- Notifications Dropdown -->
                             <div x-show="showNotifications"
                                  x-transition:enter="transition ease-out duration-300"
@@ -179,17 +179,17 @@
                                  @click.away="showNotifications = false"
                                  class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl z-50 border border-gray-100"
                                  style="display: none;">
-                                
+
                                 <!-- Notifications Header -->
                                 <div class="flex items-center justify-between p-4 border-b border-gray-100">
                                     <h3 class="font-semibold text-gray-800">Thông báo</h3>
-                                    <button @click="markAllAsRead()" 
+                                    <button @click="markAllAsRead()"
                                             x-show="unreadCount > 0"
                                             class="text-xs text-blue-600 hover:text-blue-700 font-medium">
                                         Đánh dấu đã đọc tất cả
                                     </button>
                                 </div>
-                                
+
                                 <!-- Loading -->
                                 <div x-show="loading" class="p-4 text-center">
                                     <div class="inline-flex items-center">
@@ -200,7 +200,7 @@
                                         <span class="text-sm text-gray-600">Đang tải...</span>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Notifications List -->
                                 <div x-show="!loading" class="max-h-96 overflow-y-auto">
                                     <template x-for="notification in notifications" :key="notification.id">
@@ -212,13 +212,13 @@
                                                 <span class="text-xs text-gray-500" x-text="notification.time_ago"></span>
                                             </div>
                                             <p class="text-sm text-gray-600 line-clamp-2" x-text="notification.message"></p>
-                                            
+
                                             <!-- Type Badge -->
                                             <div class="mt-2">
                                                 <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
                                                       :class="{
                                                           'bg-green-100 text-green-800': notification.type === 'paper_submitted',
-                                                          'bg-blue-100 text-blue-800': notification.type === 'review_assigned', 
+                                                          'bg-blue-100 text-blue-800': notification.type === 'review_assigned',
                                                           'bg-orange-100 text-orange-800': notification.type === 'deadline_reminder',
                                                           'bg-purple-100 text-purple-800': notification.type === 'status_update'
                                                       }"
@@ -232,7 +232,7 @@
                                             </div>
                                         </div>
                                     </template>
-                                    
+
                                     <!-- Empty State -->
                                     <div x-show="notifications.length === 0" class="p-8 text-center">
                                         <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -249,7 +249,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- User Dropdown -->
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" class="flex items-center space-x-2 hover:text-orange-300 transition-all duration-300 px-3 py-2 rounded-xl hover:bg-white/10">
@@ -263,15 +263,15 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                            
-                            <div x-show="open" 
+
+                            <div x-show="open"
                                  x-transition:enter="transition ease-out duration-300"
                                  x-transition:enter-start="opacity-0 scale-95"
                                  x-transition:enter-end="opacity-100 scale-100"
                                  x-transition:leave="transition ease-in duration-200"
                                  x-transition:leave-start="opacity-100 scale-100"
                                  x-transition:leave-end="opacity-0 scale-95"
-                                 @click.away="open = false" 
+                                 @click.away="open = false"
                                  class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl py-2 z-50 border border-gray-100"
                                  style="display: none;">
                                 @if($userData && $userData['dashboardUrl'])
@@ -324,7 +324,7 @@
                         </div>
                     @endauth
                 </div>
-                
+
                 <!-- Mobile Menu Button -->
                 <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,9 +332,9 @@
                     </svg>
                 </button>
             </div>
-            
+
             <!-- Mobile Menu -->
-            <div x-show="mobileMenuOpen" 
+            <div x-show="mobileMenuOpen"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0 -translate-y-2"
                  x-transition:enter-end="opacity-100 translate-y-0"
@@ -414,11 +414,11 @@
             <p class="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
                 Tạo – Quản lý – Công bố kỹ yếu. Quy trình cho tác giả, reviewer và ban tổ chức với COI, bidding, phân công phản biện & xuất bản.
             </p>
-            
+
             <!-- Search Bar -->
             <div class="max-w-2xl mx-auto animate-fade-in">
                 <div class="flex gap-3">
-                    <input type="text" 
+                    <input type="text"
                            placeholder="Nhập từ khóa (mã, tên hội thảo, lĩnh vực...)"
                            class="flex-1 px-6 py-4 rounded-xl text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 shadow-lg">
                     <button class="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-xl font-medium transition-all duration-300 hover:shadow-xl hover:scale-105">
@@ -426,7 +426,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Quick Actions -->
             <div class="mt-8 flex flex-wrap justify-center gap-4">
                 <a href="#upcoming" class="inline-flex items-center space-x-2 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl transition-all duration-300 backdrop-blur-sm hover:scale-105">
@@ -454,105 +454,6 @@
         </div>
     </section>
 
-    <!-- Stats Section -->
-    <section class="py-10 bg-gradient-to-b from-white to-gray-50 border-b" x-data="{ animate: false }" x-init="setTimeout(() => animate = true, 100)">
-        <div class="container mx-auto px-4">
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Thống kê hệ thống</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
-                <div class="bg-white rounded-xl shadow-md p-4 text-center transform transition-all duration-500 hover:shadow-lg" 
-                     :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
-                     style="transition-delay: 0ms">
-                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                        </svg>
-                    </div>
-                    <div class="text-3xl font-bold text-blue-700 mb-1">{{ $statistics['activeConferences'] ?? 0 }}</div>
-                    <div class="text-xs text-gray-600 font-medium">Hội thảo đang mở</div>
-                </div>
-                <div class="bg-white rounded-xl shadow-md p-4 text-center transform transition-all duration-500 hover:shadow-lg" 
-                     :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
-                     style="transition-delay: 100ms">
-                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                    </div>
-                    <div class="text-3xl font-bold text-green-700 mb-1">{{ $statistics['totalPapers'] ?? 0 }}</div>
-                    <div class="text-xs text-gray-600 font-medium">Bài báo đã nộp</div>
-                </div>
-                <div class="bg-white rounded-xl shadow-md p-4 text-center transform transition-all duration-500 hover:shadow-lg" 
-                     :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
-                     style="transition-delay: 200ms">
-                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <svg class="w-6 h-6 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="text-3xl font-bold text-purple-700 mb-1">{{ $statistics['totalReviewers'] ?? 0 }}</div>
-                    <div class="text-xs text-gray-600 font-medium">Reviewer</div>
-                </div>
-                <div class="bg-white rounded-xl shadow-md p-4 text-center transform transition-all duration-500 hover:shadow-lg" 
-                     :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
-                     style="transition-delay: 300ms">
-                    <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <svg class="w-6 h-6 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="text-3xl font-bold text-orange-700 mb-1">{{ $statistics['totalAuthors'] ?? 0 }}</div>
-                    <div class="text-xs text-gray-600 font-medium">Tác giả</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Recent Papers Section -->
-    <section class="py-12 bg-gradient-to-b from-blue-50 to-white">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Bài báo mới nhất</h2>
-                <p class="text-gray-600 text-sm">Các bài báo khoa học được nộp gần đây</p>
-            </div>
-            
-            @if($recentPapers && $recentPapers->count() > 0)
-                <div class="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                    @foreach($recentPapers as $paper)
-                        <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
-                            <div class="text-xs text-blue-600 font-medium mb-3">{{ $paper->conference_title }}</div>
-                            <h3 class="text-lg font-bold text-gray-800 mb-3 line-clamp-2">{{ $paper->paper_title }}</h3>
-                            <div class="flex items-center text-sm text-gray-600 mb-3">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                                <span>{{ $paper->author_name }}</span>
-                            </div>
-                            <div class="flex items-center text-sm text-gray-500 mb-4">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <span>{{ \Carbon\Carbon::parse($paper->submitted_at)->format('d/m/Y') }}</span>
-                            </div>
-                            @if($paper->abstract)
-                                <p class="text-sm text-gray-600 line-clamp-3">{{ \Illuminate\Support\Str::limit($paper->abstract, 100) }}</p>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <div class="text-center py-12">
-                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Chưa có bài báo</h3>
-                    <p class="text-gray-500">Hiện tại chưa có bài báo nào được nộp.</p>
-                </div>
-            @endif
-        </div>
-    </section>
-
     <!-- Khám phá Hội thảo - Compact & Simple -->
     <section id="conferences" class="py-16 bg-gray-50 scroll-mt-16">
         <div class="container mx-auto px-4">
@@ -572,8 +473,8 @@
                                 <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     id="conferenceSearch"
                                     placeholder="Tìm kiếm hội thảo..."
                                     class="w-full px-4 py-2.5 pl-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm transition-all"
@@ -583,15 +484,15 @@
 
                         <!-- Compact Status Filters -->
                         <div class="flex gap-2 flex-wrap md:flex-nowrap">
-                            <button onclick="filterConferences('all')" 
+                            <button onclick="filterConferences('all')"
                                     class="filter-btn active px-3 py-2 text-xs font-medium rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition whitespace-nowrap">
                                 Tất cả
                             </button>
-                            <button onclick="filterConferences('open')" 
+                            <button onclick="filterConferences('open')"
                                     class="filter-btn px-3 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition whitespace-nowrap">
                                 Đang mở
                             </button>
-                            <button onclick="filterConferences('closed')" 
+                            <button onclick="filterConferences('closed')"
                                     class="filter-btn px-3 py-2 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition whitespace-nowrap">
                                 Đã đóng
                             </button>
@@ -613,12 +514,12 @@
             <!-- Conference Grid -->
             <div id="conferenceGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($recentConferences as $conference)
-                    <div class="conference-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden" 
-                         data-status="{{ $conference->status_display }}" 
+                    <div class="conference-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden"
+                         data-status="{{ $conference->status_display }}"
                          data-title="{{ strtolower($conference->title) }}"
                          data-year="{{ $conference->year }}"
                          data-deadline="{{ $conference->deadline_submission }}">
-                        
+
                         <!-- Conference Header with Gradient -->
                         <div class="bg-gradient-to-br from-blue-600 to-blue-500 p-5 text-white">
                             <div class="flex items-start justify-between mb-3">
@@ -648,7 +549,7 @@
                                     </svg>
                                     <span>{{ $conference->paper_count ?? 0 }} bài báo</span>
                                 </div>
-                                
+
                                 @if($conference->deadline_submission)
                                 <div class="flex items-center">
                                     <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -695,11 +596,11 @@
         const conferenceCards = document.querySelectorAll('.conference-card');
         const conferenceGrid = document.getElementById('conferenceGrid');
         const noResults = document.getElementById('noResults');
-        
+
         let currentFilter = 'all';
         let currentSort = 'year';
         let searchTimeout;
-        
+
         // Search with debounce
         searchInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
@@ -707,11 +608,11 @@
                 applyFilters();
             }, 300);
         });
-        
+
         // Filter by status
         function filterConferences(status) {
             currentFilter = status;
-            
+
             // Update button styles
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('bg-orange-600', 'text-white');
@@ -719,30 +620,30 @@
             });
             event.target.classList.remove('bg-white', 'border', 'border-gray-200', 'text-gray-700');
             event.target.classList.add('bg-orange-600', 'text-white', 'active');
-            
+
             applyFilters();
         }
-        
+
         // Sort conferences
         function sortConferences(sortBy) {
             currentSort = sortBy;
             applyFilters();
         }
-        
+
         // Apply all filters
         function applyFilters() {
             const searchTerm = searchInput.value.toLowerCase().trim();
             const cardsArray = Array.from(conferenceCards);
             let visibleCount = 0;
-            
+
             // Filter and show/hide
             cardsArray.forEach(card => {
                 const title = card.dataset.title || '';
                 const status = card.dataset.status || '';
-                
+
                 const matchesSearch = !searchTerm || title.includes(searchTerm);
                 const matchesFilter = currentFilter === 'all' || status === currentFilter;
-                
+
                 if (matchesSearch && matchesFilter) {
                     card.style.display = 'block';
                     visibleCount++;
@@ -750,7 +651,7 @@
                     card.style.display = 'none';
                 }
             });
-            
+
             // Sort visible cards
             const visibleCards = cardsArray.filter(card => card.style.display !== 'none');
             visibleCards.sort((a, b) => {
@@ -763,10 +664,10 @@
                 }
                 return 0;
             });
-            
+
             // Re-append sorted cards
             visibleCards.forEach(card => conferenceGrid.appendChild(card));
-            
+
             // Show/hide no results
             if (visibleCount === 0 && conferenceCards.length > 0) {
                 conferenceGrid.classList.add('hidden');
@@ -776,7 +677,7 @@
                 noResults.classList.add('hidden');
             }
         }
-        
+
         // Reset all filters
         function resetFilters() {
             searchInput.value = '';
@@ -792,7 +693,7 @@
             });
             applyFilters();
         }
-        
+
         // Initialize
         applyFilters();
     </script>
@@ -817,7 +718,7 @@
         facilities: [],
         errors: {},
         loading: false,
-        
+
         async initializeModal() {
             try {
                 const response = await fetch('/api/facilities');
@@ -827,7 +728,7 @@
                 console.error('Error loading facilities:', error);
             }
         },
-        
+
         addCoChair() {
             this.formData.coChairs.push({
                 fullname: '',
@@ -835,15 +736,15 @@
                 affiliation: ''
             });
         },
-        
+
         removeCoChair(index) {
             this.formData.coChairs.splice(index, 1);
         },
-        
+
         async submitRequest() {
             this.loading = true;
             this.errors = {};
-            
+
             try {
                 const formData = new FormData();
                 formData.append('title', this.formData.title);
@@ -857,11 +758,11 @@
                 formData.append('chair_email', this.formData.chair_email);
                 formData.append('chair_phone', this.formData.chair_phone);
                 formData.append('co_chairs', JSON.stringify(this.formData.coChairs));
-                
+
                 if (this.formData.proposal_file) {
                     formData.append('proposal_file', this.formData.proposal_file);
                 }
-                
+
                 const response = await fetch('/api/conference-requests', {
                     method: 'POST',
                     headers: {
@@ -869,9 +770,9 @@
                     },
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     alert('Yêu cầu tạo hội thảo đã được gửi thành công! ID: ' + data.request_id);
                     this.resetForm();
@@ -888,7 +789,7 @@
                 this.loading = false;
             }
         },
-        
+
         resetForm() {
             this.formData = {
                 title: '',
@@ -909,10 +810,10 @@
     }" @click.away="showConferenceRequestModal = false"
     x-show="showConferenceRequestModal"
     class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
-        
+
         <!-- Modal Overlay -->
         <div class="fixed inset-0 bg-black opacity-50"></div>
-        
+
         <!-- Modal Content -->
         <div class="relative bg-white rounded-xl shadow-2xl max-w-2xl mx-auto mt-20 p-8">
             <!-- Header -->
@@ -924,7 +825,7 @@
                     </svg>
                 </button>
             </div>
-            
+
             <!-- Form -->
             <form @submit.prevent="submitRequest()" class="space-y-6">
                 <!-- Title & Field -->
@@ -940,7 +841,7 @@
                         <template x-if="errors.field"><p class="text-xs text-red-600 mt-1" x-text="errors.field[0]"></p></template>
                     </div>
                 </div>
-                
+
                 <!-- Level & Date -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -956,7 +857,7 @@
                         <template x-if="errors.expected_date"><p class="text-xs text-red-600 mt-1" x-text="errors.expected_date[0]"></p></template>
                     </div>
                 </div>
-                
+
                 <!-- Objective & Facility -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -975,7 +876,7 @@
                         <template x-if="errors.facility_id"><p class="text-xs text-red-600 mt-1" x-text="errors.facility_id[0]"></p></template>
                     </div>
                 </div>
-                
+
                 <!-- Chair Info -->
                 <fieldset class="border border-gray-300 rounded-lg p-4">
                     <legend class="text-sm font-semibold text-gray-700 px-2">Thông tin Chủ tịch *</legend>
@@ -994,7 +895,7 @@
                         </div>
                     </div>
                 </fieldset>
-                
+
                 <!-- Co-chairs -->
                 <div>
                     <div class="flex items-center justify-between mb-3">
@@ -1018,7 +919,7 @@
                         </div>
                     </template>
                 </div>
-                
+
                 <!-- File Upload -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">File đề xuất (PDF) *</label>
@@ -1034,7 +935,7 @@
                     </template>
                     <template x-if="errors.proposal_file"><p class="text-xs text-red-600 mt-1" x-text="errors.proposal_file[0]"></p></template>
                 </div>
-                
+
                 <!-- Buttons -->
                 <div class="flex justify-end gap-3">
                     <button type="button" @click="showConferenceRequestModal = false" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
@@ -1048,7 +949,7 @@
             </form>
         </div>
     </div>
-    
+
     <script>
         // Initialize conference request modal on page load
         const modalComponent = document.getElementById('conferenceRequestModal');
@@ -1064,21 +965,16 @@
             <div class="grid md:grid-cols-3 gap-8">
                 <div>
                     <h3 class="text-white font-bold text-lg mb-4">HUIT Conferences</h3>
-                    <p class="text-sm leading-relaxed">Trường Đại học Công Thương</p>
-                    <p class="text-sm leading-relaxed mt-2">Nền tảng quản lý hội thảo khoa học đa cấp (Tin/Dữ/Nhóm, Khoa)</p>
+                    <p class="text-sm leading-relaxed">Trường Đại học Công Thương TP. Hồ Chí Minh</p>
+                    <p class="text-sm leading-relaxed mt-2">Nền tảng quản lý hội thảo khoa học các cấp</p>
                 </div>
                 <div>
-                    <h3 class="text-white font-bold text-lg mb-4">Liên kết</h3>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-white transition-colors">Bảng điều khiển Tác giả</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Bảng điều khiển Reviewer</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Bảng điều khiển tổ chức</a></li>
-                    </ul>
+
                 </div>
                 <div>
                     <h3 class="text-white font-bold text-lg mb-4">Liên hệ</h3>
-                    <p class="text-sm leading-relaxed">Email: khoics@huit.edu.vn</p>
-                    <p class="text-sm leading-relaxed">Điện thoại: (028) 38xx xxxx</p>
+                    <p class="text-sm leading-relaxed">Email: dangtrucquynh04@gmail.com</p>
+                    <p class="text-sm leading-relaxed">Điện thoại: 0971351150 </p>
                     <p class="text-sm leading-relaxed">Địa chỉ: 140 Lê Trọng Tấn, TP.HCM</p>
                 </div>
             </div>
