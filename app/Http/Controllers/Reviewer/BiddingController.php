@@ -111,7 +111,16 @@ class BiddingController extends Controller
                 })
                 ->leftJoin('nguoidung as n', 'b.submitter_id', '=', 'n.user_id')
                 ->where('b.conference_id', $conferenceId)
-                ->whereIn('b.status_code', ['SUBMITTED', 'UNDER_REVIEW']); // Show submitted papers for immediate bidding
+                ->whereIn('b.status_code', ['SUBMITTED', 'UNDER_REVIEW']) // Show submitted papers for immediate bidding
+                // Exclude papers where the user is the submitter
+                ->where('b.submitter_id', '!=', $userId)
+                // Exclude papers where the user is a co-author
+                ->whereNotExists(function ($query) use ($userId) {
+                    $query->select(DB::raw(1))
+                          ->from('tacgiabaibao')
+                          ->whereColumn('tacgiabaibao.paper_id', 'b.paper_id')
+                          ->where('tacgiabaibao.user_id', $userId);
+                });
 
             // Apply keyword filtering if enabled
             if ($biddingSetting && $biddingSetting->enable_keyword_matching) {
@@ -265,6 +274,26 @@ class BiddingController extends Controller
                 ], 404);
             }
 
+            // Check if user is author (submitter or co-author)
+            if ($paper->submitter_id == $userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn là tác giả của bài báo này, không thể tham gia bidding'
+                ], 403);
+            }
+
+            $isCoAuthor = DB::table('tacgiabaibao')
+                ->where('paper_id', $data['paper_id'])
+                ->where('user_id', $userId)
+                ->exists();
+
+            if ($isCoAuthor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn là đồng tác giả của bài báo này, không thể tham gia bidding'
+                ], 403);
+            }
+
             // Check for existing assignment (can't bid on assigned papers)
             $existingAssignment = ReviewerAssignment::where('user_id', $userId)
                 ->where('paper_id', $data['paper_id'])
@@ -365,6 +394,29 @@ class BiddingController extends Controller
                         'success' => false,
                         'message' => "Bạn đã được phân công bài {$biddingData['paper_id']}, không thể thay đổi bidding"
                     ], 400);
+                }
+
+                // Check if user is author (submitter or co-author)
+                $paper = BaiBao::find($biddingData['paper_id']);
+                if ($paper && $paper->submitter_id == $userId) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Bạn là tác giả của bài báo '{$paper->title}', không thể tham gia bidding"
+                    ], 403);
+                }
+
+                $isCoAuthor = DB::table('tacgiabaibao')
+                    ->where('paper_id', $biddingData['paper_id'])
+                    ->where('user_id', $userId)
+                    ->exists();
+
+                if ($isCoAuthor) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Bạn là đồng tác giả của bài báo '{$paper->title}', không thể tham gia bidding"
+                    ], 403);
                 }
 
                 // Upsert bidding

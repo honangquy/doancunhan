@@ -104,34 +104,42 @@ class AuthController extends Controller
         // Auto-verify certain test/admin accounts
         $this->autoVerifySpecialAccounts($user);
 
-        // Check if user has any role assigned
-        $hasAnyRole = DB::table('vaitronguoidung')
+        // Get all distinct roles for the user
+        $roles = DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
-            ->exists();
+            ->distinct()
+            ->pluck('role_code');
 
         // If user has no role, redirect to home with pending message
-        if (!$hasAnyRole) {
+        if ($roles->isEmpty()) {
             return redirect()->route('home')
                 ->with('warning', 'Tài khoản của bạn đang chờ Admin phê duyệt. Vui lòng quay lại sau.');
         }
 
-        // Check roles in order of priority: ADMIN > CHAIR > REVIEWER > AUTHOR
-        if ($user->hasRole('ADMIN')) {
+        // If user has more than 1 role, redirect to role selection page
+        if ($roles->count() > 1) {
+            return redirect()->route('role.selection');
+        }
+
+        // If user has exactly 1 role, redirect to that role's dashboard
+        $role = $roles->first();
+
+        if ($role === 'ADMIN') {
             return redirect()->intended('/admin/dashboard')
                 ->with('success', 'Chào mừng Admin, ' . $user->full_name . '!');
         }
 
-        if ($user->hasRole('CHAIR')) {
+        if ($role === 'CHAIR') {
             return redirect()->intended('/chair/dashboard')
                 ->with('success', 'Chào mừng Chair, ' . $user->full_name . '!');
         }
 
-        if ($user->hasRole('REVIEWER')) {
+        if ($role === 'REVIEWER') {
             return redirect()->intended('/reviewer/dashboard')
                 ->with('success', 'Chào mừng Reviewer, ' . $user->full_name . '!');
         }
 
-        if ($user->hasRole('AUTHOR')) {
+        if ($role === 'AUTHOR') {
             return redirect()->intended('/author/dashboard')
                 ->with('success', 'Chào mừng ' . $user->full_name . '!');
         }
@@ -139,6 +147,62 @@ class AuthController extends Controller
         // Fallback: user has role but not recognized
         return redirect()->route('home')
             ->with('info', 'Chào mừng ' . $user->full_name . '!');
+    }
+
+    public function showRoleSelection()
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        // Get all roles with conference details if applicable
+        $roles = DB::table('vaitronguoidung')
+            ->leftJoin('hoithao', 'vaitronguoidung.conference_id', '=', 'hoithao.conference_id')
+            ->where('vaitronguoidung.user_id', $user->user_id)
+            ->select(
+                'vaitronguoidung.role_code',
+                'vaitronguoidung.conference_id',
+                'hoithao.title as conference_title'
+            )
+            ->get()
+            ->groupBy('role_code');
+
+        return view('auth.role-selection', [
+            'roles' => $roles,
+            'user' => $user
+        ]);
+    }
+
+    public function selectRole(Request $request)
+    {
+        $role = $request->input('role');
+        
+        // Validate if user actually has this role
+        $user = Auth::user();
+        $hasRole = DB::table('vaitronguoidung')
+            ->where('user_id', $user->user_id)
+            ->where('role_code', $role)
+            ->exists();
+            
+        if (!$hasRole) {
+            return back()->with('error', 'Bạn không có quyền truy cập vai trò này.');
+        }
+
+        // Redirect based on selected role
+        switch ($role) {
+            case 'ADMIN':
+                return redirect()->intended('/admin/dashboard');
+            case 'CHAIR':
+                return redirect()->intended('/chair/dashboard');
+            case 'REVIEWER':
+                return redirect()->intended('/reviewer/dashboard');
+            case 'AUTHOR':
+                return redirect()->intended('/author/dashboard');
+            default:
+                return redirect()->route('home');
+        }
     }
 
     public function logout(Request $request)

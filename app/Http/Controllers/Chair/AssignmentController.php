@@ -244,6 +244,18 @@ class AssignmentController extends Controller
                     continue;
                 }
 
+                // Kiểm tra xem reviewer có phải là CHAIR của hội thảo này không
+                $isChair = DB::table('vaitronguoidung')
+                    ->where('user_id', $reviewerId)
+                    ->where('conference_id', $paper->conference_id)
+                    ->where('role_code', 'CHAIR')
+                    ->exists();
+
+                if ($isChair) {
+                    $errors[] = "Reviewer ID {$reviewerId} là chủ tịch hội thảo, không thể phân công làm reviewer.";
+                    continue;
+                }
+
                 // Kiểm tra COI
                 $bidding = ReviewerBidding::where('paper_id', $paperId)
                     ->where('user_id', $reviewerId)

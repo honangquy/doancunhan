@@ -1131,3 +1131,10 @@ Route::get('/debug/test-join/{token}', function($token) {
 
     return nl2br($output);
 });
+
+// Authenticated Routes
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/role-selection', [AuthController::class, 'showRoleSelection'])->name('role.selection');
+    Route::post('/select-role', [AuthController::class, 'selectRole'])->name('role.select');
+});
