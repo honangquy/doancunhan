@@ -240,6 +240,17 @@ class PaperController extends Controller
         if (!$joinRequest) {
             return back()->withErrors(['conference_id' => 'Bạn chưa được phép tham gia hội thảo này với vai trò tác giả.'])->withInput();
         }
+
+        // Check if user is CHAIR of this conference
+        $isChair = DB::table('vaitronguoidung')
+            ->where('user_id', $userId)
+            ->where('conference_id', $validated['conference_id'])
+            ->where('role_code', 'CHAIR')
+            ->exists();
+
+        if ($isChair) {
+            return back()->withErrors(['conference_id' => 'Chủ tịch hội thảo không thể nộp bài cho hội thảo của mình.'])->withInput();
+        }
         
         DB::beginTransaction();
         

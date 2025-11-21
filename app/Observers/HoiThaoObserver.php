@@ -57,8 +57,6 @@ class HoiThaoObserver
                     'user_id' => $hoiThao->chair_id,
                     'role_code' => 'CHAIR',
                     'conference_id' => $hoiThao->conference_id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
 
                 Log::info("[HoiThaoObserver] Auto-created CHAIR role", [

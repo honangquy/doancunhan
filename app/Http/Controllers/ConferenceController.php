@@ -174,6 +174,20 @@ class ConferenceController extends Controller
 
             $userId = Auth::id();
 
+            // Check if user is CHAIR of this conference
+            $isChair = DB::table('vaitronguoidung')
+                ->where('user_id', $userId)
+                ->where('conference_id', $id)
+                ->where('role_code', 'CHAIR')
+                ->exists();
+
+            if ($isChair) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn là Chủ tịch của hội thảo này, không thể đăng ký tham gia với vai trò khác.'
+                ]);
+            }
+
             // Check if user already has a join request for this conference and role
             $existingRequest = JoinRequest::where([
                 'conference_id' => $id,

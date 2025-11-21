@@ -89,19 +89,48 @@ class ReviewerInvitationController extends Controller
         // Lấy thông tin hội thảo
         $conference = DB::table('hoithao')->where('conference_id', $conferenceId)->first();
         
-        // Kiểm tra email đã tồn tại trong hệ thống (ngoại trừ role USER)
-        $existingUser = DB::table('nguoidung as nd')
-            ->join('vaitronguoidung as vt', 'nd.user_id', '=', 'vt.user_id')
-            ->join('loaivaitro as lvt', 'vt.role_code', '=', 'lvt.role_code')
-            ->where('nd.email', $email)
-            ->where('lvt.role_code', '!=', 'USER')
-            ->first();
+        // Kiểm tra email đã tồn tại trong hệ thống
+        $existingUser = DB::table('nguoidung')->where('email', $email)->first();
 
         if ($existingUser) {
-            return response()->json([
-                'success' => false,
-                'message' => "Email đã tồn tại. Vui lòng nhập email khác."
-            ], 400);
+            // 1. Không thể mời chính mình
+            if ($existingUser->user_id == $userId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Bạn không thể mời chính mình làm reviewer."
+                ], 400);
+            }
+
+            // 2. Kiểm tra xem đã là CHAIR của hội thảo này chưa (Đồng chủ tịch)
+            $isCoChair = DB::table('vaitronguoidung')
+                ->where('user_id', $existingUser->user_id)
+                ->where('conference_id', $conferenceId)
+                ->where('role_code', 'CHAIR')
+                ->exists();
+
+            if ($isCoChair) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Người dùng này đã là Đồng chủ tịch (Chair) của hội thảo."
+                ], 400);
+            }
+
+            // 3. Kiểm tra xem đã là REVIEWER của hội thảo này chưa
+            $isReviewer = DB::table('vaitronguoidung')
+                ->where('user_id', $existingUser->user_id)
+                ->where('conference_id', $conferenceId)
+                ->where('role_code', 'REVIEWER')
+                ->exists();
+
+            if ($isReviewer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Người dùng này đã là Phản biện viên (Reviewer) của hội thảo."
+                ], 400);
+            }
+
+            // Nếu là các role khác (AUTHOR, USER, hoặc role ở hội thảo khác) -> Cho phép mời
+            // Logic tiếp tục bên dưới để tạo lời mời
         }
 
         // Kiểm tra xem đã gửi lời mời cho email này chưa

@@ -430,7 +430,7 @@ window.viewUser = function(userId) {
                                     </div>
                                     <div>
                                         <p class="text-xs font-medium text-gray-500">Vai trò</p>
-                                        <p class="text-sm font-semibold text-gray-900">${data.user.roles ? data.user.roles.map(r => r.TenVaiTro || r.name).join(', ') : 'Chưa có vai trò'}</p>
+                                        <p class="text-sm font-semibold text-gray-900">${data.user.roles ? [...new Set(data.user.roles.map(r => r.TenVaiTro || r.name))].join(', ') : 'Chưa có vai trò'}</p>
                                     </div>
                                 </div>
                             </div>
