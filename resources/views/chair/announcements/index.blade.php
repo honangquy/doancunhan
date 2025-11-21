@@ -1,18 +1,18 @@
 @extends('layouts.chair')
 
-@section('title', 'Quản lý thông báo')
+@section('title', 'Quản lý thông báo broadcast')
 
 @section('content')
 <div class="p-6" x-data="announcementList()">
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Quản lý thông báo</h1>
-        <p class="text-gray-600 mt-1">Gửi thông báo đến người dùng qua nhiều kênh</p>
+        <h1 class="text-2xl font-bold text-gray-900">Quản lý thông báo broadcast</h1>
+        <p class="text-gray-600 mt-1">Quản lý thông báo toàn hệ thống đã gửi</p>
     </div>
 
     <!-- Action Buttons -->
     <div class="mb-6 flex justify-between items-center">
         <div class="flex space-x-3">
-            <a href="{{ route('chair.announcements.create') }}" 
+            <a href="{{ route('chair.announcements.create') }}"
                class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -83,21 +83,10 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow p-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Hội thảo</label>
-                <select x-model="filters.conference_id" @change="loadAnnouncements()" 
-                        class="w-full border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500">
-                    <option value="">Tất cả hội thảo</option>
-                    <template x-for="conf in conferences" :key="conf.id">
-                        <option :value="conf.id" x-text="conf.ten_hoi_thao"></option>
-                    </template>
-                </select>
-            </div>
-
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-                <select x-model="filters.status" @change="loadAnnouncements()" 
+                <select x-model="filters.status" @change="loadAnnouncements()"
                         class="w-full border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500">
                     <option value="">Tất cả</option>
                     <option value="SENT">Đã gửi</option>
@@ -108,8 +97,8 @@
 
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
-                <input type="text" x-model="filters.search" @input="loadAnnouncements()" 
-                       placeholder="Tìm theo tiêu đề..."
+                <input type="text" x-model="filters.search" @input="loadAnnouncements()"
+                       placeholder="Tìm theo tiêu đề hoặc nội dung..."
                        class="w-full border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500">
             </div>
         </div>
@@ -121,11 +110,11 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tiêu đề</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đối tượng</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nội dung</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kênh gửi</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian gửi</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người nhận</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -154,28 +143,27 @@
                             <div class="text-sm font-medium text-gray-900" x-text="item.title"></div>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="text-sm text-gray-600" x-text="item.audience_label"></span>
+                            <div class="text-sm text-gray-600" x-text="item.content_excerpt"></div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="flex space-x-1" x-html="item.channels_html"></div>
+                            <div class="flex flex-col space-y-1" x-html="item.channels_html"></div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600" x-text="item.sent_at_display"></td>
                         <td class="px-6 py-4">
                             <span :class="{
                                 'bg-gray-100 text-gray-800': item.status === 'DRAFT',
-                                'bg-orange-100 text-orange-800': item.status === 'PENDING',
+                                'bg-orange-100 text-orange-800': item.status === 'SCHEDULED',
                                 'bg-green-100 text-green-800': item.status === 'SENT',
                                 'bg-red-100 text-red-800': item.status === 'FAILED'
                             }" class="px-2 py-1 text-xs font-medium rounded-full" x-text="item.status_label"></span>
                         </td>
+                        <td class="px-6 py-4 text-sm text-gray-600" x-text="item.sent_at_display"></td>
                         <td class="px-6 py-4">
-                            <div class="flex space-x-2">
-                                <a :href="`/chair/announcements/${item.id}/statistics`" 
-                                   class="text-blue-600 hover:text-blue-800">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                    </svg>
-                                </a>
+                            <div class="flex items-center space-x-1">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <span class="text-sm font-medium text-gray-900" x-text="item.recipient_count"></span>
+                                <span class="text-xs text-gray-500">users</span>
                             </div>
                         </td>
                     </tr>
@@ -189,7 +177,6 @@
 function announcementList() {
     return {
         announcements: [],
-        conferences: [],
         loading: false,
         stats: {
             total: 0,
@@ -198,47 +185,23 @@ function announcementList() {
             failed: 0
         },
         filters: {
-            conference_id: '',
             status: '',
             search: ''
         },
 
         init() {
-            this.loadConferences();
+            console.log('=== Broadcast Announcement List Initialized ===');
             this.loadAnnouncements();
-        },
-        
-        async loadConferences() {
-            try {
-                const response = await fetch('/chair/announcements/data/conferences', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    credentials: 'same-origin'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                this.conferences = data.data || [];
-                console.log('Loaded conferences:', this.conferences.length);
-            } catch (error) {
-                console.error('Failed to load conferences:', error);
-            }
         },
 
         async loadAnnouncements() {
             this.loading = true;
             try {
                 const params = new URLSearchParams({
-                    conference_id: this.filters.conference_id || '',
                     status: this.filters.status || '',
                     search: this.filters.search || ''
                 });
-                
+
                 const response = await fetch(`/chair/announcements/data/list?${params}`, {
                     headers: {
                         'Accept': 'application/json',
@@ -246,33 +209,32 @@ function announcementList() {
                     },
                     credentials: 'same-origin'
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                
-                // Map Vietnamese keys to English for template
+
+                // Process announcements
                 this.announcements = (data.announcements || []).map(item => ({
                     id: item.id,
-                    title: item.tieuDe,
-                    content: item.noiDung,
-                    audience: item.doiTuong,
-                    audience_label: this.getAudienceLabel(item.doiTuong),
-                    channels: item.channels,
-                    channels_html: this.getChannelsHtml(item.channels),
-                    status: item.trangThai,
-                    status_label: this.getStatusLabel(item.trangThai),
-                    scheduled_at: item.thoiGianHenGui,
-                    sent_at: item.thoiGianDaGui,
-                    sent_at_display: item.thoiGianDaGui || item.thoiGianHenGui || '-',
-                    created_at: item.taoLuc,
-                    conference_name: item.tenHoiThao
+                    title: item.title,
+                    content: item.content,
+                    content_excerpt: item.content ? (item.content.length > 100 ? item.content.substring(0, 100) + '...' : item.content) : '',
+                    channels: item.channels || [],
+                    channels_html: this.getChannelsHtml(item.channels || []),
+                    status: item.status,
+                    status_label: this.getStatusLabel(item.status),
+                    scheduled_at: item.schedule_time,
+                    sent_at: item.sent_at,
+                    sent_at_display: item.sent_at || item.schedule_time || '-',
+                    created_at: item.created_at,
+                    recipient_count: item.recipient_count || 0
                 }));
-                
+
                 this.stats = data.stats || { total: 0, sent: 0, scheduled: 0, failed: 0 };
-                console.log('Loaded announcements:', this.announcements.length);
+                console.log('Loaded broadcast announcements:', this.announcements.length);
             } catch (error) {
                 console.error('Failed to load announcements:', error);
                 alert('Không thể tải danh sách thông báo: ' + error.message);
@@ -280,17 +242,7 @@ function announcementList() {
                 this.loading = false;
             }
         },
-        
-        getAudienceLabel(audience) {
-            const labels = {
-                'ALL': 'Tất cả',
-                'AUTHORS': 'Tác giả',
-                'REVIEWERS': 'Phản biện',
-                'CHAIRS': 'Ban tổ chức'
-            };
-            return labels[audience] || audience;
-        },
-        
+
         getStatusLabel(status) {
             const labels = {
                 'DRAFT': 'Nháp',
@@ -300,14 +252,14 @@ function announcementList() {
             };
             return labels[status] || status;
         },
-        
+
         getChannelsHtml(channels) {
             if (!channels || channels.length === 0) return '-';
             const icons = {
-                'EMAIL': '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">Email</span>',
-                'SYSTEM': '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Hệ thống</span>'
+                'email': '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded flex items-center space-x-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg><span>Email</span></span>',
+                'in-app': '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded flex items-center space-x-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg><span>In-App</span></span>'
             };
-            return channels.map(ch => icons[ch] || ch).join(' ');
+            return channels.map(ch => icons[ch] || ch).join('');
         }
     }
 }

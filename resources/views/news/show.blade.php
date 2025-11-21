@@ -19,11 +19,11 @@
             <!-- News Article -->
             <article class="card shadow-sm mb-4">
                 @if($news->cover_image)
-                    <img src="{{ asset('storage/' . $news->cover_image) }}" 
-                         class="card-img-top" 
+                    <img src="{{ asset('storage/' . $news->cover_image) }}"
+                         class="card-img-top"
                          alt="{{ $news->title }}">
                 @endif
-                
+
                 <div class="card-body">
                     <!-- Meta Info -->
                     <div class="mb-3">
@@ -42,11 +42,11 @@
                     <div class="text-muted mb-4 pb-3 border-bottom">
                         <i class="far fa-calendar me-2"></i>
                         {{ $news->published_at->format('d/m/Y H:i') }}
-                        
+
                         @if($news->conference)
                             <span class="mx-2">•</span>
                             <i class="far fa-building me-2"></i>
-                            <a href="{{ route('news.index', ['conference_id' => $news->conference_id]) }}" 
+                            <a href="{{ route('news.index', ['conference_id' => $news->conference_id]) }}"
                                class="text-decoration-none">
                                 {{ $news->conference->title }}
                             </a>
@@ -54,7 +54,7 @@
 
                         <span class="mx-2">•</span>
                         <i class="far fa-user me-2"></i>
-                        {{ $news->creator->full_name ?? 'Admin' }}
+                        {{ $news->createdBy->full_name ?? 'Admin' }}
                     </div>
 
                     <!-- Summary -->
@@ -74,17 +74,17 @@
                     <div class="mt-5 pt-4 border-top">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <a href="{{ route('news.index') }}" class="btn btn-outline-secondary">
+                                <a href="{{ route('articles.index') }}" class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
                                 </a>
                             </div>
                             <div>
                                 <!-- Social Share Buttons -->
-                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('news.show', $news->slug)) }}" 
+                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('articles.show', $news->slug)) }}"
                                    target="_blank" class="btn btn-outline-primary btn-sm" title="Chia sẻ Facebook">
                                     <i class="fab fa-facebook-f"></i>
                                 </a>
-                                <a href="https://twitter.com/intent/tweet?url={{ urlencode(route('news.show', $news->slug)) }}&text={{ urlencode($news->title) }}" 
+                                <a href="https://twitter.com/intent/tweet?url={{ urlencode(route('articles.show', $news->slug)) }}&text={{ urlencode($news->title) }}"
                                    target="_blank" class="btn btn-outline-info btn-sm" title="Chia sẻ Twitter">
                                     <i class="fab fa-twitter"></i>
                                 </a>
@@ -107,11 +107,11 @@
                 </div>
                 <div class="list-group list-group-flush">
                     @foreach($relatedNews as $related)
-                        <a href="{{ route('news.show', $related->slug) }}" 
+                        <a href="{{ route('articles.show', $related->slug) }}"
                            class="list-group-item list-group-item-action">
                             <div class="d-flex gap-3">
                                 @if($related->cover_image)
-                                    <img src="{{ asset('storage/' . $related->cover_image) }}" 
+                                    <img src="{{ asset('storage/' . $related->cover_image) }}"
                                          alt="{{ $related->title }}"
                                          class="rounded"
                                          style="width: 60px; height: 60px; object-fit: cover;">
@@ -121,7 +121,7 @@
                                         <i class="fas fa-image text-muted"></i>
                                     </div>
                                 @endif
-                                
+
                                 <div class="flex-grow-1">
                                     <h6 class="mb-1">{{ Str::limit($related->title, 60) }}</h6>
                                     <small class="text-muted">
@@ -144,19 +144,19 @@
                     </h5>
                 </div>
                 <div class="list-group list-group-flush">
-                    <a href="{{ route('news.index', ['category' => 'NEWS']) }}" 
+                    <a href="{{ route('news.index', ['category' => 'NEWS']) }}"
                        class="list-group-item list-group-item-action">
                         Tin tức
                     </a>
-                    <a href="{{ route('news.index', ['category' => 'ANNOUNCEMENT']) }}" 
+                    <a href="{{ route('news.index', ['category' => 'ANNOUNCEMENT']) }}"
                        class="list-group-item list-group-item-action">
                         Thông báo
                     </a>
-                    <a href="{{ route('news.index', ['category' => 'EVENT']) }}" 
+                    <a href="{{ route('news.index', ['category' => 'EVENT']) }}"
                        class="list-group-item list-group-item-action">
                         Sự kiện
                     </a>
-                    <a href="{{ route('news.index', ['category' => 'GUIDE']) }}" 
+                    <a href="{{ route('news.index', ['category' => 'GUIDE']) }}"
                        class="list-group-item list-group-item-action">
                         Hướng dẫn
                     </a>

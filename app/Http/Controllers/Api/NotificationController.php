@@ -24,9 +24,9 @@ class NotificationController extends Controller
 
             // Filter by read status
             if ($filterRead === 'read') {
-                $query->whereNotNull('read_at');
+                $query->where('is_read', true);
             } elseif ($filterRead === 'unread') {
-                $query->whereNull('read_at');
+                $query->where('is_read', false);
             }
 
             // Order by newest first
@@ -37,7 +37,7 @@ class NotificationController extends Controller
                 'success' => true,
                 'data' => $notifications,
                 'unread_count' => Notification::where('user_id', $user->user_id)
-                    ->whereNull('read_at')
+                    ->where('is_read', false)
                     ->count(),
             ], 200);
 
@@ -59,7 +59,7 @@ class NotificationController extends Controller
         try {
             $user = auth()->user();
             $count = Notification::where('user_id', $user->user_id)
-                ->whereNull('read_at')
+                ->where('is_read', false)
                 ->count();
 
             return response()->json([
@@ -142,13 +142,16 @@ class NotificationController extends Controller
     {
         try {
             $user = auth()->user();
-            
+
             DB::beginTransaction();
 
             try {
                 Notification::where('user_id', $user->user_id)
-                    ->whereNull('read_at')
-                    ->update(['read_at' => now()]);
+                    ->where('is_read', false)
+                    ->update([
+                        'is_read' => true,
+                        'read_at' => now()
+                    ]);
 
                 DB::commit();
 

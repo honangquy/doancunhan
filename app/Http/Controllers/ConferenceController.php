@@ -4,10 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\HoiThao;
 use App\Models\JoinRequest;
+use App\Models\User;
 use App\Models\VaiTroNguoiDung;
+use App\Notifications\RoleApprovalRequested;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class ConferenceController extends Controller
@@ -20,10 +25,10 @@ class ConferenceController extends Controller
         $search = $request->get('search');
         $status = $request->get('status', 'all');
         $level = $request->get('level');
-        
+
         $query = HoiThao::with('khoa')
             ->where('status', 'ACTIVE'); // Chỉ hiển thị hội thảo đã được admin duyệt
-            
+
         // Search filter
         if ($search) {
             $query->where(function($q) use ($search) {
@@ -32,12 +37,12 @@ class ConferenceController extends Controller
                   ->orWhere('keywords', 'like', "%{$search}%");
             });
         }
-        
+
         // Level filter
         if ($level) {
             $query->where('level_code', $level);
         }
-        
+
         // Status filter based on dates
         if ($status !== 'all') {
             $now = now();
@@ -58,18 +63,18 @@ class ConferenceController extends Controller
                     break;
             }
         }
-        
+
         $conferences = $query->orderBy('year', 'desc')
             ->orderBy('conference_id', 'desc')
             ->paginate(12);
-            
+
         // Get filter options
         $levels = HoiThao::where('status', 'ACTIVE')
             ->distinct()
             ->pluck('level_code')
             ->filter()
             ->sort();
-            
+
         return view('conferences.index', compact('conferences', 'levels', 'search', 'status', 'level'));
     }
 
@@ -81,13 +86,13 @@ class ConferenceController extends Controller
         $conference = HoiThao::with(['khoa', 'joinRequests', 'chair', 'conferenceRequest'])
             ->where('status', 'ACTIVE') // Chỉ hiển thị hội thảo đã được duyệt
             ->findOrFail($id);
-            
+
         // Get conference statistics
         $stats = $conference->getStats();
-        
+
         // Calculate time remaining until submission deadline
         $timeRemaining = $conference->getDaysUntilSubmission();
-        
+
         return view('conferences.show', compact('conference', 'stats', 'timeRemaining'));
     }
 
@@ -96,7 +101,7 @@ class ConferenceController extends Controller
      */
     public function submitJoinRequest(Request $request, $id)
     {
-        \Log::info('Join request submission started', [
+        Log::info('Join request submission started', [
             'conference_id' => $id,
             'user_id' => Auth::id(),
             'request_data' => $request->all()
@@ -112,7 +117,7 @@ class ConferenceController extends Controller
 
         // Get role from request to determine validation rules
         $role = $request->input('role');
-        
+
         // Validate based on role
         if ($role === JoinRequest::ROLE_AUTHOR) {
             $validated = $request->validate(JoinRequest::getAuthorValidationRules());
@@ -127,20 +132,20 @@ class ConferenceController extends Controller
 
         try {
             $conference = HoiThao::findOrFail($id);
-            
+
             // Check for invitation token
             $invitationToken = $request->input('invitation_token');
             $isInvitedUser = false;
             $reviewerInvitation = null;
-            
+
             if ($invitationToken) {
-                $reviewerInvitation = \DB::table('reviewer_invitations')
+                $reviewerInvitation = DB::table('reviewer_invitations')
                     ->where('token', $invitationToken)
                     ->where('conference_id', $id)
                     ->where('status', 'pending')
                     ->where('expires_at', '>', now())
                     ->first();
-                
+
                 if ($reviewerInvitation) {
                     // Verify email matches invitation
                     if ($reviewerInvitation->email === $validated['email_contact']) {
@@ -158,7 +163,7 @@ class ConferenceController extends Controller
                     ], 422);
                 }
             }
-            
+
             // Check if conference is still open (skip check for invited users)
             if (!$isInvitedUser && !$conference->isOpen()) {
                 return response()->json([
@@ -182,7 +187,7 @@ class ConferenceController extends Controller
                     'APPROVED' => 'Yêu cầu tham gia của bạn đã được chấp thuận',
                     'REJECTED' => 'Yêu cầu tham gia của bạn đã bị từ chối trước đó'
                 };
-                
+
                 return response()->json([
                     'success' => false,
                     'message' => $statusMessage
@@ -231,27 +236,36 @@ class ConferenceController extends Controller
             // Create new join request
             $joinRequest = JoinRequest::create($joinRequestData);
 
+            // Send notification to admins
+            $admins = User::whereHas('roles', function($q) {
+                $q->where('role_code', 'ADMIN');
+            })->get();
+
+            if ($admins->count() > 0) {
+                Notification::send($admins, new RoleApprovalRequested($joinRequest));
+            }
+
             // If this was from an invitation, mark it as accepted but don't assign role yet
             if ($isInvitedUser && $reviewerInvitation) {
-                \DB::table('reviewer_invitations')
+                DB::table('reviewer_invitations')
                     ->where('token', $invitationToken)
                     ->update([
                         'status' => 'accepted'
                     ]);
-                
+
                 // Log that this join request came from an invitation
-                \Log::info('Join request from invited user (auto-approved, pending admin final approval)', [
+                Log::info('Join request from invited user (auto-approved, pending admin final approval)', [
                     'user_id' => $userId,
                     'conference_id' => $id,
                     'email' => $validated['email_contact'],
                     'invitation_token' => $invitationToken
                 ]);
-                
+
                 // Clear invitation data from session
                 session()->forget('invitation_data');
             }
 
-            $message = $isInvitedUser 
+            $message = $isInvitedUser
                 ? 'Yêu cầu tham gia đã được gửi thành công! Do bạn được mời, yêu cầu được ưu tiên xử lý. Admin sẽ duyệt và cấp quyền sớm nhất.'
                 : 'Yêu cầu tham gia đã được gửi thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.';
 
@@ -271,14 +285,14 @@ class ConferenceController extends Controller
                 'message' => 'Dữ liệu không hợp lệ',
                 'errors' => $e->errors()
             ], 422);
-            
+
         } catch (\Exception $e) {
-            \Log::error('Join request submission error: ' . $e->getMessage(), [
+            Log::error('Join request submission error: ' . $e->getMessage(), [
                 'conference_id' => $id,
                 'user_id' => Auth::id(),
                 'request_data' => $validated
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi xử lý yêu cầu. Vui lòng thử lại sau.'
@@ -316,7 +330,7 @@ class ConferenceController extends Controller
     {
         // This would be used in admin panel
         $conference = HoiThao::with(['pendingJoinRequests.user'])->findOrFail($id);
-        
+
         return view('admin.conferences.join-requests', compact('conference'));
     }
 
@@ -326,7 +340,7 @@ class ConferenceController extends Controller
     public function processJoinRequest(Request $request, $requestId)
     {
         // Log the incoming request for debugging
-        \Log::info('Join request processing started', [
+        Log::info('Join request processing started', [
             'request_id' => $requestId,
             'admin_id' => Auth::id(),
             'request_data' => $request->all(),
@@ -343,7 +357,11 @@ class ConferenceController extends Controller
         }
 
         $user = Auth::user();
-        if (!$user->hasRole('ADMIN')) {
+        $isAdmin = VaiTroNguoiDung::where('user_id', $user->user_id)
+            ->where('role_code', 'ADMIN')
+            ->exists();
+        
+        if (!$isAdmin) {
             return response()->json([
                 'success' => false,
                 'message' => 'Bạn không có quyền thực hiện hành động này'
@@ -357,21 +375,20 @@ class ConferenceController extends Controller
                 'admin_notes' => 'nullable|string|max:500'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('Join request validation failed', [
+            Log::error('Join request validation failed', [
                 'errors' => $e->errors(),
                 'request_data' => $request->all()
             ]);
-            
             return response()->json([
                 'success' => false,
-                'message' => 'Dữ liệu không hợp lệ: ' . implode(', ', array_flatten($e->errors()))
+                'message' => 'Dữ liệu không hợp lệ: ' . implode(', ', Arr::flatten($e->errors()))
             ], 422);
         }
 
         try {
             // Find the join request
             $joinRequest = JoinRequest::where('id', $requestId)->first();
-            
+
             if (!$joinRequest) {
                 return response()->json([
                     'success' => false,
@@ -388,15 +405,15 @@ class ConferenceController extends Controller
 
             // Prepare update data
             $updateData = [
-                'status' => $validated['action'] === 'approve' 
-                    ? JoinRequest::STATUS_APPROVED 
+                'status' => $validated['action'] === 'approve'
+                    ? JoinRequest::STATUS_APPROVED
                     : JoinRequest::STATUS_REJECTED,
                 'processed_by' => $user->user_id, // Use user_id explicitly
                 'processed_at' => now(),
                 'admin_notes' => $validated['admin_notes'] ?? null
             ];
 
-            \Log::info('Updating join request', [
+            Log::info('Updating join request', [
                 'request_id' => $requestId,
                 'update_data' => $updateData
             ]);
@@ -409,7 +426,7 @@ class ConferenceController extends Controller
                 try {
                     // Get the conference_id from join request (may be null for global roles)
                     $conferenceId = $joinRequest->conference_id;
-                    
+
                     // Check if user already has this role for this conference
                     $existingRole = VaiTroNguoiDung::where('user_id', $joinRequest->user_id)
                         ->where('role_code', $joinRequest->role)
@@ -430,21 +447,21 @@ class ConferenceController extends Controller
                             'conference_id' => $conferenceId,
                         ]);
 
-                        \Log::info('Role assigned successfully', [
+                        Log::info('Role assigned successfully', [
                             'user_id' => $joinRequest->user_id,
                             'role_code' => $joinRequest->role,
                             'conference_id' => $conferenceId,
                             'request_id' => $requestId
                         ]);
                     } else {
-                        \Log::info('User already has this role', [
+                        Log::info('User already has this role', [
                             'user_id' => $joinRequest->user_id,
                             'role_code' => $joinRequest->role,
                             'conference_id' => $conferenceId
                         ]);
                     }
                 } catch (\Exception $e) {
-                    \Log::error('Failed to assign role after approval', [
+                    Log::error('Failed to assign role after approval', [
                         'user_id' => $joinRequest->user_id,
                         'role_code' => $joinRequest->role,
                         'conference_id' => $joinRequest->conference_id ?? null,
@@ -456,8 +473,8 @@ class ConferenceController extends Controller
             }
 
             $actionText = $validated['action'] === 'approve' ? 'duyệt' : 'từ chối';
-            
-            \Log::info('Join request processed successfully', [
+
+            Log::info('Join request processed successfully', [
                 'request_id' => $requestId,
                 'action' => $validated['action'],
                 'admin_id' => $user->user_id
@@ -476,26 +493,26 @@ class ConferenceController extends Controller
             ]);
 
         } catch (\Illuminate\Database\QueryException $e) {
-            \Log::error('Database error in join request processing', [
+            Log::error('Database error in join request processing', [
                 'error' => $e->getMessage(),
                 'sql' => $e->getSql() ?? 'N/A',
                 'bindings' => $e->getBindings() ?? [],
                 'request_id' => $requestId
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Lỗi cơ sở dữ liệu. Vui lòng thử lại sau'
             ], 500);
-            
+
         } catch (\Exception $e) {
-            \Log::error('Unexpected error in join request processing', [
+            Log::error('Unexpected error in join request processing', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_id' => $requestId,
                 'admin_id' => Auth::id()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi không mong muốn xảy ra. Vui lòng thử lại sau'
@@ -565,20 +582,20 @@ class ConferenceController extends Controller
     public function showCFP($id)
     {
         $conference = HoiThao::findOrFail($id);
-        
+
         if (!$conference->cfp_file_path) {
             abort(404, 'Không tìm thấy file Call for Papers');
         }
-        
+
         $filePath = storage_path('app/public/' . $conference->cfp_file_path);
-        
+
         if (!file_exists($filePath)) {
             abort(404, 'File Call for Papers không tồn tại');
         }
-        
+
         $filename = 'CFP_' . $conference->title . '.pdf';
         $safeFilename = preg_replace('/[^A-Za-z0-9_\-]/', '_', $filename);
-        
+
         $headers = [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . $safeFilename . '"',
@@ -586,7 +603,7 @@ class ConferenceController extends Controller
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'SAMEORIGIN',
         ];
-        
+
         return response()->file($filePath, $headers);
     }
 }

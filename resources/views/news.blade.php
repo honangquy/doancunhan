@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         * {
             font-family: 'Inter', sans-serif;
@@ -25,12 +25,12 @@
         <div class="container mx-auto px-4 py-3">
             <div class="flex items-center space-x-6">
                 <a href="{{ route('home') }}" class="flex-shrink-0 hover:opacity-90 transition">
-                    <img src="https://huit.edu.vn/Images/Documents/N00CT/logo-huit-web-chinh-moi-mau-xanh-02.svg?h=80" 
+                    <img src="https://huit.edu.vn/Images/Documents/N00CT/logo-huit-web-chinh-moi-mau-xanh-02.svg?h=80"
                          alt="HUIT Logo" class="h-12 w-auto">
                 </a>
                 <div class="flex-1 flex flex-col items-center text-center space-y-1">
                     <span class="text-lg md:text-xl font-bold text-blue-600 uppercase tracking-wide">BỘ CÔNG THƯƠNG</span>
-                    <span class="text-xl md:text-2xl lg:text-3xl font-bold text-blue-700 uppercase">TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TP. HỒ CHÍ MINH</span>
+                    <span class="text-xl md:text-2xl lg:text-3xl font-bold text-blue-700 uppercase">Trường Đại học Công Thương TP. Hồ Chí Minh TP. HỒ CHÍ MINH</span>
                 </div>
             </div>
         </div>
@@ -47,16 +47,16 @@
                         <div class="text-xs text-blue-200">Hệ thống quản lý hội thảo</div>
                     </div>
                 </a>
-                
+
                 <div class="flex items-center space-x-8">
                     <a href="{{ route('home') }}" class="hover:text-orange-300 transition font-medium">Hội thảo</a>
                     <a href="{{ route('news.index') }}" class="text-orange-300 font-bold">Tin tức</a>
                     <a href="{{ route('process') }}" class="hover:text-orange-300 transition font-medium">Quy trình</a>
                     <a href="{{ route('support') }}" class="hover:text-orange-300 transition font-medium">Hỗ trợ</a>
-                    
+
                     @auth
                         <a href="{{ route('dashboard') }}" class="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-full font-semibold transition">
-                            Hồ Năng Quý
+                            {{ Auth::user()->full_name ?? Auth::user()->email }}
                         </a>
                     @else
                         <a href="{{ route('login') }}" class="hover:text-orange-300 transition font-medium">Đăng nhập</a>
@@ -78,12 +78,12 @@
             <p class="text-xl text-blue-100 mb-8">
                 Cập nhật tin tức mới nhất về các hội thảo và hoạt động khoa học tại HUIT
             </p>
-            
+
             <!-- Search Box -->
             <div class="max-w-2xl mx-auto">
                 <div class="relative">
-                    <input type="text" 
-                           placeholder="Tìm kiếm tin tức, sự kiện..." 
+                    <input type="text"
+                           placeholder="Tìm kiếm tin tức, sự kiện..."
                            class="w-full px-6 py-4 rounded-full text-gray-800 focus:outline-none focus:ring-4 focus:ring-blue-300">
                     <button class="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-full font-semibold transition">
                         Tìm kiếm
@@ -106,7 +106,7 @@
                     <div class="text-3xl font-bold text-blue-600">{{ $statistics['conferences'] ?? 0 }}</div>
                     <div class="text-gray-600 text-sm">Hội thảo</div>
                 </div>
-                
+
                 <div class="text-center p-6 bg-green-50 rounded-lg">
                     <div class="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
                         <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
@@ -117,7 +117,7 @@
                     <div class="text-3xl font-bold text-green-600">{{ $statistics['papers'] ?? 0 }}</div>
                     <div class="text-gray-600 text-sm">Bài báo</div>
                 </div>
-                
+
                 <div class="text-center p-6 bg-purple-50 rounded-lg">
                     <div class="w-16 h-16 mx-auto mb-4 bg-purple-100 rounded-full flex items-center justify-center">
                         <svg class="w-8 h-8 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
@@ -127,7 +127,7 @@
                     <div class="text-3xl font-bold text-purple-600">{{ $statistics['reviewers'] ?? 0 }}</div>
                     <div class="text-gray-600 text-sm">Phản biện</div>
                 </div>
-                
+
                 <div class="text-center p-6 bg-orange-50 rounded-lg">
                     <div class="w-16 h-16 mx-auto mb-4 bg-orange-100 rounded-full flex items-center justify-center">
                         <svg class="w-8 h-8 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
@@ -150,7 +150,7 @@
                     Xem tất cả →
                 </a>
             </div>
-            
+
             <div class="grid md:grid-cols-3 gap-6">
                 @forelse($recentNews as $news)
                 <div class="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition">
@@ -201,7 +201,7 @@
                     Xem tất cả →
                 </a>
             </div>
-            
+
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($recentConferences as $conf)
                 <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition">
@@ -221,7 +221,7 @@
                             {{ $conf->paper_count }} bài báo
                         </div>
                     </div>
-                    <a href="{{ route('home') }}#conference-{{ $conf->conference_id }}" class="mt-4 inline-block text-blue-600 hover:text-blue-700 font-semibold text-sm">
+                    <a href="{{ route('conferences.show', $conf->conference_id) }}" class="mt-4 inline-block text-blue-600 hover:text-blue-700 font-semibold text-sm">
                         Xem chi tiết →
                     </a>
                 </div>

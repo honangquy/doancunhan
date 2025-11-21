@@ -12,18 +12,21 @@ class NotificationTemplate extends Model
     protected $table = 'notification_templates';
     protected $primaryKey = 'template_id';
 
-    // Schema cũ: code, title, body, default_channels, variables
+    // Schema mới: template_code, template_name, event_type, days_before, subject, body_html, body_text
     protected $fillable = [
-        'code',
-        'title',
-        'body',
-        'default_channels',
-        'variables'
+        'template_code',
+        'template_name',
+        'event_type',
+        'days_before',
+        'subject',
+        'body_html',
+        'body_text',
+        'is_active'
     ];
 
     protected $casts = [
-        'default_channels' => 'array',
-        'variables' => 'array'
+        'is_active' => 'boolean',
+        'days_before' => 'integer'
     ];
 
     /**
@@ -31,8 +34,8 @@ class NotificationTemplate extends Model
      */
     public function render(array $variables): array
     {
-        $subject = $this->title; // title chính là subject trong schema cũ
-        $body = $this->body;
+        $subject = $this->subject; // Dùng field 'subject' từ schema mới
+        $body = $this->body_html;  // Dùng field 'body_html' từ schema mới
 
         foreach ($variables as $key => $value) {
             $placeholder = '{{' . $key . '}}';

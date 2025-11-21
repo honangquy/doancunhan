@@ -4,9 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\YeuCauHoiThao;
 use App\Models\ThemVienBoSung;
+use App\Models\User;
+use App\Notifications\ConferenceApprovalRequested;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class ConferenceRequestController extends Controller
@@ -100,7 +104,7 @@ class ConferenceRequestController extends Controller
                 ]);
 
                 // Parse and store co-chairs
-                \Log::info('[WEB] Processing co-chairs', [
+                Log::info('[WEB] Processing co-chairs', [
                     'has_co_chairs' => $request->has('co_chairs'),
                     'co_chairs_value' => $request->co_chairs,
                     'co_chairs_type' => gettype($request->co_chairs)
@@ -108,13 +112,13 @@ class ConferenceRequestController extends Controller
 
                 if ($request->has('co_chairs') && $request->co_chairs) {
                     $coChairs = json_decode($request->co_chairs, true);
-                    
-                    \Log::info('[WEB] Decoded co-chairs', ['coChairs' => $coChairs, 'is_array' => is_array($coChairs)]);
-                    
+
+                    Log::info('[WEB] Decoded co-chairs', ['coChairs' => $coChairs, 'is_array' => is_array($coChairs)]);
+
                     if (is_array($coChairs)) {
                         foreach ($coChairs as $index => $coChair) {
-                            \Log::info("[WEB] Processing co-chair #{$index}", $coChair);
-                            
+                            Log::info("[WEB] Processing co-chair #{$index}", $coChair);
+
                             if (!empty($coChair['fullname']) && !empty($coChair['email'])) {
                                 $created = ThemVienBoSung::create([
                                     'request_id' => $conferenceRequest->request_id,
@@ -122,17 +126,26 @@ class ConferenceRequestController extends Controller
                                     'email' => $coChair['email'],
                                     'affiliation' => $coChair['affiliation'] ?? null,
                                 ]);
-                                \Log::info("[WEB] Co-chair created successfully", ['co_chair_id' => $created->co_chair_id]);
+                                Log::info("[WEB] Co-chair created successfully", ['co_chair_id' => $created->co_chair_id]);
                             } else {
-                                \Log::warning("[WEB] Co-chair skipped - missing required fields", $coChair);
+                                Log::warning("[WEB] Co-chair skipped - missing required fields", $coChair);
                             }
                         }
                     }
                 } else {
-                    \Log::info('[WEB] No co-chairs to process');
+                    Log::info('[WEB] No co-chairs to process');
                 }
 
                 DB::commit();
+
+                // Send notification to admins
+                $admins = User::whereHas('roles', function($q) {
+                    $q->where('role_code', 'ADMIN');
+                })->get();
+
+                if ($admins->count() > 0) {
+                    Notification::send($admins, new ConferenceApprovalRequested($conferenceRequest));
+                }
 
                 return response()->json([
                     'success' => true,
@@ -142,12 +155,12 @@ class ConferenceRequestController extends Controller
 
             } catch (\Exception $e) {
                 DB::rollback();
-                
+
                 // Delete uploaded file if database operation failed
                 if (isset($filePath)) {
                     Storage::disk('public')->delete($filePath);
                 }
-                
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Database error: ' . $e->getMessage(),

@@ -3,28 +3,35 @@
 @section('title', 'Tạo tin tức mới')
 
 @section('content')
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3">Tạo tin tức mới</h1>
-        <a href="{{ route('chair.news.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Quay lại
+<div class="p-6">
+    <div class="mb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Tạo tin tức mới</h1>
+            <p class="text-gray-600 mt-1">Thêm tin tức, thông báo hoặc sự kiện mới</p>
+        </div>
+        <a href="{{ route('chair.news.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg inline-flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Quay lại
         </a>
     </div>
 
-    <div class="card">
-        <div class="card-body">
-            <form action="{{ route('chair.news.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @include('chair.news.form')
-                
-                <div class="d-flex justify-content-end gap-2 mt-4">
-                    <a href="{{ route('chair.news.index') }}" class="btn btn-secondary">Hủy</a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane me-2"></i>Gửi tin tức
-                    </button>
-                </div>
-            </form>
+    <form action="{{ route('chair.news.store') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        @include('chair.news.form')
+
+        <div class="flex justify-end space-x-3 mt-6">
+            <a href="{{ route('chair.news.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg">
+                Hủy
+            </a>
+            <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg inline-flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                </svg>
+                Tạo tin tức
+            </button>
         </div>
-    </div>
+    </form>
 </div>
 @endsection

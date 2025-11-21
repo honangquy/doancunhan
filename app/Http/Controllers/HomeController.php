@@ -13,16 +13,16 @@ class HomeController extends Controller
     {
         // Get statistics for homepage hero section
         $statistics = $this->getStatistics();
-        
-        // Get recent conferences for featured section  
+
+        // Get recent conferences for featured section
         $recentConferences = $this->getRecentConferences();
-        
+
         // Get recent papers with authors
         $recentPapers = $this->getRecentPapers();
-        
+
         // Get user-specific data if authenticated
         $userData = Auth::check() ? $this->getUserData() : null;
-        
+
         return view('home', [
             'title' => 'Trang chủ - HUIT Conferences',
             'statistics' => $statistics,
@@ -31,7 +31,7 @@ class HomeController extends Controller
             'userData' => $userData
         ]);
     }
-    
+
     /**
      * Search conferences via AJAX
      */
@@ -41,13 +41,13 @@ class HomeController extends Controller
         $status = $request->get('status', 'all');
         $sortBy = $request->get('sortBy', 'year');
         $sortOrder = $request->get('sortOrder', 'desc');
-        
+
         $query = DB::table('hoithao as h')
             ->leftJoin('baibao as b', 'h.conference_id', '=', 'b.conference_id')
             ->select(
                 'h.conference_id',
                 'h.title',
-                'h.start_date', 
+                'h.start_date',
                 'h.end_date',
                 'h.deadline_submission',
                 'h.year',
@@ -56,7 +56,7 @@ class HomeController extends Controller
             )
             ->where('h.status', 'ACTIVE') // Chỉ tìm kiếm trong các hội thảo đã được duyệt
             ->groupBy('h.conference_id', 'h.title', 'h.start_date', 'h.end_date', 'h.deadline_submission', 'h.year', 'h.status');
-            
+
         // Apply search filter
         if (!empty($search)) {
             $query->where(function($q) use ($search) {
@@ -64,7 +64,7 @@ class HomeController extends Controller
                   ->orWhere('h.description', 'LIKE', "%{$search}%");
             });
         }
-        
+
         // Apply status filter
         if ($status !== 'all') {
             $now = now();
@@ -81,7 +81,7 @@ class HomeController extends Controller
                     break;
             }
         }
-        
+
         // Apply sorting
         switch ($sortBy) {
             case 'title':
@@ -97,45 +97,45 @@ class HomeController extends Controller
                 $query->orderBy('h.year', $sortOrder)
                       ->orderBy('h.conference_id', 'desc');
         }
-        
+
         $conferences = $query->limit(20)->get()
             ->map(function ($conference) {
                 // Determine conference status
                 $now = now();
                 $submissionDeadline = $conference->deadline_submission ? Carbon::parse($conference->deadline_submission) : null;
                 $startDate = $conference->start_date ? Carbon::parse($conference->start_date) : null;
-                
+
                 if ($submissionDeadline && $now->lt($submissionDeadline)) {
                     $conference->status_display = 'open';
                     $conference->status_text = 'Đang mở';
                     $conference->status_class = 'bg-green-500 text-white';
                 } elseif ($startDate && $now->lt($startDate)) {
-                    $conference->status_display = 'closed'; 
+                    $conference->status_display = 'closed';
                     $conference->status_text = 'Hết hạn nộp';
                     $conference->status_class = 'bg-orange-500 text-white';
                 } else {
                     $conference->status_display = 'ended';
-                    $conference->status_text = 'Đã kết thúc'; 
+                    $conference->status_text = 'Đã kết thúc';
                     $conference->status_class = 'bg-gray-500 text-white';
                 }
-                
+
                 $conference->formatted_dates = $this->formatConferenceDates($conference);
                 return $conference;
             });
-            
+
         return response()->json([
             'conferences' => $conferences,
             'total' => $conferences->count()
         ]);
     }
-    
+
     /**
      * Get conference counts by status for filter buttons
      */
     public function getConferenceCounts()
     {
         $now = now();
-        
+
         $counts = [
             'all' => DB::table('hoithao')->count(),
             'open' => DB::table('hoithao')->where('deadline_submission', '>', $now)->count(),
@@ -145,10 +145,10 @@ class HomeController extends Controller
                 ->count(),
             'ended' => DB::table('hoithao')->where('start_date', '<=', $now)->count()
         ];
-        
+
         return response()->json($counts);
     }
-    
+
     /**
      * Get system statistics for homepage hero section
      */
@@ -174,7 +174,7 @@ class HomeController extends Controller
                 ->count()
         ];
     }
-    
+
     /**
      * Get recent conferences for featured section
      */
@@ -203,7 +203,7 @@ class HomeController extends Controller
                 $now = now();
                 $submissionDeadline = $conference->deadline_submission ? Carbon::parse($conference->deadline_submission) : null;
                 $startDate = $conference->start_date ? Carbon::parse($conference->start_date) : null;
-                
+
                 if ($submissionDeadline && $now->lt($submissionDeadline)) {
                     $conference->status_display = 'open';
                     $conference->status_text = 'Đang mở';
@@ -217,11 +217,11 @@ class HomeController extends Controller
                     $conference->status_text = 'Đã kết thúc';
                     $conference->status_class = 'bg-gray-500 text-white';
                 }
-                
+
                 return $conference;
             });
     }
-    
+
     /**
      * Get recent papers for news section
      */
@@ -242,31 +242,31 @@ class HomeController extends Controller
             ->limit(3)
             ->get();
     }
-    
+
     /**
      * Get user-specific data when authenticated
      */
     private function getUserData()
     {
         $userId = Auth::id();
-        
+
         // Get user's role information
         $userRoles = DB::table('VaiTronguoidung as vt')
             ->join('LoaiVaiTro as lt', 'vt.role_code', '=', 'lt.role_code')
             ->where('vt.user_id', $userId)
             ->select('lt.role_code', 'lt.role_name')
             ->get();
-            
+
         // Get user's papers if author
         $userPapers = DB::table('baibao')
             ->where('submitter_id', $userId)
             ->count();
-            
+
         // Get user's assignments if reviewer
         $userAssignments = DB::table('phancongphanbien')
             ->where('reviewer_id', $userId)
             ->count();
-            
+
         return [
             'roles' => $userRoles,
             'paperCount' => $userPapers,
@@ -274,7 +274,7 @@ class HomeController extends Controller
             'dashboardUrl' => $this->getDashboardUrl($userRoles->first()->role_code ?? 'AUTHOR')
         ];
     }
-    
+
     /**
      * Get appropriate dashboard URL based on user role
      */
@@ -286,7 +286,7 @@ class HomeController extends Controller
             'CHAIR' => route('chair.dashboard'),
             'ADMIN' => route('admin.dashboard')
         ];
-        
+
         return $roleMap[$roleCode] ?? route('author.dashboard');
     }
 
@@ -309,10 +309,10 @@ class HomeController extends Controller
     {
         // Get statistics
         $statistics = $this->getStatistics();
-        
+
         // Get recent conferences
         $recentConferences = $this->getRecentConferences();
-        
+
         // Get recent news/announcements
         $recentNews = DB::table('news')
             ->where('status', 'PUBLISHED')
@@ -323,10 +323,10 @@ class HomeController extends Controller
             ->orderBy('published_at', 'desc')
             ->limit(6)
             ->get();
-        
+
         // Get user-specific data if authenticated
         $userData = Auth::check() ? $this->getUserData() : null;
-        
+
         return view('news', [
             'title' => 'Tin tức & Sự kiện',
             'statistics' => $statistics,
@@ -340,7 +340,7 @@ class HomeController extends Controller
     {
         // Get user-specific data if authenticated
         $userData = Auth::check() ? $this->getUserData() : null;
-        
+
         return view('process', [
             'title' => 'Quy trình',
             'userData' => $userData
@@ -351,13 +351,13 @@ class HomeController extends Controller
     {
         // Get user-specific data if authenticated
         $userData = Auth::check() ? $this->getUserData() : null;
-        
+
         return view('support', [
             'title' => 'Hỗ trợ',
             'userData' => $userData
         ]);
     }
-    
+
     /**
      * Get user notifications via AJAX
      */
@@ -366,21 +366,21 @@ class HomeController extends Controller
         if (!Auth::check()) {
             return response()->json(['notifications' => [], 'unreadCount' => 0]);
         }
-        
+
         $userId = Auth::id();
         $limit = $request->get('limit', 10);
-        
+
         $notifications = DB::table('notifications')
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
-            
+
         $unreadCount = DB::table('notifications')
             ->where('user_id', $userId)
             ->whereNull('read_at')
             ->count();
-            
+
         return response()->json([
             'notifications' => $notifications->map(function($notification) {
                 return [
@@ -397,7 +397,7 @@ class HomeController extends Controller
             'unreadCount' => $unreadCount
         ]);
     }
-    
+
     /**
      * Mark notification as read
      */
@@ -406,16 +406,16 @@ class HomeController extends Controller
         if (!Auth::check()) {
             return response()->json(['success' => false], 401);
         }
-        
+
         $updated = DB::table('notifications')
             ->where('id', $id)
             ->where('user_id', Auth::id())
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
-            
+
         return response()->json(['success' => $updated > 0]);
     }
-    
+
     /**
      * Mark all notifications as read
      */
@@ -424,15 +424,15 @@ class HomeController extends Controller
         if (!Auth::check()) {
             return response()->json(['success' => false], 401);
         }
-        
+
         $updated = DB::table('notifications')
             ->where('user_id', Auth::id())
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
-            
+
         return response()->json(['success' => true, 'marked' => $updated]);
     }
-    
+
     /**
      * Create sample notifications for testing
      */
@@ -441,7 +441,7 @@ class HomeController extends Controller
         if (!Auth::check()) {
             return response()->json(['success' => false], 401);
         }
-        
+
         $userId = Auth::id();
         $sampleNotifications = [
             [
@@ -469,21 +469,21 @@ class HomeController extends Controller
                 'created_at' => now()->subHours(6)
             ]
         ];
-        
+
         foreach ($sampleNotifications as $notification) {
             DB::table('notifications')->insert($notification);
         }
-        
+
         return response()->json(['success' => true, 'created' => count($sampleNotifications)]);
     }
-    
+
     /**
      * Helper function to format time ago
      */
     private function timeAgo($datetime)
     {
         $time = time() - strtotime($datetime);
-        
+
         if ($time < 60) {
             return 'Vừa xong';
         } elseif ($time < 3600) {

@@ -14,10 +14,10 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -85,7 +85,7 @@
 
             <!-- Navigation -->
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <a href="{{ route('chair.dashboard') }}" 
+                <a href="{{ route('chair.dashboard') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.dashboard') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
@@ -93,7 +93,7 @@
                     <span>Dashboard</span>
                 </a>
 
-                <a href="{{ route('chair.conferences.index') }}" 
+                <a href="{{ route('chair.conferences.index') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.conferences*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
@@ -101,7 +101,7 @@
                     <span>Quản lý hội thảo</span>
                 </a>
 
-                <a href="{{ route('chair.papers') }}" 
+                <a href="{{ route('chair.papers') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.papers*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -109,7 +109,7 @@
                     <span>Quản lý bài báo</span>
                 </a>
 
-                <a href="{{ route('chair.announcements.index') }}" 
+                <a href="{{ route('chair.announcements.index') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.announcements*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path>
@@ -117,7 +117,7 @@
                     <span>Quản lý thông báo</span>
                 </a>
 
-                <a href="{{ route('chair.news.index') }}" 
+                <a href="{{ route('chair.news.index') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.news*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
@@ -128,7 +128,7 @@
                 <!-- Phân công Dropdown Menu -->
                 <div x-data="{ open: {{ request()->routeIs('chair.reviewers*') || request()->routeIs('chair.assignments*') || request()->routeIs('chair.coi*') ? 'true' : 'false' }} }" class="space-y-1">
                     <!-- Main Menu Item -->
-                    <button @click="open = !open" 
+                    <button @click="open = !open"
                             :class="open ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500'"
                             class="w-full flex items-center justify-between px-4 py-3 rounded-lg transition text-left">
                         <div class="flex items-center space-x-3">
@@ -143,16 +143,16 @@
                     </button>
 
                     <!-- Submenu Items -->
-                    <div x-show="open" x-transition:enter="transition ease-out duration-200" 
-                         x-transition:enter-start="opacity-0 transform scale-95" 
+                    <div x-show="open" x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 transform scale-95"
                          x-transition:enter-end="opacity-100 transform scale-100"
                          x-transition:leave="transition ease-in duration-150"
                          x-transition:leave-start="opacity-100 transform scale-100"
                          x-transition:leave-end="opacity-0 transform scale-95"
                          class="ml-6 space-y-1">
-                        
+
                         <!-- Mời reviewer -->
-                        <a href="{{ route('chair.reviewers.index') }}" 
+                        <a href="{{ route('chair.reviewers.index') }}"
                            class="flex items-center space-x-3 px-4 py-2 rounded-lg transition text-sm {{ request()->routeIs('chair.reviewers*') ? 'bg-orange-400 font-medium' : 'hover:bg-orange-400' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -161,7 +161,7 @@
                         </a>
 
                         <!-- Phân công phản biện -->
-                        <a href="{{ route('chair.assignments.index') }}" 
+                        <a href="{{ route('chair.assignments.index') }}"
                            class="flex items-center space-x-3 px-4 py-2 rounded-lg transition text-sm {{ request()->routeIs('chair.assignments*') ? 'bg-orange-400 font-medium' : 'hover:bg-orange-400' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
@@ -170,7 +170,7 @@
                         </a>
 
                         <!-- Kiểm tra COI (submenu) -->
-                        <a href="{{ route('chair.coi.index') }}" 
+                        <a href="{{ route('chair.coi.index') }}"
                            class="flex items-center space-x-3 px-4 py-2 rounded-lg transition text-sm {{ request()->routeIs('chair.coi*') ? 'bg-orange-400 font-medium' : 'hover:bg-orange-400' }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -180,7 +180,7 @@
                     </div>
                     </div>
 
-                <a href="{{ route('chair.bidding-settings') }}" 
+                <a href="{{ route('chair.bidding-settings') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.bidding-settings*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
@@ -189,7 +189,7 @@
                     <span>Cài đặt Bidding</span>
                 </a>
 
-                <a href="{{ route('chair.reminders.index') }}" 
+                <a href="{{ route('chair.reminders.index') }}"
                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition {{ request()->routeIs('chair.reminders*') ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -197,8 +197,8 @@
                     <span>Reminder Tự Động</span>
                 </a>
 
-                <a href="#" 
-                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition hover:bg-orange-500">
+                <a href="{{ session('current_conference_id') ? route('chair.reports.index', ['conference_id' => session('current_conference_id')]) : route('chair.reports.index') }}"
+                   class="flex items-center space-x-3 px-4 py-3 rounded-lg transition hover:bg-orange-500 {{ request()->routeIs('chair.reports.*') ? 'bg-orange-500' : '' }}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
@@ -241,19 +241,17 @@
                         notifications: [],
                         unreadCount: 0,
                         loading: false,
-                        
+
                         async loadNotifications() {
                             this.loading = true;
                             try {
-                                console.log('Loading notifications from /web/notifications');
-                                const response = await fetch('/web/notifications');
-                                console.log('Response status:', response.status);
-                                
+                                const response = await fetch('{{ route('chair.notifications.unread') }}');
+
                                 if (response.ok) {
                                     const data = await response.json();
                                     console.log('Notifications loaded:', data);
                                     this.notifications = data.notifications;
-                                    this.unreadCount = data.unreadCount;
+                                    this.unreadCount = data.unread_count;
                                 } else {
                                     const errorText = await response.text();
                                     console.error('Failed to load notifications:', response.status, errorText);
@@ -264,14 +262,14 @@
                                 this.loading = false;
                             }
                         },
-                        
+
                         async markAsRead(id) {
                             try {
-                                const response = await fetch(`/web/notifications/${id}/read`, {
-                                    method: 'PATCH',
+                                const response = await fetch(`/chair/notifications/${id}/read`, {
+                                    method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
                                     }
                                 });
                                 if (response.ok) {
@@ -281,14 +279,14 @@
                                 console.error('Error marking notification as read:', error);
                             }
                         },
-                        
+
                         async markAllAsRead() {
                             try {
-                                const response = await fetch('/web/notifications/read-all', {
-                                    method: 'PATCH',
+                                const response = await fetch('{{ route('chair.notifications.mark-all-read') }}', {
+                                    method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
                                     }
                                 });
                                 if (response.ok) {
@@ -304,12 +302,12 @@
                             <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                             </svg>
-                            <span x-show="unreadCount > 0" 
+                            <span x-show="unreadCount > 0"
                                   x-text="unreadCount"
                                   class="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
                             </span>
                         </button>
-                        
+
                         <!-- Notifications Dropdown -->
                         <div x-show="showNotifications"
                              x-transition:enter="transition ease-out duration-300"
@@ -323,13 +321,13 @@
                              style="display: none;">
                             <div class="p-4 border-b border-gray-100 flex justify-between items-center">
                                 <h3 class="font-semibold text-gray-800">Thông báo</h3>
-                                <button @click="markAllAsRead()" 
+                                <button @click="markAllAsRead()"
                                         x-show="unreadCount > 0"
                                         class="text-xs text-orange-600 hover:text-orange-700 font-medium">
                                     Đánh dấu tất cả đã đọc
                                 </button>
                             </div>
-                            
+
                             <div class="max-h-96 overflow-y-auto">
                                 <template x-if="loading">
                                     <div class="p-8 text-center">
@@ -340,7 +338,7 @@
                                         <p class="mt-2 text-sm text-gray-500">Đang tải...</p>
                                     </div>
                                 </template>
-                                
+
                                 <template x-if="!loading && notifications.length === 0">
                                     <div class="p-8 text-center">
                                         <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -349,7 +347,7 @@
                                         <p class="text-gray-500 text-sm">Không có thông báo mới</p>
                                     </div>
                                 </template>
-                                
+
                                 <template x-for="notif in notifications" :key="notif.id">
                                     <a :href="`/web/notifications/${notif.id}`"
                                        class="block p-4 hover:bg-gray-50 transition border-b border-gray-50 last:border-0"
@@ -381,7 +379,7 @@
                                     </div>
                                 </template>
                             </div>
-                            
+
                             <div class="p-3 border-t border-gray-100 text-center">
                                 <a href="#" class="text-sm text-orange-600 hover:text-orange-700 font-medium">
                                     Xem tất cả thông báo

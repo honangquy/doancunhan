@@ -24,7 +24,7 @@ class ConferenceRequestController extends Controller
     {
         try {
             $user = auth()->user();
-            
+
             $query = YeuCauHoiThao::with(['hoiThao', 'requester', 'approver', 'coChairs']);
 
             // Filter by status
@@ -139,16 +139,16 @@ class ConferenceRequestController extends Controller
 
                 if ($request->has('co_chairs') && $request->co_chairs) {
                     // Handle both JSON string and array
-                    $coChairs = is_string($request->co_chairs) 
-                        ? json_decode($request->co_chairs, true) 
+                    $coChairs = is_string($request->co_chairs)
+                        ? json_decode($request->co_chairs, true)
                         : $request->co_chairs;
-                    
+
                     \Log::info('Decoded co-chairs', ['coChairs' => $coChairs, 'is_array' => is_array($coChairs)]);
-                    
+
                     if (is_array($coChairs)) {
                         foreach ($coChairs as $index => $coChair) {
                             \Log::info("Processing co-chair #{$index}", $coChair);
-                            
+
                             if (!empty($coChair['fullname']) && !empty($coChair['email'])) {
                                 $created = ThemVienBoSung::create([
                                     'request_id' => $conferenceRequest->request_id,
@@ -501,7 +501,6 @@ class ConferenceRequestController extends Controller
                 'title' => 'required|string|max:255',
                 'acronym' => 'required|string|max:50',
                 'year' => 'required|integer|min:' . date('Y') . '|max:' . (date('Y') + 5),
-                'conference_name' => 'nullable|string|max:255',
                 'description' => 'required|string|max:500',
                 'detailed_description' => 'required|string|max:2000',
                 'keywords' => 'nullable|string|max:1000',
@@ -516,9 +515,7 @@ class ConferenceRequestController extends Controller
                 'location' => 'required|string|max:255',
                 'contact_email' => 'required|email|max:255',
                 'contact_phone' => 'nullable|string|max:20',
-                'chair_name' => 'required|string|max:255',
-                'chair_email' => 'required|email|max:255',
-                'cfp_url' => 'nullable|url|max:500',
+                'cfp_file_path' => 'nullable|string|max:500',
                 'submission_guidelines' => 'required|string|max:2000',
             ]);
 
@@ -530,22 +527,41 @@ class ConferenceRequestController extends Controller
                 ], 422);
             }
 
+            // Remove faculty_id/faculty_name from request if sent (we'll set faculty_id manually based on conference request)
+            $requestData = $request->except(['faculty_id', 'faculty_name', 'level_code', 'chair_id', 'conference_request_id']);
+
             DB::beginTransaction();
 
             try {
                 // Get or create conference for this request
                 $conference = $conferenceRequest->hoiThao;
 
+                // Lookup faculty_id from faculty_name in the request
+                $facultyId = null;
+                if ($conferenceRequest->faculty_name) {
+                    $faculty = \App\Models\Khoa::where('faculty_name', 'like', '%' . $conferenceRequest->faculty_name . '%')->first();
+                    $facultyId = $faculty ? $faculty->faculty_id : null;
+                    \Log::info('Faculty lookup:', [
+                        'faculty_name' => $conferenceRequest->faculty_name,
+                        'found_faculty' => $faculty ? $faculty->toArray() : null,
+                        'faculty_id' => $facultyId
+                    ]);
+                }
+                // Fallback to user's faculty_id if not found
+                if (!$facultyId) {
+                    $facultyId = $user->faculty_id ?? null;
+                    \Log::info('Using user faculty_id:', ['faculty_id' => $facultyId]);
+                }
+
                 if (!$conference) {
                     // Create HoiThao record if it doesn't exist
                     $conference = HoiThao::create([
                         'conference_request_id' => $conferenceRequest->request_id,
                         'level_code' => $conferenceRequest->level_code,
-                        'faculty_id' => $user->faculty_id ?? null,
+                        'faculty_id' => $facultyId,
                         'title' => $request->title,
                         'acronym' => $request->acronym,
                         'year' => $request->year,
-                        'conference_name' => $request->conference_name,
                         'description' => $request->description,
                         'detailed_description' => $request->detailed_description,
                         'keywords' => $request->keywords,
@@ -560,11 +576,9 @@ class ConferenceRequestController extends Controller
                         'location' => $request->location,
                         'contact_email' => $request->contact_email,
                         'contact_phone' => $request->contact_phone,
-                        'chair_name' => $request->chair_name,
-                        'chair_email' => $request->chair_email,
-                        'cfp_url' => $request->cfp_url,
+                        'cfp_file_path' => $request->cfp_file_path,
                         'submission_guidelines' => $request->submission_guidelines,
-                        'status' => 'OPEN',
+                        'status' => 'PENDING_ADMIN_APPROVAL',
                         'chair_id' => $user->user_id,
                     ]);
                 } else {
@@ -573,7 +587,6 @@ class ConferenceRequestController extends Controller
                         'title' => $request->title,
                         'acronym' => $request->acronym,
                         'year' => $request->year,
-                        'conference_name' => $request->conference_name,
                         'description' => $request->description,
                         'detailed_description' => $request->detailed_description,
                         'keywords' => $request->keywords,
@@ -588,11 +601,9 @@ class ConferenceRequestController extends Controller
                         'location' => $request->location,
                         'contact_email' => $request->contact_email,
                         'contact_phone' => $request->contact_phone,
-                        'chair_name' => $request->chair_name,
-                        'chair_email' => $request->chair_email,
-                        'cfp_url' => $request->cfp_url,
+                        'cfp_file_path' => $request->cfp_file_path,
                         'submission_guidelines' => $request->submission_guidelines,
-                        'status' => 'OPEN',
+                        'status' => 'PENDING_ADMIN_APPROVAL',
                         'chair_id' => $user->user_id,
                     ]);
                 }
@@ -601,6 +612,9 @@ class ConferenceRequestController extends Controller
                 $conferenceRequest->update([
                     'status' => 'CONFIGURED',
                 ]);
+
+                // Note: CHAIR role is automatically created by HoiThaoObserver
+                // when the conference is created via HoiThao::create()
 
                 DB::commit();
 
