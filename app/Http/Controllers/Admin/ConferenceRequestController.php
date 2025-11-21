@@ -261,25 +261,46 @@ class ConferenceRequestController extends Controller
         $request->validate([
             'admin_note' => 'nullable|string|max:1000',
         ]);
-        
-        $conference->update([
-            'status' => 'ACTIVE',
-            'admin_approver_id' => auth()->user()->user_id,
-            'admin_note' => $request->admin_note,
-            'admin_approved_at' => now(),
-        ]);
-        
+
+        // Use transaction to ensure both conference approval and role assignment succeed
+        \DB::transaction(function () use ($conference, $request) {
+            $conference->update([
+                'status' => 'ACTIVE',
+                'admin_approver_id' => auth()->user()->user_id,
+                'admin_note' => $request->admin_note,
+                'admin_approved_at' => now(),
+                'approved_by' => auth()->user()->user_id,
+                'approved_at' => now(),
+            ]);
+
+            // Assign CHAIR role for this specific conference
+            if ($conference->chair_id) {
+                \DB::table('vaitronguoidung')->updateOrInsert(
+                    [
+                        'user_id' => $conference->chair_id,
+                        'role_code' => 'CHAIR',
+                        'conference_id' => $conference->conference_id
+                    ]
+                );
+                
+                \Log::info('Chair role assigned', [
+                    'conference_id' => $conference->conference_id,
+                    'chair_id' => $conference->chair_id
+                ]);
+            }
+        });
+
         // Return JSON response for AJAX requests
         if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Hội thảo đã được kích hoạt và hiển thị trên trang chủ.',
+                'message' => 'Hội thảo đã được kích hoạt và Chair đã được phân quyền.',
                 'conference' => $conference
             ]);
         }
-        
+
         return redirect()->route('admin.configured-conferences.index')
-                        ->with('success', 'Hội thảo đã được kích hoạt và hiển thị trên trang chủ.');
+                        ->with('success', 'Hội thảo đã được kích hoạt và Chair đã được phân quyền.');
     }
 
     /**

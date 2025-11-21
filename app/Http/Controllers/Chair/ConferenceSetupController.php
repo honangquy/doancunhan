@@ -130,6 +130,20 @@ class ConferenceSetupController extends Controller
                 $cfpFilePath = $request->file('cfp_file')->store('conference-cfp', 'public');
             }
 
+            // Get faculty_id from faculty_name
+            $facultyId = null;
+            if ($conferenceRequest->faculty_name) {
+                $faculty = DB::table('khoa')
+                    ->where('faculty_name', $conferenceRequest->faculty_name)
+                    ->first();
+                $facultyId = $faculty ? $faculty->faculty_id : null;
+                
+                \Log::info('Faculty lookup', [
+                    'faculty_name' => $conferenceRequest->faculty_name,
+                    'found_faculty_id' => $facultyId
+                ]);
+            }
+
             // Create conference
             $conference = HoiThao::create([
                 // Basic info
@@ -164,9 +178,8 @@ class ConferenceSetupController extends Controller
                 'chair_id' => auth()->user()->user_id,
                 'status' => 'PENDING_ADMIN_APPROVAL', // Needs admin approval to go live
                 'level_code' => $conferenceRequest->level_code,
-                'faculty_id' => $conferenceRequest->faculty_name,
+                'faculty_id' => $facultyId, // Use resolved faculty_id instead of faculty_name
                 'conference_request_id' => $conferenceRequest->request_id,
-                'acronym' => $validatedData['acronym'],
             ]);
 
             // Update conference request with conference_id
