@@ -26,6 +26,27 @@ class Kernel extends ConsoleKernel
 
         // Đảm bảo tính nhất quán của CHAIR roles mỗi 5 phút (safety net)
         $schedule->command('chair:ensure-roles --fix')->everyFiveMinutes();
+
+        // Scheduled Backup
+        try {
+            $settings = \App\Models\SystemSetting::all()->pluck('value', 'key');
+            if (isset($settings['auto_backup']) && $settings['auto_backup'] == '1') {
+                $frequency = $settings['backup_frequency'] ?? 'daily';
+                $time = $settings['backup_time'] ?? '00:00';
+
+                $command = $schedule->command('backup:run');
+
+                if ($frequency == 'daily') {
+                    $command->dailyAt($time);
+                } elseif ($frequency == 'weekly') {
+                    $command->weekly()->at($time);
+                } elseif ($frequency == 'monthly') {
+                    $command->monthly()->at($time);
+                }
+            }
+        } catch (\Exception $e) {
+            // Ignore DB errors during migration/setup
+        }
     }    /**
      * Register the commands for the application.
      *

@@ -300,23 +300,17 @@ class PaperController extends Controller
                 $order = 2;
                 foreach ($validated['co_authors'] as $coAuthor) {
                     if (!empty($coAuthor['email']) && !empty($coAuthor['name'])) {
-                        // Find or create user
+                        // Find user
                         $coAuthorUser = DB::table('nguoidung')
                             ->where('email', $coAuthor['email'])
                             ->first();
                         
                         if (!$coAuthorUser) {
-                            // Create new user for co-author
-                            $coAuthorUserId = DB::table('nguoidung')->insertGetId([
-                                'email' => $coAuthor['email'],
-                                'full_name' => $coAuthor['name'],
-                                'organization' => $coAuthor['organization'] ?? null,
-                                'password_hash' => bcrypt('temporary_password_' . time()),
-                                'created_at' => now(),
-                            ]);
-                        } else {
-                            $coAuthorUserId = $coAuthorUser->user_id;
+                            // If user does not exist, throw error
+                            throw new \Exception("Email đồng tác giả '{$coAuthor['email']}' chưa được đăng ký trong hệ thống. Vui lòng yêu cầu đồng tác giả đăng ký tài khoản trước.");
                         }
+                        
+                        $coAuthorUserId = $coAuthorUser->user_id;
                         
                         // Add to TacGiaBaiBao
                         DB::table('tacgiabaibao')->insert([

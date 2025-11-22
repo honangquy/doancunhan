@@ -229,6 +229,14 @@
                                     $userData = null;
                                     if(Auth::check()) {
                                         $roles = DB::table('VaiTroNguoiDung')->where('user_id', Auth::id())->get();
+                                        
+                                        // Filter out USER role if other roles exist
+                                        if ($roles->count() > 1) {
+                                            $roles = $roles->reject(function($r) {
+                                                return $r->role_code === 'USER';
+                                            });
+                                        }
+
                                         if($roles->isNotEmpty()) {
                                             $firstRole = $roles->first()->role_code;
                                             $dashboardUrl = match($firstRole) {

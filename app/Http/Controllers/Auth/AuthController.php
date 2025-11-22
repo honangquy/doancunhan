@@ -110,6 +110,13 @@ class AuthController extends Controller
             ->distinct()
             ->pluck('role_code');
 
+        // Filter out USER role if other roles exist
+        if ($roles->count() > 1 && $roles->contains('USER')) {
+            $roles = $roles->reject(function ($value) {
+                return $value === 'USER';
+            });
+        }
+
         // If user has no role, redirect to home with pending message
         if ($roles->isEmpty()) {
             return redirect()->route('home')
@@ -168,6 +175,11 @@ class AuthController extends Controller
             )
             ->get()
             ->groupBy('role_code');
+
+        // If user has other roles besides USER, remove USER role
+        if ($roles->count() > 1 && $roles->has('USER')) {
+            $roles->forget('USER');
+        }
 
         return view('auth.role-selection', [
             'roles' => $roles,
@@ -346,6 +358,13 @@ class AuthController extends Controller
             ->where('vt.user_id', $user->user_id)
             ->select('lt.role_code', 'lt.role_name', 'vt.conference_id')
             ->get();
+
+        // Filter out USER role if other roles exist
+        if ($userRoles->count() > 1) {
+            $userRoles = $userRoles->reject(function ($role) {
+                return $role->role_code === 'USER';
+            });
+        }
 
         // Get user statistics
         $stats = [
