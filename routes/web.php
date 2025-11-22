@@ -1052,8 +1052,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Permissions Management
         Route::get('/permissions', [DashboardController::class, 'adminPermissions'])->name('permissions.index');
 
-        // System Settings
-        Route::get('/settings', [DashboardController::class, 'adminSettings'])->name('settings.index');
+        // System Settings (Backup & Restore)
+        Route::get('/settings', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('settings.index');
+        Route::post('/settings/update', [\App\Http\Controllers\Admin\BackupController::class, 'updateSettings'])->name('settings.update');
+        Route::post('/settings/backup', [\App\Http\Controllers\Admin\BackupController::class, 'create'])->name('settings.backup.create');
+        Route::get('/settings/backup/{filename}/download', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('settings.backup.download');
+        Route::delete('/settings/backup/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'delete'])->name('settings.backup.delete');
+        Route::post('/settings/backup/{filename}/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])->name('settings.backup.restore');
 
         // System Logs
         Route::get('/logs', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('logs.index');
