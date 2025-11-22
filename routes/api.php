@@ -347,3 +347,22 @@ Route::prefix('chair')->middleware(['auth:api'])->group(function () {
     });
 });
 
+// === REVIEWER MOBILE APP API ===
+Route::prefix('mobile/reviewer')->middleware(['auth:api'])->group(function () {
+    // Dashboard
+    Route::get('dashboard', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getDashboard']);
+
+    // Assignments
+    Route::get('assignments', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getAssignments']);
+    Route::get('assignments/{id}', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getAssignmentDetail']);
+    Route::post('assignments/{id}/accept', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'acceptAssignment']);
+    Route::post('assignments/{id}/decline', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'declineAssignment']);
+
+    // Papers
+    Route::get('papers/{paper_id}/versions', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getPaperVersions']);
+
+    // Reviews
+    Route::get('reviews', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getReviews']);
+    Route::get('reviews/{id}', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getReviewDetail']);
+    Route::post('reviews', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'submitReview']);
+});

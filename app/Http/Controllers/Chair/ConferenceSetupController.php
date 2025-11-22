@@ -9,6 +9,7 @@ use App\Models\TieuBan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ConferenceSetupController extends Controller
 {
@@ -65,7 +66,7 @@ class ConferenceSetupController extends Controller
     public function store(Request $request, $requestId)
     {
         // Debug log
-        \Log::info('Conference setup store method called', [
+        Log::info('Conference setup store method called', [
             'requestId' => $requestId,
             'userId' => auth()->user()->user_id,
             'requestData' => $request->all(),
@@ -208,7 +209,7 @@ class ConferenceSetupController extends Controller
             DB::rollback();
 
             // Log exception
-            \Log::error('Conference setup failed', [
+            Log::error('Conference setup failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'requestId' => $requestId,

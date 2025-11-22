@@ -43,10 +43,8 @@ class BaiBao extends Model
         return $this->belongsTo(NguoiDung::class, 'submitter_id', 'user_id');
     }
 
-    public function trangThai()
-    {
-        return $this->belongsTo(TrangThaiBaiBao::class, 'status_code', 'status_code');
-    }
+    // Removed trangThai relationship - TrangThaiBaiBao model does not exist
+    // If needed, create the model first: php artisan make:model TrangThaiBaiBao
 
     public function tacGias()
     {

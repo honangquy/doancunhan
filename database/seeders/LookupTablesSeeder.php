@@ -20,6 +20,7 @@ class LookupTablesSeeder extends Seeder
             ['status_code' => 'SUBMITTED', 'status_name' => 'Đã nộp'],
             ['status_code' => 'UNDER_REVIEW', 'status_name' => 'Đang phản biện'],
             ['status_code' => 'REVISION_REQUIRED', 'status_name' => 'Yêu cầu chỉnh sửa'],
+            ['status_code' => 'PENDING_CHAIR_REVIEW', 'status_name' => 'Chờ Chair duyệt lại'],
             ['status_code' => 'ACCEPTED', 'status_name' => 'Chấp nhận'],
             ['status_code' => 'REJECTED', 'status_name' => 'Từ chối'],
             ['status_code' => 'WITHDRAWN', 'status_name' => 'Đã rút'],

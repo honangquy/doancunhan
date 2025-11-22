@@ -113,7 +113,7 @@ class NewsController extends Controller
 
             if ($admins->count() > 0) {
                 foreach ($admins as $admin) {
-                    \DB::table('notifications')->insert([
+                    DB::table('notifications')->insert([
                         'notifiable_type' => 'App\Models\User',
                         'notifiable_id' => $admin->user_id,
                         'user_id' => $admin->user_id,
@@ -225,7 +225,7 @@ class NewsController extends Controller
 
             if ($admins->count() > 0) {
                 foreach ($admins as $admin) {
-                    \DB::table('notifications')->insert([
+                    DB::table('notifications')->insert([
                         'notifiable_type' => 'App\Models\User',
                         'notifiable_id' => $admin->user_id,
                         'user_id' => $admin->user_id,
