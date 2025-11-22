@@ -247,6 +247,14 @@
                                     <span>Về trang chủ</span>
                                 </div>
                             </a>
+                            <a href="{{ route('role.selection') }}" class="block px-4 py-3 text-sm text-gray-700 hover:bg-green-50 transition border-t">
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                                    </svg>
+                                    <span>Chuyển đổi vai trò</span>
+                                </div>
+                            </a>
                             <div class="border-t">
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf

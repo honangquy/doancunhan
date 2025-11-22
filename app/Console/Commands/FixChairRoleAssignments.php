@@ -71,8 +71,6 @@ class FixChairRoleAssignments extends Command
                         'user_id' => $conference->chair_id,
                         'role_code' => 'CHAIR',
                         'conference_id' => $conference->conference_id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
                     $this->info("   ✓ Created CHAIR role for user #{$conference->chair_id}");
                     $fixed++;

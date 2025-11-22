@@ -516,7 +516,7 @@
                             </div>
                         @else
                             <div class="space-y-2">
-                                @foreach($userRoles as $role)
+                                @foreach($userRoles->unique('role_name') as $role)
                                     <div class="flex items-center space-x-2">
                                         <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                                             {{ $role->role_name }}

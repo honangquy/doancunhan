@@ -62,8 +62,6 @@ class EnsureChairRolesConsistency extends Command
                         'user_id' => $conf->chair_id,
                         'role_code' => 'CHAIR',
                         'conference_id' => $conf->conference_id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
                     $this->info("    ✓ Created CHAIR role");
                 } catch (\Exception $e) {
