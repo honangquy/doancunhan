@@ -21,6 +21,8 @@ class News extends Model
         'summary',
         'content',
         'cover_image', // Changed from 'thumbnail_path'
+        'attachment_path',
+        'images',
         'is_featured',
         'status',
         'published_at',
@@ -30,6 +32,7 @@ class News extends Model
 
     protected $casts = [
         'is_featured' => 'boolean',
+        'images' => 'array',
         'published_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

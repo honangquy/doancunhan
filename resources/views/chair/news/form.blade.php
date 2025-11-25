@@ -98,6 +98,77 @@
                 </div>
             @endif
         </div>
+
+        <!-- Attachments & Gallery -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Tệp đính kèm & Thư viện ảnh</h3>
+
+            <!-- PDF Attachment -->
+            <div class="mb-4">
+                <label for="attachment_path" class="block text-sm font-medium text-gray-700 mb-1">
+                    Tài liệu đính kèm (PDF)
+                </label>
+                <input type="file"
+                       name="attachment_path"
+                       id="attachment_path"
+                       accept=".pdf"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 @error('attachment_path') border-red-500 @enderror">
+                <p class="mt-1 text-xs text-gray-500">Chỉ chấp nhận file PDF (Max: 10MB)</p>
+
+                @if(isset($news) && $news->attachment_path)
+                    <div class="mt-2 flex items-center p-2 bg-gray-50 rounded border border-gray-200">
+                        <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        <a href="{{ asset('storage/' . $news->attachment_path) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                            {{ basename($news->attachment_path) }}
+                        </a>
+                    </div>
+                @endif
+                @error('attachment_path')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="border-t border-gray-200 my-4"></div>
+
+            <!-- Image Gallery -->
+            <div class="mb-4">
+                <label for="images" class="block text-sm font-medium text-gray-700 mb-1">
+                    Thư viện ảnh (Nhiều ảnh)
+                </label>
+                <input type="file"
+                       name="images[]"
+                       id="images"
+                       multiple
+                       accept="image/*"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 @error('images') border-red-500 @enderror">
+                <p class="mt-1 text-xs text-gray-500">Chọn nhiều ảnh cùng lúc (Max: 2MB/ảnh)</p>
+
+                @if(isset($news) && !empty($news->images))
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-700 mb-2">Ảnh đã tải lên:</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            @foreach($news->images as $image)
+                                <div class="relative group">
+                                    <img src="{{ asset('storage/' . $image) }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                    <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                        <label class="flex items-center space-x-1 cursor-pointer text-white">
+                                            <input type="checkbox" name="remove_images[]" value="{{ $image }}" class="form-checkbox h-4 w-4 text-red-600 rounded border-gray-300 focus:ring-red-500">
+                                            <span class="text-xs font-medium">Xóa</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500 italic">* Chọn "Xóa" để loại bỏ ảnh khi cập nhật</p>
+                    </div>
+                @endif
+                @error('images.*')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+        </div>
     </div>
 
     <!-- Sidebar - Right Side -->

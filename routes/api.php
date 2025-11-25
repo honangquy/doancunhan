@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ConferenceController;
 use App\Http\Controllers\Api\TrackController;
@@ -14,6 +15,9 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\AssignmentController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AnnouncementController;
+use App\Http\Controllers\Api\NewsController;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +72,27 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('change-password', [AuthController::class, 'changePassword']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
+    });
+
+    // News Management (Chair Only) - DEBUG: Remove role middleware first
+    Route::prefix('news')->group(function () {
+        Route::get('/', [NewsController::class, 'index']);
+        Route::post('/', [NewsController::class, 'store']);
+        Route::get('/{id}', [NewsController::class, 'show']);
+        Route::post('/{id}', [NewsController::class, 'update']); // Use POST for file upload
+        Route::delete('/{id}', [NewsController::class, 'destroy']);
+    });
+
+    // Test endpoint for debugging
+    Route::get('test/news', function() {
+        $user = auth()->user();
+        return response()->json([
+            'success' => true,
+            'user_id' => $user ? $user->user_id : null,
+            'email' => $user ? $user->email : null,
+            'has_chair_role' => $user ? $user->hasRole('CHAIR') : false,
+            'message' => 'News routes are working!'
+        ]);
     });
 
     // Announcement Management (Chair + User)
@@ -222,7 +247,7 @@ Route::get('health', function () {
 
 // Test route without CSRF for debugging
 Route::post('test-conference-submit', function (Request $request) {
-    \Log::info('API Test route called', [
+    Log::info('API Test route called', [
         'method' => $request->method(),
         'data' => $request->all()
     ]);
@@ -238,10 +263,9 @@ Route::post('test-conference-submit', function (Request $request) {
 // Real conference request endpoint with proper validation
 Route::post('submit-conference-request', function (Request $request) {
     try {
-        \Log::info('Conference request API called', $request->all());
-
+        Log::info('Conference request API called', $request->all());
         // Validate request
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:500',
             'objective' => 'required|string',
             'level_code' => 'required|in:KHOA,TRUONG',
@@ -288,7 +312,7 @@ Route::post('submit-conference-request', function (Request $request) {
         ]);
 
     } catch (\Exception $e) {
-        \Log::error('Conference request error: ' . $e->getMessage());
+        Log::error('Conference request error: ' . $e->getMessage());
 
         return response()->json([
             'success' => false,
@@ -347,3 +371,22 @@ Route::prefix('chair')->middleware(['auth:api'])->group(function () {
     });
 });
 
+// === REVIEWER MOBILE APP API ===
+Route::prefix('mobile/reviewer')->middleware(['auth:api'])->group(function () {
+    // Dashboard
+    Route::get('dashboard', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getDashboard']);
+
+    // Assignments
+    Route::get('assignments', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getAssignments']);
+    Route::get('assignments/{id}', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getAssignmentDetail']);
+    Route::post('assignments/{id}/accept', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'acceptAssignment']);
+    Route::post('assignments/{id}/decline', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'declineAssignment']);
+
+    // Papers
+    Route::get('papers/{paper_id}/versions', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getPaperVersions']);
+
+    // Reviews
+    Route::get('reviews', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getReviews']);
+    Route::get('reviews/{id}', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'getReviewDetail']);
+    Route::post('reviews', [\App\Http\Controllers\Api\ReviewerMobileController::class, 'submitReview']);
+});

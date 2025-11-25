@@ -122,16 +122,48 @@ class NguoiDung extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->hasMany(ChuyenMonReviewer::class, 'user_id', 'user_id');
     }
 
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id', 'user_id');
+    }
+
     // Helper methods
     public function hasRole($roleCode, $conferenceId = null)
     {
+        // 1. Check explicit roles in vaitronguoidung
         $query = $this->vaiTros()->where('role_code', $roleCode);
 
         if ($conferenceId !== null) {
             $query->where('conference_id', $conferenceId);
         }
 
-        return $query->exists();
+        if ($query->exists()) {
+            return true;
+        }
+
+        // 2. Check implicit CHAIR role (owner of conference)
+        if ($roleCode === 'CHAIR') {
+             $chairQuery = \Illuminate\Support\Facades\DB::table('hoithao')->where('chair_id', $this->user_id);
+             if ($conferenceId !== null) {
+                 $chairQuery->where('conference_id', $conferenceId);
+             }
+             if ($chairQuery->exists()) {
+                 return true;
+             }
+        }
+
+        // 3. Check implicit AUTHOR role (submitter of paper)
+        if ($roleCode === 'AUTHOR') {
+             $authorQuery = \Illuminate\Support\Facades\DB::table('baibao')->where('submitter_id', $this->user_id);
+             if ($conferenceId !== null) {
+                 $authorQuery->where('conference_id', $conferenceId);
+             }
+             if ($authorQuery->exists()) {
+                 return true;
+             }
+        }
+
+        return false;
     }
 
     public function isAdmin()

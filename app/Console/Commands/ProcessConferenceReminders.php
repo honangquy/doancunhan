@@ -15,13 +15,13 @@ class ProcessConferenceReminders extends Command
     public function handle(ConferenceReminderService $service): int
     {
         $this->info('🔔 Processing conference reminders...');
-        
+
         if ($this->option('dry-run')) {
             $this->warn('⚠️  DRY RUN MODE - No emails will be sent');
         }
 
         try {
-            $stats = $service->processReminders();
+            $stats = $service->processReminders($this->option('dry-run'));
 
             $this->info("✅ Processing complete:");
             $this->table(
@@ -34,7 +34,7 @@ class ProcessConferenceReminders extends Command
             );
 
             return Command::SUCCESS;
-            
+
         } catch (\Exception $e) {
             $this->error("❌ Error processing reminders: " . $e->getMessage());
             return Command::FAILURE;

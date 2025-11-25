@@ -157,6 +157,90 @@
                 </div>
             </div>
         </div>
+
+        <!-- Attachments & Gallery Card -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-50 to-red-50 px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                    </svg>
+                    Tệp đính kèm & Thư viện ảnh
+                </h3>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- PDF Attachment -->
+                <div>
+                    <label for="attachment_path" class="block text-sm font-medium text-gray-700 mb-2">
+                        Tài liệu đính kèm (PDF)
+                    </label>
+                    <input type="file"
+                           id="attachment_path"
+                           name="attachment_path"
+                           accept=".pdf"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 transition-all">
+                    <p class="mt-1 text-xs text-gray-500">Chỉ chấp nhận file PDF (Max: 10MB)</p>
+
+                    @if(isset($news) && $news->attachment_path)
+                        <div class="mt-3 flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <svg class="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">
+                                    {{ basename($news->attachment_path) }}
+                                </p>
+                                <a href="{{ asset('storage/' . $news->attachment_path) }}" target="_blank" class="text-xs text-blue-600 hover:underline">
+                                    Xem tài liệu hiện tại
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                    @error('attachment_path')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="border-t border-gray-200"></div>
+
+                <!-- Image Gallery -->
+                <div>
+                    <label for="images" class="block text-sm font-medium text-gray-700 mb-2">
+                        Thư viện ảnh (Nhiều ảnh)
+                    </label>
+                    <input type="file"
+                           id="images"
+                           name="images[]"
+                           multiple
+                           accept="image/*"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all">
+                    <p class="mt-1 text-xs text-gray-500">Chọn nhiều ảnh cùng lúc (Max: 2MB/ảnh)</p>
+
+                    @if(isset($news) && !empty($news->images))
+                        <div class="mt-4">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Ảnh đã tải lên:</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                @foreach($news->images as $image)
+                                    <div class="relative group">
+                                        <img src="{{ asset('storage/' . $image) }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                        <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                            <label class="flex items-center space-x-1 cursor-pointer text-white">
+                                                <input type="checkbox" name="remove_images[]" value="{{ $image }}" class="form-checkbox h-4 w-4 text-red-600 rounded border-gray-300 focus:ring-red-500">
+                                                <span class="text-xs font-medium">Xóa</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <p class="mt-2 text-xs text-gray-500 italic">* Chọn "Xóa" để loại bỏ ảnh khi cập nhật</p>
+                        </div>
+                    @endif
+                    @error('images.*')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Sidebar Column (1/3 width) -->

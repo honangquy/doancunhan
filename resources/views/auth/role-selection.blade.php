@@ -70,8 +70,8 @@
     <div class="shape shape-3"></div>
 
     <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8" x-data="{ show: false }" x-init="setTimeout(() => show = true, 100)">
-        <div class="sm:mx-auto sm:w-full sm:max-w-md" 
-             x-show="show" 
+        <div class="sm:mx-auto sm:w-full sm:max-w-md"
+             x-show="show"
              x-transition:enter="transition ease-out duration-700"
              x-transition:enter-start="opacity-0 transform -translate-y-4"
              x-transition:enter-end="opacity-100 transform translate-y-0">
@@ -103,7 +103,7 @@
                             <form action="{{ route('role.select') }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="role" value="{{ $roleCode }}">
-                                
+
                                 <button type="submit" class="w-full group relative flex items-center justify-between p-5 border-2 border-gray-100 rounded-2xl hover:border-blue-500 hover:bg-blue-50/50 hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-white">
                                     <div class="flex items-center">
                                         <span class="h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 duration-300
@@ -132,10 +132,22 @@
                                                 @else {{ $roleCode }}
                                                 @endif
                                             </p>
-                                            @if($roleItems->first()->conference_title)
-                                                <p class="text-sm text-gray-500 mt-1 group-hover:text-blue-600/70 transition-colors">
-                                                    Tham gia {{ $roleItems->count() }} hội thảo
-                                                </p>
+                                            @php
+                                                $conferencesWithTitle = $roleItems->filter(function($item) {
+                                                    return !empty($item->conference_title);
+                                                });
+                                            @endphp
+                                            @if($conferencesWithTitle->isNotEmpty())
+                                                <div class="mt-2 text-sm text-gray-500 space-y-1">
+                                                    @foreach($conferencesWithTitle as $item)
+                                                        <div class="flex items-start gap-2">
+                                                            <svg class="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                                            </svg>
+                                                            <span class="line-clamp-1 text-left" title="{{ $item->conference_title }}">{{ $item->conference_title }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
                                             @else
                                                 <p class="text-sm text-gray-500 mt-1 group-hover:text-blue-600/70 transition-colors">
                                                     Truy cập bảng điều khiển

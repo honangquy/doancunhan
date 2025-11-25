@@ -19,13 +19,13 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Get user's primary role from database
         $roleRecord = DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->whereNull('conference_id')
             ->first();
-        
+
         $role = $roleRecord ? strtolower($roleRecord->role_code) : 'author';
 
         // Log dashboard access
@@ -274,8 +274,23 @@ class DashboardController extends Controller
             'pending_requests' => DB::table('join_requests')->where('status', 'PENDING')->count(),
         ];
 
-        // Get recent papers (simplified for now)
-        $recentPapers = collect(); // Empty collection for now to avoid table errors
+        // Get recent papers
+        $recentPapers = DB::table('baibao')
+            ->join('nguoidung', 'baibao.submitter_id', '=', 'nguoidung.user_id')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->join('trangthaibaibao', 'baibao.status_code', '=', 'trangthaibaibao.status_code')
+            ->select(
+                'baibao.paper_id',
+                'baibao.title',
+                'baibao.created_at',
+                'nguoidung.full_name as author_name',
+                'hoithao.title as conference_title',
+                'trangthaibaibao.status_name',
+                'trangthaibaibao.status_code'
+            )
+            ->orderBy('baibao.created_at', 'desc')
+            ->limit(5)
+            ->get();
 
         // Get user role distribution from VaiTroNguoiDung table
         $userRoles = DB::table('vaitronguoidung')

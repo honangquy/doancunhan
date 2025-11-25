@@ -34,7 +34,7 @@
                 <p class="text-sm opacity-90">{{ \Carbon\Carbon::parse($request->created_at)->format('d/m/Y H:i') }}</p>
                 @if($request->status == 'APPROVED')
                     <div class="mt-2">
-                        <a href="{{ route('chair.conferences') }}" class="inline-flex items-center text-xs bg-white text-orange-600 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors">
+                        <a href="{{ route('chair.conferences.index') }}" class="inline-flex items-center text-xs bg-white text-orange-600 px-3 py-1 rounded-full hover:bg-gray-100 transition-colors">
                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -170,13 +170,17 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
                                         $statusConfig = [
+                                            'SUBMITTED' => ['label' => 'Đã nộp', 'class' => 'bg-yellow-100 text-yellow-800'],
                                             'PENDING' => ['label' => 'Đang chờ', 'class' => 'bg-yellow-100 text-yellow-800'],
                                             'UNDER_REVIEW' => ['label' => 'Đang xét', 'class' => 'bg-blue-100 text-blue-800'],
+                                            'PENDING_CHAIR_REVIEW' => ['label' => 'Chờ duyệt', 'class' => 'bg-purple-100 text-purple-800'],
                                             'REVIEWED' => ['label' => 'Đã xét', 'class' => 'bg-purple-100 text-purple-800'],
                                             'ACCEPTED' => ['label' => 'Chấp nhận', 'class' => 'bg-green-100 text-green-800'],
                                             'REJECTED' => ['label' => 'Từ chối', 'class' => 'bg-red-100 text-red-800'],
+                                            'REVISION_REQUIRED' => ['label' => 'Cần chỉnh sửa', 'class' => 'bg-orange-100 text-orange-800'],
+                                            'WITHDRAWN' => ['label' => 'Đã rút', 'class' => 'bg-gray-100 text-gray-800'],
                                         ];
-                                        $currentStatus = $paper->status_code ?? 'PENDING';
+                                        $currentStatus = $paper->status_code ?? 'SUBMITTED';
                                         $status = $statusConfig[$currentStatus] ?? ['label' => $currentStatus, 'class' => 'bg-gray-100 text-gray-800'];
                                     @endphp
                                     <span class="px-2 py-1 text-xs font-medium rounded-full {{ $status['class'] }}">
@@ -299,7 +303,7 @@
     .stat-card {
         transition: all 0.3s ease;
     }
-    
+
     .stat-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 12px 24px -10px rgba(234, 88, 12, 0.3);
