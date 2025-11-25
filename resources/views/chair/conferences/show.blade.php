@@ -95,6 +95,13 @@
                     
                     @if($conference->status === 'ACTIVE')
                         <div class="flex space-x-3">
+                            <a href="{{ route('chair.proceedings.index', isset($conference->conference_id) ? $conference->conference_id : '#') }}" 
+                               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253z"></path>
+                                </svg>
+                                Quản lý kỷ yếu
+                            </a>
                             <a href="{{ route('chair.conferences.edit', isset($conference->conference_id) ? $conference->conference_id : '#') }}" 
                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -411,16 +418,150 @@
         </div>
         @endif
 
-        <!-- Recent Papers -->
-        <div class="bg-white shadow rounded-lg">
-            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <h2 class="text-lg font-medium text-gray-900">Bài báo gần đây</h2>
-                @if($totalPapers > 0)
-                    <span class="text-sm text-gray-500">
-                        {{ $totalPapers }} bài báo
-                    </span>
+        <!-- Proceedings Section -->
+        @if($conference->status === 'ACTIVE')
+        <div class="bg-white shadow rounded-lg mb-8">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-medium text-gray-900">Tình trạng kỷ yếu</h2>
+                    <a href="{{ route('chair.proceedings.index', $conference->conference_id) }}" 
+                       class="text-sm text-blue-600 hover:text-blue-900 font-medium">
+                        Quản lý kỷ yếu →
+                    </a>
+                </div>
+            </div>
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">
+                            {{ isset($acceptedPapersCount) ? $acceptedPapersCount : 0 }}
+                        </div>
+                        <div class="text-sm text-gray-500">Bài báo chấp nhận</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">
+                            {{ isset($publishedPapersCount) ? $publishedPapersCount : 0 }}
+                        </div>
+                        <div class="text-sm text-gray-500">Đã xuất bản</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-600">
+                            {{ isset($totalProceedingsPages) ? $totalProceedingsPages : 0 }}
+                        </div>
+                        <div class="text-sm text-gray-500">Tổng số trang</div>
+                    </div>
+                </div>
+                
+                @if(isset($publishedPapersCount) && $publishedPapersCount > 0)
+                <div class="mt-4 flex justify-center">
+                    <a href="{{ route('chair.conferences.proceedings', $conference->conference_id) }}" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        Xem kỷ yếu công khai
+                    </a>
+                </div>
                 @endif
             </div>
+        </div>
+        @endif
+
+        <!-- Conference Details Tabs -->
+        <div class="bg-white shadow rounded-lg" x-data="{ activeTab: 'overview' }">
+            <!-- Tab Navigation -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <nav class="flex space-x-8">
+                    <button @click="activeTab = 'overview'" 
+                            :class="activeTab === 'overview' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                        Tổng quan
+                    </button>
+                    <button @click="activeTab = 'papers'" 
+                            :class="activeTab === 'papers' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                        Bài báo gần đây
+                        @if($totalPapers > 0)
+                            <span class="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs">{{ $totalPapers }}</span>
+                        @endif
+                    </button>
+                    <button @click="activeTab = 'proceedings'" 
+                            :class="activeTab === 'proceedings' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                        Kỷ yếu
+                        @if($publishedPapersCount > 0)
+                            <span class="ml-2 bg-purple-100 text-purple-900 py-0.5 px-2.5 rounded-full text-xs">{{ $publishedPapersCount }}</span>
+                        @endif
+                    </button>
+                </nav>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="px-6 py-4">
+                <!-- Overview Tab -->
+                <div x-show="activeTab === 'overview'" x-transition>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <dt class="text-sm font-medium text-gray-500">Tổng bài báo</dt>
+                                    <dd class="text-lg font-semibold text-gray-900">{{ $totalPapers }}</dd>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <dt class="text-sm font-medium text-gray-500">Đã chấp nhận</dt>
+                                    <dd class="text-lg font-semibold text-gray-900">{{ $acceptedPapersCount }}</dd>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <dt class="text-sm font-medium text-gray-500">Đã xuất bản</dt>
+                                    <dd class="text-lg font-semibold text-gray-900">{{ $publishedPapersCount }}</dd>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-orange-50 rounded-lg p-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <dt class="text-sm font-medium text-gray-500">Phản biện viên</dt>
+                                    <dd class="text-lg font-semibold text-gray-900">{{ $totalReviewers }}</dd>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Papers Tab -->
+                <div x-show="activeTab === 'papers'" x-transition>
             <div class="px-6 py-4">
                 @if(isset($recentPapers) && $recentPapers->count() > 0)
                     <div class="space-y-4">
@@ -459,6 +600,38 @@
                                                     {{ $paper->status_code }}
                                                 </span>
                                             @endif
+                                            
+                                            @if($paper->decision)
+                                                @if($paper->decision === 'ACCEPT')
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Chấp nhận
+                                                    </span>
+                                                @elseif($paper->decision === 'REJECT')
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Từ chối
+                                                    </span>
+                                                @elseif($paper->decision === 'REVISE')
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Yêu cầu sửa
+                                                    </span>
+                                                @elseif($paper->decision === 'PUBLISHED')
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Đã xuất bản
+                                                    </span>
+                                                @endif
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -474,6 +647,109 @@
                         <p class="mt-1 text-sm text-gray-500">Bài báo được nộp sẽ hiển thị ở đây.</p>
                     </div>
                 @endif
+                </div>
+                
+                <!-- Proceedings Tab -->
+                <div x-show="activeTab === 'proceedings'" x-transition>
+                    @if($publishedPapersCount > 0)
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">Kỷ yếu đã xuất bản</h3>
+                                    <p class="text-sm text-gray-600">{{ $publishedPapersCount }} bài báo đã được xuất bản trong kỷ yếu</p>
+                                </div>
+                                <div class="flex space-x-3">
+                                    <a href="{{ route('chair.proceedings.index', $conference->conference_id) }}" 
+                                       class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium">
+                                        Quản lý kỷ yếu
+                                    </a>
+                                    <a href="{{ route('chair.conferences.proceedings', $conference->conference_id) }}" 
+                                       class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 text-sm font-medium">
+                                        Xem kỷ yếu công khai
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="bg-green-50 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <svg class="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-500">Bài báo chấp nhận</p>
+                                            <p class="text-lg font-semibold text-gray-900">{{ $acceptedPapersCount }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-purple-50 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <svg class="h-8 w-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                        </svg>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-500">Đã xuất bản</p>
+                                            <p class="text-lg font-semibold text-gray-900">{{ $publishedPapersCount }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-blue-50 rounded-lg p-4">
+                                    <div class="flex items-center">
+                                        <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-gray-500">Tổng trang</p>
+                                            <p class="text-lg font-semibold text-gray-900">{{ $totalProceedingsPages }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
+                                <h4 class="text-lg font-semibold mb-2">Trạng thái kỷ yếu</h4>
+                                <p class="text-purple-100 mb-4">
+                                    Hội thảo đã có {{ $publishedPapersCount }} bài báo được xuất bản trong kỷ yếu với tổng số {{ $totalProceedingsPages }} trang.
+                                </p>
+                                <div class="flex space-x-4">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold">{{ number_format(($publishedPapersCount / max($acceptedPapersCount, 1)) * 100, 1) }}%</div>
+                                        <div class="text-xs text-purple-200">Tỷ lệ xuất bản</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold">{{ $totalProceedingsPages ? number_format($totalProceedingsPages / max($publishedPapersCount, 1), 1) : 0 }}</div>
+                                        <div class="text-xs text-purple-200">Trang/bài báo</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-24 w-24 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                            <h3 class="mt-4 text-lg font-medium text-gray-900">Chưa có kỷ yếu</h3>
+                            <p class="mt-2 text-gray-500">Chưa có bài báo nào được xuất bản trong kỷ yếu.</p>
+                            
+                            @if($acceptedPapersCount > 0)
+                                <div class="mt-6">
+                                    <a href="{{ route('chair.proceedings.index', $conference->conference_id) }}" 
+                                       class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium inline-flex items-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                        </svg>
+                                        Bắt đầu xuất bản kỷ yếu
+                                    </a>
+                                    <p class="mt-2 text-sm text-gray-500">
+                                        Có {{ $acceptedPapersCount }} bài báo đã chấp nhận sẵn sàng để xuất bản
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
 

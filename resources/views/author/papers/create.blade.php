@@ -198,6 +198,22 @@
                     </button>
                 </div>
                 
+                <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div class="flex">
+                        <svg class="w-5 h-5 text-amber-600 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="text-amber-800 text-sm">
+                            <p class="font-medium mb-1">Lưu ý quan trọng về đồng tác giả:</p>
+                            <ul class="list-disc list-inside space-y-1 text-xs">
+                                <li>Chỉ các đồng tác giả đã có tài khoản trong hệ thống mới được thêm vào bài báo.</li>
+                                <li>Nếu đồng tác giả chưa có tài khoản, họ sẽ được bỏ qua nhưng bài báo vẫn được nộp thành công.</li>
+                                <li>Bạn có thể liên hệ admin để thêm đồng tác giả sau khi họ đã đăng ký tài khoản.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
                 <div x-show="coAuthors.length === 0" class="text-gray-500 text-sm italic p-4 bg-gray-50 rounded-lg">
                     Chưa có đồng tác giả nào. Bấm "Thêm đồng tác giả" để thêm.
                 </div>

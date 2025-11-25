@@ -284,12 +284,13 @@
                     </div>
                 </div>
                 
-                <a href="#" class="flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg">
+                <a href="{{ route('author.proceedings.index') }}" class="flex items-center space-x-3 px-4 py-3 {{ request()->routeIs('author.proceedings.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h2a2 2 0 012 2v4M7 7h10M7 7l1 10a2 2 0 002 2h4a2 2 0 002-2L17 7M7 7V5a2 2 0 012-2h6a2 2 0 012 2v2"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                     </svg>
-                    <span>Yêu cầu tham gia</span>
+                    <span>Kỷ yếu</span>
                 </a>
+                
             </nav>
         </aside>
 

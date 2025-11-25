@@ -101,6 +101,17 @@ class ChairController extends Controller
                 ->whereIn('conference_id', $conferenceIds)
                 ->whereIn('status_code', ['ACCEPTED', 'REJECTED'])
                 ->count();
+                
+            // Papers by decision status
+            $stats['accepted'] = DB::table('baibao')
+                ->whereIn('conference_id', $conferenceIds)
+                ->where('decision', 'ACCEPT')
+                ->count();
+                
+            $stats['published'] = DB::table('baibao')
+                ->whereIn('conference_id', $conferenceIds)
+                ->where('decision', 'PUBLISHED')
+                ->count();
         }
         
         // Recent papers (last 10)
@@ -215,7 +226,16 @@ class ChairController extends Controller
         }
         
         if ($request->filled('status')) {
-            $query->where('bb.status_code', $request->status);
+            $status = $request->status;
+            
+            // Check if filtering by decision
+            if (str_starts_with($status, 'decision:')) {
+                $decisionValue = substr($status, 9); // Remove 'decision:' prefix
+                $query->where('bb.decision', $decisionValue);
+            } else {
+                // Filter by status_code
+                $query->where('bb.status_code', $status);
+            }
         }
         
         if ($request->filled('search')) {
@@ -233,6 +253,7 @@ class ChairController extends Controller
                 'bb.keywords',
                 'bb.created_at',
                 'bb.status_code',
+                'bb.decision',
                 'ht.title as conference_name',
                 'ht.conference_id',
                 'nd.full_name as author_name',
@@ -284,6 +305,16 @@ class ChairController extends Controller
         $acceptedCount = $statusCounts['ACCEPTED'] ?? 0;
         $rejectedCount = $statusCounts['REJECTED'] ?? 0;
         
+        // Count papers by decision status
+        $decisionCounts = DB::table('baibao')
+            ->whereIn('conference_id', $conferenceIds)
+            ->select('decision', DB::raw('COUNT(*) as count'))
+            ->groupBy('decision')
+            ->pluck('count', 'decision')
+            ->all();
+            
+        $publishedCount = $decisionCounts['PUBLISHED'] ?? 0;
+        
         return view('chair.papers.index', [
             'papers' => $papers,
             'conferences' => $conferences,
@@ -291,6 +322,7 @@ class ChairController extends Controller
             'pendingCount' => $pendingCount,
             'acceptedCount' => $acceptedCount,
             'rejectedCount' => $rejectedCount,
+            'publishedCount' => $publishedCount,
             'filters' => $request->only(['conference', 'status', 'search'])
         ]);
     }

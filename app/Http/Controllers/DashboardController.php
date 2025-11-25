@@ -64,6 +64,7 @@ class DashboardController extends Controller
                 'baibao.paper_id',
                 'baibao.title',
                 'baibao.status_code',
+                'baibao.decision',
                 'baibao.created_at',
                 'trangthaibaibao.status_name',
                 'hoithao.title as conference_name',
@@ -77,8 +78,9 @@ class DashboardController extends Controller
         $stats = [
             'total' => $papers->count(),
             'under_review' => $papers->where('status_code', 'UNDER_REVIEW')->count(),
-            'accepted' => $papers->where('status_code', 'ACCEPTED')->count(),
-            'rejected' => $papers->where('status_code', 'REJECTED')->count(),
+            'accepted' => $papers->where('decision', 'ACCEPT')->count(),
+            'published' => $papers->where('decision', 'PUBLISHED')->count(),
+            'rejected' => $papers->where('decision', 'REJECT')->count(),
         ];
 
         return view('author.dashboard', [
