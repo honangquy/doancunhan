@@ -290,6 +290,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/papers/{id}', [AuthorPaperController::class, 'update'])->name('papers.update');
         Route::post('/papers/{id}/withdraw', [AuthorPaperController::class, 'withdraw'])->name('papers.withdraw');
         Route::get('/papers/{id}/download', [AuthorPaperController::class, 'download'])->name('papers.download');
+
+        // Proceedings Management
+        Route::get('/proceedings', [\App\Http\Controllers\Author\ProceedingsController::class, 'index'])->name('proceedings.index');
+        Route::get('/proceedings/{conference}', [\App\Http\Controllers\Author\ProceedingsController::class, 'show'])->name('proceedings.show');
+        Route::get('/proceedings/{conference}/papers/{paper}/download', [\App\Http\Controllers\Author\ProceedingsController::class, 'downloadPaper'])->name('proceedings.download');
     });
 
     // Reviewer Routes
@@ -546,6 +551,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // News & Events Management
         Route::resource('news', \App\Http\Controllers\Chair\NewsController::class);
+
+        // Proceedings Management
+        Route::get('/proceedings', [\App\Http\Controllers\Chair\ProceedingsController::class, 'selectConference'])->name('proceedings.select');
+        Route::get('/proceedings/{conferenceId}', [\App\Http\Controllers\Chair\ProceedingsController::class, 'index'])->name('proceedings.index');
+        Route::post('/proceedings/{conferenceId}/update-pagination', [\App\Http\Controllers\Chair\ProceedingsController::class, 'updatePagination'])->name('proceedings.update-pagination');
+        Route::post('/proceedings/{conferenceId}/publish', [\App\Http\Controllers\Chair\ProceedingsController::class, 'publish'])->name('proceedings.publish');
+        Route::get('/proceedings/{conferenceId}/show', [\App\Http\Controllers\Chair\ProceedingsController::class, 'proceedings'])->name('conferences.proceedings');
+        Route::get('/proceedings/{conferenceId}/download/{paperId}', [\App\Http\Controllers\Chair\ProceedingsController::class, 'downloadPaper'])->name('proceedings.download');
 
         // Notifications
         Route::prefix('notifications')->name('notifications.')->group(function () {

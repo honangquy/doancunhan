@@ -62,6 +62,24 @@
                             $colorClass = $statusColors[$paper->status_code] ?? 'bg-gray-200 text-gray-800';
                         @endphp
                         <span class="badge {{ $colorClass }}">{{ $paper->status_name }}</span>
+                        
+                        @if($paper->decision)
+                            @php
+                                $decisionColors = [
+                                    'ACCEPT' => 'bg-green-100 text-green-800',
+                                    'REJECT' => 'bg-red-100 text-red-800',
+                                    'PUBLISHED' => 'bg-purple-100 text-purple-800'
+                                ];
+                                $decisionNames = [
+                                    'ACCEPT' => 'Chấp nhận',
+                                    'REJECT' => 'Từ chối',
+                                    'PUBLISHED' => 'Đã xuất bản'
+                                ];
+                                $decisionClass = $decisionColors[$paper->decision] ?? 'bg-gray-200 text-gray-800';
+                                $decisionName = $decisionNames[$paper->decision] ?? $paper->decision;
+                            @endphp
+                            <span class="badge {{ $decisionClass }}">{{ $decisionName }}</span>
+                        @endif
                     </div>
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ $paper->title }}</h1>
                     <p class="text-gray-600">
@@ -71,16 +89,18 @@
                         Nộp ngày: {{ \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y H:i') }}
                     </p>
                     
-                    @if($paper->decision && in_array($paper->status_code, ['ACCEPTED', 'REJECTED', 'REVISION_REQUIRED', 'PENDING_CHAIR_REVIEW']))
+                    @if($paper->decision)
                     <div class="mt-4 p-4 rounded-lg 
                         @if($paper->decision === 'ACCEPT') bg-green-50 border border-green-200
                         @elseif($paper->decision === 'REJECT') bg-red-50 border border-red-200  
                         @elseif($paper->decision === 'REVISE') bg-orange-50 border border-orange-200
+                        @elseif($paper->decision === 'PUBLISHED') bg-purple-50 border border-purple-200
                         @endif">
                         <h3 class="font-semibold mb-2
                             @if($paper->decision === 'ACCEPT') text-green-800
                             @elseif($paper->decision === 'REJECT') text-red-800
                             @elseif($paper->decision === 'REVISE') text-orange-800
+                            @elseif($paper->decision === 'PUBLISHED') text-purple-800
                             @endif">
                             <svg class="w-5 h-5 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
                                 @if($paper->decision === 'ACCEPT')
@@ -89,12 +109,15 @@
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
                                 @elseif($paper->decision === 'REVISE')
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                @elseif($paper->decision === 'PUBLISHED')
+                                <path fill-rule="evenodd" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" clip-rule="evenodd"></path>
                                 @endif
                             </svg>
                             Quyết định của Chair: 
                             @if($paper->decision === 'ACCEPT') Chấp nhận
                             @elseif($paper->decision === 'REJECT') Từ chối
                             @elseif($paper->decision === 'REVISE') Yêu cầu sửa lại
+                            @elseif($paper->decision === 'PUBLISHED') Đã xuất bản
                             @endif
                         </h3>
                         

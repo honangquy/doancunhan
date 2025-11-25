@@ -149,6 +149,20 @@ document.addEventListener('alpine:init', () => {
                 </div>
             </div>
 
+            <div class="bg-gradient-to-br from-purple-400 to-indigo-600 rounded-lg shadow-xl p-4 text-white transform hover:scale-105 transition-all duration-200 hover:shadow-2xl" style="box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5), 0 8px 10px -6px rgba(139, 92, 246, 0.5);">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-purple-100 mb-1">Đã xuất bản</p>
+                        <p class="text-2xl font-bold">{{ $publishedCount ?? 0 }}</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 p-2 rounded-lg">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path fill-rule="evenodd" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-gradient-to-br from-red-400 to-pink-600 rounded-lg shadow-xl p-4 text-white transform hover:scale-105 transition-all duration-200 hover:shadow-2xl" style="box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5), 0 8px 10px -6px rgba(239, 68, 68, 0.5);">
                 <div class="flex items-center justify-between">
                     <div>
@@ -181,11 +195,20 @@ document.addEventListener('alpine:init', () => {
                     <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                     <select name="status" id="status" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                         <option value="">Tất cả</option>
-                        <option value="PENDING" {{ request('status') === 'PENDING' ? 'selected' : '' }}>Đang chờ duyệt</option>
-                        <option value="ACCEPTED" {{ request('status') === 'ACCEPTED' ? 'selected' : '' }}>Đã chấp nhận</option>
-                        <option value="REJECTED" {{ request('status') === 'REJECTED' ? 'selected' : '' }}>Đã từ chối</option>
-                        <option value="UNDER_REVIEW" {{ request('status') === 'UNDER_REVIEW' ? 'selected' : '' }}>Đang phản biện</option>
-                        <option value="PENDING_CHAIR_REVIEW" {{ request('status') === 'PENDING_CHAIR_REVIEW' ? 'selected' : '' }}>Chờ Chair duyệt lại</option>
+                        <optgroup label="Trạng thái nộp bài">
+                            <option value="SUBMITTED" {{ request('status') === 'SUBMITTED' ? 'selected' : '' }}>Đã nộp</option>
+                            <option value="UNDER_REVIEW" {{ request('status') === 'UNDER_REVIEW' ? 'selected' : '' }}>Đang phản biện</option>
+                            <option value="REVIEWED" {{ request('status') === 'REVIEWED' ? 'selected' : '' }}>Đã phản biện</option>
+                            <option value="PENDING_CHAIR_REVIEW" {{ request('status') === 'PENDING_CHAIR_REVIEW' ? 'selected' : '' }}>Chờ Chair duyệt</option>
+                            <option value="ACCEPTED" {{ request('status') === 'ACCEPTED' ? 'selected' : '' }}>Đã chấp nhận</option>
+                            <option value="REJECTED" {{ request('status') === 'REJECTED' ? 'selected' : '' }}>Đã từ chối</option>
+                        </optgroup>
+                        <optgroup label="Quyết định Chair">
+                            <option value="decision:ACCEPT" {{ request('status') === 'decision:ACCEPT' ? 'selected' : '' }}>Chấp nhận</option>
+                            <option value="decision:REJECT" {{ request('status') === 'decision:REJECT' ? 'selected' : '' }}>Từ chối</option>
+                            <option value="decision:REVISE" {{ request('status') === 'decision:REVISE' ? 'selected' : '' }}>Yêu cầu sửa lại</option>
+                            <option value="decision:PUBLISHED" {{ request('status') === 'decision:PUBLISHED' ? 'selected' : '' }}>Đã xuất bản</option>
+                        </optgroup>
                     </select>
                 </div>
                 
@@ -386,9 +409,43 @@ document.addEventListener('alpine:init', () => {
                                             ];
                                             $currentStatus = $paper->status_code ?? 'SUBMITTED';
                                         @endphp
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusClasses[$currentStatus] ?? 'bg-gray-100 text-gray-800' }}">
-                                            {{ $statusLabels[$currentStatus] ?? $currentStatus }}
-                                        </span>
+                                        <div class="space-y-1">
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusClasses[$currentStatus] ?? 'bg-gray-100 text-gray-800' }}">
+                                                {{ $statusLabels[$currentStatus] ?? $currentStatus }}
+                                            </span>
+                                            
+                                            @if($paper->decision)
+                                                @if($paper->decision === 'ACCEPT')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Chấp nhận
+                                                    </span>
+                                                @elseif($paper->decision === 'REJECT')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Từ chối
+                                                    </span>
+                                                @elseif($paper->decision === 'REVISE')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Yêu cầu sửa
+                                                    </span>
+                                                @elseif($paper->decision === 'PUBLISHED')
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        Đã xuất bản
+                                                    </span>
+                                                @endif
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-600 font-medium">
                                         {{ $paper->created_at ? \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y') : 'N/A' }}

@@ -50,7 +50,7 @@
 @endif
 
 <!-- Statistics Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-8">
     <!-- Total Papers -->
     <div class="card stat-card border-blue-500 p-4">
         <div class="flex items-center justify-between">
@@ -126,6 +126,21 @@
         </div>
     </div>
 
+    <!-- Published -->
+    <div class="card stat-card border-purple-500 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-500 text-xs font-medium uppercase">Đã xuất bản</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ $stats['published'] }}</p>
+            </div>
+            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
     <!-- Rejected -->
     <div class="card stat-card border-red-500 p-4">
         <div class="flex items-center justify-between">
@@ -181,20 +196,42 @@
                             </span>
                         </td>
                         <td class="py-4 px-4">
-                            @php
-                                $statusColors = [
-                                    'DRAFT' => 'bg-gray-200 text-gray-800',
-                                    'SUBMITTED' => 'bg-blue-100 text-blue-800',
-                                    'UNDER_REVIEW' => 'bg-yellow-100 text-yellow-800',
-                                    'ACCEPTED' => 'bg-green-100 text-green-800',
-                                    'REJECTED' => 'bg-red-100 text-red-800',
-                                    'WITHDRAWN' => 'bg-gray-300 text-gray-600',
-                                ];
-                                $colorClass = $statusColors[$paper->status_code] ?? 'bg-gray-200 text-gray-800';
-                            @endphp
-                            <span class="badge {{ $colorClass }}">
-                                {{ $paper->status_name }}
-                            </span>
+                            <div class="flex flex-col space-y-1">
+                                @php
+                                    $statusColors = [
+                                        'DRAFT' => 'bg-gray-200 text-gray-800',
+                                        'SUBMITTED' => 'bg-blue-100 text-blue-800',
+                                        'UNDER_REVIEW' => 'bg-yellow-100 text-yellow-800',
+                                        'ACCEPTED' => 'bg-green-100 text-green-800',
+                                        'REJECTED' => 'bg-red-100 text-red-800',
+                                        'WITHDRAWN' => 'bg-gray-300 text-gray-600',
+                                    ];
+                                    $colorClass = $statusColors[$paper->status_code] ?? 'bg-gray-200 text-gray-800';
+                                @endphp
+                                <span class="badge {{ $colorClass }} text-xs">
+                                    {{ $paper->status_name }}
+                                </span>
+                                
+                                @if($paper->decision)
+                                    @php
+                                        $decisionColors = [
+                                            'ACCEPT' => 'bg-green-100 text-green-800',
+                                            'REJECT' => 'bg-red-100 text-red-800',
+                                            'PUBLISHED' => 'bg-purple-100 text-purple-800'
+                                        ];
+                                        $decisionNames = [
+                                            'ACCEPT' => 'Chấp nhận',
+                                            'REJECT' => 'Từ chối',
+                                            'PUBLISHED' => 'Đã xuất bản'
+                                        ];
+                                        $decisionClass = $decisionColors[$paper->decision] ?? 'bg-gray-200 text-gray-800';
+                                        $decisionName = $decisionNames[$paper->decision] ?? $paper->decision;
+                                    @endphp
+                                    <span class="badge {{ $decisionClass }} text-xs">
+                                        {{ $decisionName }}
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="py-4 px-4">
                             <div class="flex items-center justify-end space-x-2">

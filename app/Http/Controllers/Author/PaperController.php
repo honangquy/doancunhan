@@ -143,6 +143,7 @@ class PaperController extends Controller
                 'baibao.title',
                 'baibao.created_at',
                 'baibao.status_code',
+                'baibao.decision',
                 'hoithao.title as conference_title',
                 'hoithao.conference_id',
                 'hoithao.deadline_submission',
@@ -171,8 +172,9 @@ class PaperController extends Controller
             'draft' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'DRAFT')->count(),
             'submitted' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'SUBMITTED')->count(),
             'under_review' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'UNDER_REVIEW')->count(),
-            'accepted' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'ACCEPTED')->count(),
-            'rejected' => DB::table('baibao')->where('submitter_id', $userId)->where('status_code', 'REJECTED')->count(),
+            'accepted' => DB::table('baibao')->where('submitter_id', $userId)->where('decision', 'ACCEPT')->count(),
+            'published' => DB::table('baibao')->where('submitter_id', $userId)->where('decision', 'PUBLISHED')->count(),
+            'rejected' => DB::table('baibao')->where('submitter_id', $userId)->where('decision', 'REJECT')->count(),
         ];
         
         return view('author.papers.index', compact('papers', 'stats'));
@@ -218,6 +220,11 @@ class PaperController extends Controller
             'co_authors.*.name' => 'nullable|string|max:255',
             'co_authors.*.email' => 'nullable|email|max:255',
             'co_authors.*.organization' => 'nullable|string|max:255',
+        ], [
+            'co_authors.*.email.email' => 'Email đồng tác giả không đúng định dạng.',
+            'co_authors.*.name.max' => 'Tên đồng tác giả không được vượt quá 255 ký tự.',
+            'co_authors.*.email.max' => 'Email đồng tác giả không được vượt quá 255 ký tự.',
+            'co_authors.*.organization.max' => 'Tên tổ chức không được vượt quá 255 ký tự.',
         ]);
         
         // Check submission deadline
@@ -296,6 +303,7 @@ class PaperController extends Controller
             ]);
             
             // Add co-authors
+            $skippedCoAuthors = [];
             if (!empty($validated['co_authors'])) {
                 $order = 2;
                 foreach ($validated['co_authors'] as $coAuthor) {
@@ -306,8 +314,10 @@ class PaperController extends Controller
                             ->first();
                         
                         if (!$coAuthorUser) {
-                            // If user does not exist, throw error
-                            throw new \Exception("Email đồng tác giả '{$coAuthor['email']}' chưa được đăng ký trong hệ thống. Vui lòng yêu cầu đồng tác giả đăng ký tài khoản trước.");
+                            // Skip this co-author if they don't exist in the system
+                            $skippedCoAuthors[] = "{$coAuthor['name']} ({$coAuthor['email']})";
+                            \Log::warning("Co-author email '{$coAuthor['email']}' not found in system. Skipping co-author: {$coAuthor['name']}");
+                            continue;
                         }
                         
                         $coAuthorUserId = $coAuthorUser->user_id;
@@ -327,9 +337,15 @@ class PaperController extends Controller
             
             DB::commit();
             
+            // Prepare success message
+            $successMessage = 'Bài báo đã được nộp thành công!';
+            if (!empty($skippedCoAuthors)) {
+                $successMessage .= ' Lưu ý: Các đồng tác giả sau không được thêm vào vì email chưa có trong hệ thống: ' . implode(', ', $skippedCoAuthors) . '. Vui lòng yêu cầu họ đăng ký tài khoản và liên hệ admin để thêm vào bài báo.';
+            }
+            
             return redirect()
                 ->route('author.papers.show', $paperId)
-                ->with('success', 'Bài báo đã được nộp thành công!');
+                ->with('success', $successMessage);
                 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -516,6 +532,8 @@ class PaperController extends Controller
             'keywords' => 'required|string|max:500',
             'paper_file' => 'nullable|file|mimes:pdf|max:10240',
             'co_authors' => 'nullable|array',
+            'co_authors.*.user_id' => 'nullable|exists:nguoidung,user_id',
+            'co_authors.*.is_contact' => 'nullable|boolean',
         ]);
         
         // Get paper with conference deadline info

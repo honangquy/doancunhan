@@ -89,11 +89,18 @@
                                         'ACCEPT' => 'bg-green-100 text-green-800',
                                         'REJECT' => 'bg-red-100 text-red-800',
                                         'REVISION' => 'bg-yellow-100 text-yellow-800',
+                                        'REVISE' => 'bg-yellow-100 text-yellow-800',
+                                        'PUBLISHED' => 'bg-purple-100 text-purple-800',
                                     ];
                                     $dColor = $decisionColors[$paper->decision] ?? 'bg-gray-100 text-gray-800';
                                 @endphp
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $dColor }}">
-                                    {{ $paper->decision }}
+                                    @if($paper->decision === 'ACCEPT') Chấp nhận
+                                    @elseif($paper->decision === 'REJECT') Từ chối  
+                                    @elseif($paper->decision === 'REVISE') Yêu cầu sửa
+                                    @elseif($paper->decision === 'PUBLISHED') Đã xuất bản
+                                    @else {{ $paper->decision }}
+                                    @endif
                                 </span>
                             @else
                                 <span class="text-gray-400">Chưa có</span>
