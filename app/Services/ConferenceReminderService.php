@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\SendConferenceReminder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use App\Mail\ConferenceReminderMail;
 use Carbon\Carbon;
 
@@ -14,7 +15,7 @@ class ConferenceReminderService
      * Xử lý tất cả reminders - GỬI TRỰC TIẾP không dùng outbox
      * Vì schema notification_outbox không hỗ trợ individual emails
      */
-    public function processReminders(): array
+    public function processReminders(bool $dryRun = false): array
     {
         $today = Carbon::today();
         $stats = [
@@ -44,24 +45,25 @@ class ConferenceReminderService
         foreach ($conferences as $conference) {
             foreach ($reminderConfigs as $config) {
                 $deadline = $this->getReminderDate($conference, $config['event_type']);
-                
+
                 if (!$deadline) continue;
 
                 $reminderDate = Carbon::parse($deadline)->subDays($config['days_before']);
-                
+
                 if ($reminderDate->isSameDay($today)) {
                     $template = DB::table('notification_templates')
                         ->where('template_code', $config['template_code'])
                         ->first();
-                    
+
                     if ($template) {
                         $created = $this->createReminder(
-                            $conference, 
-                            $template, 
+                            $conference,
+                            $template,
                             $config['event_type'],
-                            $config['role']
+                            $config['role'],
+                            $dryRun
                         );
-                        
+
                         $stats['reminders_created'] += $created['reminders'];
                         $stats['recipients'] += $created['recipients'];
                     }
@@ -84,10 +86,10 @@ class ConferenceReminderService
         };
     }
 
-    private function createReminder($conference, $template, string $eventType, string $targetRole): array
+    private function createReminder($conference, $template, string $eventType, string $targetRole, bool $dryRun = false): array
     {
         $recipients = $this->getRecipients($conference->conference_id, $targetRole);
-        
+
         $stats = ['reminders' => 0, 'recipients' => 0];
 
         foreach ($recipients as $recipient) {
@@ -105,7 +107,7 @@ class ConferenceReminderService
 
             $body = $template->body_html;
             $subject = $template->subject;
-            
+
             foreach ($variables as $key => $value) {
                 $placeholder = '{{' . $key . '}}';
                 $body = str_replace($placeholder, $value, $body);
@@ -114,20 +116,29 @@ class ConferenceReminderService
 
             // Gửi email trực tiếp qua queue (không lưu outbox vì schema không phù hợp)
             try {
-                Mail::to($recipient->email)
-                    ->queue(new ConferenceReminderMail($subject, $body, $recipient->full_name));
-                
-                \Log::info("Conference reminder queued", [
-                    'conference_id' => $conference->conference_id,
-                    'recipient' => $recipient->email,
-                    'event_type' => $eventType,
-                    'template_code' => $template->template_code
-                ]);
+                if (!$dryRun) {
+                    Mail::to($recipient->email)
+                        ->queue(new ConferenceReminderMail($subject, $body, $recipient->full_name));
+
+                    Log::info("Conference reminder queued", [
+                        'conference_id' => $conference->conference_id,
+                        'recipient' => $recipient->email,
+                        'event_type' => $eventType,
+                        'template_code' => $template->template_code
+                    ]);
+                } else {
+                    Log::info("[DRY RUN] Conference reminder would be queued", [
+                        'conference_id' => $conference->conference_id,
+                        'recipient' => $recipient->email,
+                        'event_type' => $eventType,
+                        'template_code' => $template->template_code
+                    ]);
+                }
 
                 $stats['reminders']++;
                 $stats['recipients']++;
             } catch (\Exception $e) {
-                \Log::error("Failed to queue conference reminder", [
+                Log::error("Failed to queue conference reminder", [
                     'conference_id' => $conference->conference_id,
                     'recipient' => $recipient->email,
                     'error' => $e->getMessage()

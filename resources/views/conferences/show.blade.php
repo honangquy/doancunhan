@@ -17,7 +17,7 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
-        <span class="text-gray-900">{{ $conference->code ?? 'Chi tiết' }}</span>
+        <span class="text-gray-900">{{ Str::limit($conference->title, 60) }}</span>
     </nav>
 
     <!-- Header Section -->
@@ -128,13 +128,13 @@
                         // Kiểm tra xem user có phải là Chair của hội thảo này không
                         $isChair = Auth::user()->isChair($conference->conference_id);
                     @endphp
-                    
+
                     @if($isChair)
                         <div class="px-6 py-3 bg-purple-100 text-purple-800 font-medium rounded-lg text-center border border-purple-200">
                             Bạn là Chủ tịch của hội thảo này
                         </div>
                     @elseif($canJoin)
-                        <button @click="openJoinModal = true; joinRole = 'AUTHOR'" 
+                        <button @click="openJoinModal = true; joinRole = 'AUTHOR'"
                                 class="px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>

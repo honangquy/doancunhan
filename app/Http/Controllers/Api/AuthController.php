@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\NguoiDung;
 use App\Models\VaiTroNguoiDung;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -127,14 +128,8 @@ class AuthController extends Controller
             // Generate token
             $token = JWTAuth::fromUser($user);
 
-            // Get roles
-            $roles = $user->vaiTros()->with('loaiVaiTro')->get()->map(function ($vaiTro) {
-                return [
-                    'role_code' => $vaiTro->role_code,
-                    'role_name' => $vaiTro->loaiVaiTro->role_name ?? null,
-                    'conference_id' => $vaiTro->conference_id,
-                ];
-            });
+            // Get enriched roles
+            $roles = $this->getEnrichedRoles($user);
 
             return response()->json([
                 'success' => true,
@@ -177,14 +172,8 @@ class AuthController extends Controller
                 ], 404);
             }
 
-            // Get roles
-            $roles = $user->vaiTros()->with('loaiVaiTro')->get()->map(function ($vaiTro) {
-                return [
-                    'role_code' => $vaiTro->role_code,
-                    'role_name' => $vaiTro->loaiVaiTro->role_name ?? null,
-                    'conference_id' => $vaiTro->conference_id,
-                ];
-            });
+            // Get enriched roles
+            $roles = $this->getEnrichedRoles($user);
 
             return response()->json([
                 'success' => true,
@@ -341,6 +330,71 @@ class AuthController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Get enriched roles with conference titles
+     */
+    private function getEnrichedRoles($user)
+    {
+        // 1. Get roles from vaitronguoidung (Reviewer, Chair, Admin, etc.)
+        $roles = DB::table('vaitronguoidung')
+            ->leftJoin('hoithao', 'vaitronguoidung.conference_id', '=', 'hoithao.conference_id')
+            ->leftJoin('loaivaitro', 'vaitronguoidung.role_code', '=', 'loaivaitro.role_code')
+            ->where('vaitronguoidung.user_id', $user->user_id)
+            ->select(
+                'vaitronguoidung.role_code',
+                'loaivaitro.role_name',
+                'vaitronguoidung.conference_id',
+                'hoithao.title as conference_title'
+            )
+            ->get();
+
+        // 2. Check for Author role (from baibao table)
+        $authorConferences = DB::table('baibao')
+            ->join('hoithao', 'baibao.conference_id', '=', 'hoithao.conference_id')
+            ->where('baibao.submitter_id', $user->user_id)
+            ->select('hoithao.conference_id', 'hoithao.title as conference_title')
+            ->distinct()
+            ->get();
+
+        foreach ($authorConferences as $conf) {
+            $exists = $roles->where('role_code', 'AUTHOR')
+                           ->where('conference_id', $conf->conference_id)
+                           ->isNotEmpty();
+
+            if (!$exists) {
+                $roles->push((object)[
+                    'role_code' => 'AUTHOR',
+                    'role_name' => 'Tác giả',
+                    'conference_id' => $conf->conference_id,
+                    'conference_title' => $conf->conference_title
+                ]);
+            }
+        }
+
+        // 3. Check for Chair role (from hoithao table - owner)
+        $chairConferences = DB::table('hoithao')
+            ->where('chair_id', $user->user_id)
+            ->select('conference_id', 'title as conference_title')
+            ->get();
+
+        foreach ($chairConferences as $conf) {
+            $exists = $roles->where('role_code', 'CHAIR')
+                           ->where('conference_id', $conf->conference_id)
+                           ->isNotEmpty();
+
+            if (!$exists) {
+                $roles->push((object)[
+                    'role_code' => 'CHAIR',
+                    'role_name' => 'Chủ trì hội thảo',
+                    'conference_id' => $conf->conference_id,
+                    'conference_title' => $conf->conference_title
+                ]);
+            }
+        }
+
+        return $roles;
     }
 }
 

@@ -24,7 +24,7 @@
 
             <!-- Stats Cards -->
             <div class="grid md:grid-cols-4 gap-4 mb-6" x-data="{ animate: false }" x-init="setTimeout(() => animate = true, 100)">
-                <div class="bg-white rounded-xl shadow-md p-4 transform transition-all duration-500 hover:scale-105 hover:shadow-lg" 
+                <div class="bg-white rounded-xl shadow-md p-4 transform transition-all duration-500 hover:scale-105 hover:shadow-lg"
                      :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      style="transition-delay: 0ms">
                     <div class="flex items-center justify-between">
@@ -40,7 +40,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-md p-4 transform transition-all duration-500 hover:scale-105 hover:shadow-lg" 
+                <div class="bg-white rounded-xl shadow-md p-4 transform transition-all duration-500 hover:scale-105 hover:shadow-lg"
                      :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      style="transition-delay: 100ms">
                     <div class="flex items-center justify-between">
@@ -56,7 +56,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-md p-4 transform transition-all duration-500 hover:scale-105 hover:shadow-lg" 
+                <div class="bg-white rounded-xl shadow-md p-4 transform transition-all duration-500 hover:scale-105 hover:shadow-lg"
                      :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      style="transition-delay: 200ms">
                     <div class="flex items-center justify-between">
@@ -72,7 +72,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-md p-4 transform transition-all duration-500 hover:scale-105 hover:shadow-lg" 
+                <div class="bg-white rounded-xl shadow-md p-4 transform transition-all duration-500 hover:scale-105 hover:shadow-lg"
                      :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      style="transition-delay: 300ms">
                     <div class="flex items-center justify-between">
@@ -95,7 +95,7 @@
                     <h2 class="text-lg font-bold text-gray-800">Phân công của tôi</h2>
                     <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-3 py-1 rounded-full">{{ $assignments->count() }} bài</span>
                 </div>
-                
+
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b">
@@ -198,19 +198,11 @@
                         <h2 class="text-lg font-bold text-gray-800">Reviews đã hoàn thành</h2>
                     </div>
                     <div class="p-6 space-y-4">
-                        <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
-                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-800">Paper #32 - Deep Learning Methods</div>
-                                <div class="text-xs text-gray-500 mt-1">Recommendation: Accept</div>
-                                <div class="text-xs text-gray-400 mt-1">Submitted 2 days ago</div>
-                            </div>
-                        </div>
+                        @php
+                            $completedReviews = $assignments->whereNotNull('review_submitted_at')->take(5);
+                        @endphp
 
+                        @forelse($completedReviews as $review)
                         <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
                             <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                 <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,24 +210,16 @@
                                 </svg>
                             </div>
                             <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-800">Paper #28 - Cloud Computing Security</div>
-                                <div class="text-xs text-gray-500 mt-1">Recommendation: Minor Revision</div>
-                                <div class="text-xs text-gray-400 mt-1">Submitted 5 days ago</div>
+                                <div class="text-sm font-medium text-gray-800">Paper #{{ $review->paper_id }} - {{ Str::limit($review->paper_title, 40) }}</div>
+                                <div class="text-xs text-gray-500 mt-1">Recommendation: {{ $review->recommendation_name ?? 'N/A' }}</div>
+                                <div class="text-xs text-gray-400 mt-1">Submitted {{ \Carbon\Carbon::parse($review->review_submitted_at)->diffForHumans() }}</div>
                             </div>
                         </div>
-
-                        <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
-                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <div class="text-sm font-medium text-gray-800">Paper #21 - Neural Networks</div>
-                                <div class="text-xs text-gray-500 mt-1">Recommendation: Accept</div>
-                                <div class="text-xs text-gray-400 mt-1">Submitted 1 week ago</div>
-                            </div>
+                        @empty
+                        <div class="text-center text-gray-500 py-4">
+                            <p class="text-sm">Chưa có review nào hoàn thành</p>
                         </div>
+                        @endforelse
                     </div>
                     <div class="p-4 border-t">
                         <a href="/reviewer/reviews" class="text-sm text-purple-600 hover:text-purple-800 font-medium">

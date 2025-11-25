@@ -79,6 +79,8 @@ class NewsController extends Controller
             'category' => 'required|in:NEWS,ANNOUNCEMENT,EVENT,GUIDE',
             'conference_id' => 'nullable|exists:hoithao,conference_id',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'attachment_path' => 'nullable|file|mimes:pdf|max:10240',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_featured' => 'nullable|boolean',
             'status' => 'required|in:DRAFT,PENDING,PUBLISHED,ARCHIVED',
             'published_at' => 'nullable|date',
@@ -90,6 +92,25 @@ class NewsController extends Controller
             $filename = time() . '_' . Str::slug($request->title) . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('news/covers', $filename, 'public');
             $validated['cover_image'] = $path;
+        }
+
+        // Handle attachment upload
+        if ($request->hasFile('attachment_path')) {
+            $file = $request->file('attachment_path');
+            $filename = time() . '_' . Str::slug($request->title) . '_attachment.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('news/attachments', $filename, 'public');
+            $validated['attachment_path'] = $path;
+        }
+
+        // Handle gallery images upload
+        if ($request->hasFile('images')) {
+            $imagePaths = [];
+            foreach ($request->file('images') as $index => $image) {
+                $filename = time() . '_' . Str::slug($request->title) . '_gallery_' . $index . '.' . $image->getClientOriginalExtension();
+                $path = $image->storeAs('news/gallery', $filename, 'public');
+                $imagePaths[] = $path;
+            }
+            $validated['images'] = $imagePaths;
         }
 
         // Set created_by
@@ -152,6 +173,8 @@ class NewsController extends Controller
             'category' => 'required|in:NEWS,ANNOUNCEMENT,EVENT,GUIDE',
             'conference_id' => 'nullable|exists:hoithao,conference_id',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'attachment_path' => 'nullable|file|mimes:pdf|max:10240',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_featured' => 'nullable|boolean',
             'status' => 'required|in:DRAFT,PENDING,PUBLISHED,ARCHIVED',
             'published_at' => 'nullable|date',
@@ -168,6 +191,48 @@ class NewsController extends Controller
             $filename = time() . '_' . Str::slug($request->title) . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('news/covers', $filename, 'public');
             $validated['cover_image'] = $path;
+        }
+
+        // Handle attachment upload
+        if ($request->hasFile('attachment_path')) {
+            // Delete old attachment
+            if ($news->attachment_path && Storage::disk('public')->exists($news->attachment_path)) {
+                Storage::disk('public')->delete($news->attachment_path);
+            }
+
+            $file = $request->file('attachment_path');
+            $filename = time() . '_' . Str::slug($request->title) . '_attachment.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('news/attachments', $filename, 'public');
+            $validated['attachment_path'] = $path;
+        }
+
+        // Handle gallery images upload (Append to existing)
+        if ($request->hasFile('images')) {
+            $imagePaths = $news->images ?? [];
+            foreach ($request->file('images') as $index => $image) {
+                $filename = time() . '_' . Str::slug($request->title) . '_gallery_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $path = $image->storeAs('news/gallery', $filename, 'public');
+                $imagePaths[] = $path;
+            }
+            $validated['images'] = $imagePaths;
+        }
+
+        // Handle removing specific images
+        if ($request->has('remove_images')) {
+            $currentImages = $validated['images'] ?? ($news->images ?? []);
+            $imagesToRemove = $request->remove_images;
+            $remainingImages = [];
+
+            foreach ($currentImages as $image) {
+                if (in_array($image, $imagesToRemove)) {
+                    if (Storage::disk('public')->exists($image)) {
+                        Storage::disk('public')->delete($image);
+                    }
+                } else {
+                    $remainingImages[] = $image;
+                }
+            }
+            $validated['images'] = $remainingImages;
         }
 
         $validated['updated_by'] = auth()->id();
@@ -187,6 +252,20 @@ class NewsController extends Controller
         // Delete cover image if exists
         if ($news->cover_image && Storage::disk('public')->exists($news->cover_image)) {
             Storage::disk('public')->delete($news->cover_image);
+        }
+
+        // Delete attachment if exists
+        if ($news->attachment_path && Storage::disk('public')->exists($news->attachment_path)) {
+            Storage::disk('public')->delete($news->attachment_path);
+        }
+
+        // Delete gallery images if exist
+        if (!empty($news->images)) {
+            foreach ($news->images as $image) {
+                if (Storage::disk('public')->exists($image)) {
+                    Storage::disk('public')->delete($image);
+                }
+            }
         }
 
         $news->delete();
