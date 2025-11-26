@@ -25,4 +25,7 @@ Tài liệu này là **bộ hướng dẫn chi tiết** dành cho GitHub Copilot
 5. Khi sửa code:  
    - Luôn hiển thị **diff/patch cụ thể** (chỉ sửa phần cần thiết).  
    - Giải thích ngắn gọn **lý do và tác động**.
+6. Giao diện UI/UX:  
+   - Bắt buộc dùng svg icons hiện đại, không được phép dùng emoji
+   - Thêm animations appear cho các trang
 

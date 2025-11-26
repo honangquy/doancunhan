@@ -1,51 +1,17 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $paper->title }} - HUIT Conferences</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .badge { padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-        .section { border-left: 4px solid; padding-left: 16px; margin-bottom: 24px; }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-gradient-to-r from-blue-800 via-blue-700 to-blue-600 text-white shadow-xl">
-        <div class="px-4">
-            <div class="flex items-center justify-between h-16">
-                <a href="{{ route('author.dashboard') }}" class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                        <span class="text-blue-700 font-bold text-xl">H</span>
-                    </div>
-                    <div>
-                        <div class="font-bold text-lg">HUIT Conferences</div>
-                        <div class="text-xs text-blue-200">Author Portal</div>
-                    </div>
-                </a>
-                <div class="flex items-center space-x-4">
-                    <a href="{{ route('author.dashboard') }}" class="px-4 py-2 hover:bg-blue-700 rounded-lg transition">Dashboard</a>
-                    <a href="{{ route('author.papers.index') }}" class="px-4 py-2 hover:bg-blue-700 rounded-lg transition">Bài báo</a>
-                    <span class="text-white">{{ Auth::user()->full_name }}</span>
-                </div>
-            </div>
-        </div>
-    </nav>
+@extends('layouts.author')
 
-    <div class="max-w-5xl mx-auto px-4 py-8">
+@section('title', $paper->title)
+
+@push('styles')
+<style>
+    .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .badge { padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .section { border-left: 4px solid; padding-left: 16px; margin-bottom: 24px; }
+</style>
+@endpush
+
+@section('content')
+    <div class="max-w-5xl mx-auto">
         <!-- Breadcrumb -->
         <div class="mb-6">
             <nav class="flex items-center space-x-2 text-sm">
@@ -89,11 +55,31 @@
                                 'UNDER_REVIEW' => 'bg-yellow-100 text-yellow-800',
                                 'ACCEPTED' => 'bg-green-100 text-green-800',
                                 'REJECTED' => 'bg-red-100 text-red-800',
+                                'REVISION_REQUIRED' => 'bg-orange-100 text-orange-800',
+                                'PENDING_CHAIR_REVIEW' => 'bg-purple-100 text-purple-800',
                                 'WITHDRAWN' => 'bg-gray-300 text-gray-600',
                             ];
                             $colorClass = $statusColors[$paper->status_code] ?? 'bg-gray-200 text-gray-800';
                         @endphp
                         <span class="badge {{ $colorClass }}">{{ $paper->status_name }}</span>
+                        
+                        @if($paper->decision)
+                            @php
+                                $decisionColors = [
+                                    'ACCEPT' => 'bg-green-100 text-green-800',
+                                    'REJECT' => 'bg-red-100 text-red-800',
+                                    'PUBLISHED' => 'bg-purple-100 text-purple-800'
+                                ];
+                                $decisionNames = [
+                                    'ACCEPT' => 'Chấp nhận',
+                                    'REJECT' => 'Từ chối',
+                                    'PUBLISHED' => 'Đã xuất bản'
+                                ];
+                                $decisionClass = $decisionColors[$paper->decision] ?? 'bg-gray-200 text-gray-800';
+                                $decisionName = $decisionNames[$paper->decision] ?? $paper->decision;
+                            @endphp
+                            <span class="badge {{ $decisionClass }}">{{ $decisionName }}</span>
+                        @endif
                     </div>
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ $paper->title }}</h1>
                     <p class="text-gray-600">
@@ -102,6 +88,79 @@
                     <p class="text-gray-600 text-sm mt-1">
                         Nộp ngày: {{ \Carbon\Carbon::parse($paper->created_at)->format('d/m/Y H:i') }}
                     </p>
+                    
+                    @if($paper->decision)
+                    <div class="mt-4 p-4 rounded-lg 
+                        @if($paper->decision === 'ACCEPT') bg-green-50 border border-green-200
+                        @elseif($paper->decision === 'REJECT') bg-red-50 border border-red-200  
+                        @elseif($paper->decision === 'REVISE') bg-orange-50 border border-orange-200
+                        @elseif($paper->decision === 'PUBLISHED') bg-purple-50 border border-purple-200
+                        @endif">
+                        <h3 class="font-semibold mb-2
+                            @if($paper->decision === 'ACCEPT') text-green-800
+                            @elseif($paper->decision === 'REJECT') text-red-800
+                            @elseif($paper->decision === 'REVISE') text-orange-800
+                            @elseif($paper->decision === 'PUBLISHED') text-purple-800
+                            @endif">
+                            <svg class="w-5 h-5 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                @if($paper->decision === 'ACCEPT')
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                @elseif($paper->decision === 'REJECT')
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                @elseif($paper->decision === 'REVISE')
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                @elseif($paper->decision === 'PUBLISHED')
+                                <path fill-rule="evenodd" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" clip-rule="evenodd"></path>
+                                @endif
+                            </svg>
+                            Quyết định của Chair: 
+                            @if($paper->decision === 'ACCEPT') Chấp nhận
+                            @elseif($paper->decision === 'REJECT') Từ chối
+                            @elseif($paper->decision === 'REVISE') Yêu cầu sửa lại
+                            @elseif($paper->decision === 'PUBLISHED') Đã xuất bản
+                            @endif
+                        </h3>
+                        
+                        @if($paper->decision_date)
+                        <p class="text-sm text-gray-600 mb-2">
+                            Ngày quyết định: {{ \Carbon\Carbon::parse($paper->decision_date)->format('d/m/Y H:i') }}
+                        </p>
+                        @endif
+                        
+                        @if($paper->decision_comments)
+                        <div class="mb-3">
+                            <h4 class="font-medium text-gray-700 mb-1">Nhận xét của Chair:</h4>
+                            <p class="text-sm text-gray-700 bg-white p-3 rounded border">{{ $paper->decision_comments }}</p>
+                        </div>
+                        @endif
+                        
+                        @if($paper->decision === 'REVISE' && $paper->revision_deadline)
+                        <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
+                            <h4 class="font-medium text-yellow-800 mb-1">
+                                <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                                Hạn chỉnh sửa:
+                            </h4>
+                            <p class="text-sm text-yellow-700">
+                                {{ \Carbon\Carbon::parse($paper->revision_deadline)->format('d/m/Y') }}
+                                @php
+                                    $now = \Carbon\Carbon::now();
+                                    $deadline = \Carbon\Carbon::parse($paper->revision_deadline);
+                                    $daysLeft = $now->diffInDays($deadline, false);
+                                @endphp
+                                @if($daysLeft > 0)
+                                    (còn {{ $daysLeft }} ngày)
+                                @elseif($daysLeft === 0)
+                                    (hôm nay là hạn cuối)
+                                @else
+                                    (đã quá hạn {{ abs($daysLeft) }} ngày)
+                                @endif
+                            </p>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
                 </div>
                 
                 <div class="flex flex-col space-y-2 ml-4">
@@ -115,7 +174,7 @@
                     </a>
                     @endif
                     
-                    @if(in_array($paper->status_code, ['DRAFT', 'SUBMITTED']))
+                    @if($editPermission['can_edit'])
                     <a href="{{ route('author.papers.edit', $paper->paper_id) }}" 
                        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,9 +182,16 @@
                         </svg>
                         <span>Chỉnh sửa</span>
                     </a>
+                    @else
+                    <div class="bg-gray-100 text-gray-500 px-4 py-2 rounded-lg font-medium flex items-center space-x-2" title="{{ $editPermission['reason'] }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span>Không thể chỉnh sửa</span>
+                    </div>
                     @endif
                     
-                    @if($paper->status_code !== 'ACCEPTED' && $paper->status_code !== 'WITHDRAWN')
+                    @if($withdrawPermission['can_withdraw'])
                     <button onclick="document.getElementById('withdrawModal').classList.remove('hidden')"
                             class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition flex items-center space-x-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,6 +199,13 @@
                         </svg>
                         <span>Rút bài</span>
                     </button>
+                    @else
+                    <div class="bg-gray-100 text-gray-500 px-4 py-2 rounded-lg font-medium flex items-center space-x-2" title="{{ $withdrawPermission['reason'] }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span>Không thể rút bài</span>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -190,41 +263,95 @@
                 </div>
 
                 <!-- Reviews Section -->
-                @if(in_array($paper->status_code, ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED']) && $reviews->count() > 0)
+                @if(in_array($paper->status_code, ['UNDER_REVIEW', 'ACCEPTED', 'REJECTED', 'REVISION_REQUIRED']) && $reviews->count() > 0)
                 <div class="card p-6">
                     <div class="section border-yellow-500">
                         <h2 class="text-xl font-bold text-gray-900 mb-4">Kết quả phản biện</h2>
-                        <div class="space-y-4">
+                        <div class="space-y-6">
                             @foreach($reviews as $index => $review)
-                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h3 class="font-semibold text-gray-900">Phản biện #{{ $index + 1 }}</h3>
-                                    <span class="text-sm text-gray-600">
-                                        {{ \Carbon\Carbon::parse($review->submitted_at)->format('d/m/Y') }}
+                            <div class="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-3">
+                                        <h3 class="font-semibold text-gray-900">
+                                            @if($review->reviewer_name)
+                                                {{ $review->reviewer_name }}
+                                            @else
+                                                Reviewer #{{ $index + 1 }}
+                                            @endif
+                                        </h3>
+                                        <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                            {{ \Carbon\Carbon::parse($review->submitted_at)->format('d/m/Y') }}
+                                        </span>
+                                    </div>
+                                    @if($review->total_score)
+                                    <div class="text-right">
+                                        <div class="text-2xl font-bold text-blue-600">{{ number_format($review->total_score, 1) }}/10</div>
+                                        <div class="text-xs text-gray-600">Điểm tổng</div>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                <!-- Detailed Scores -->
+                                @if($review->score_novelty || $review->score_relevance || $review->score_technical_quality)
+                                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                                    @if($review->score_novelty)
+                                    <div class="text-center bg-white rounded-lg p-3">
+                                        <div class="text-lg font-bold text-purple-600">{{ $review->score_novelty }}/10</div>
+                                        <div class="text-xs text-gray-600">Tính mới</div>
+                                    </div>
+                                    @endif
+                                    @if($review->score_relevance)
+                                    <div class="text-center bg-white rounded-lg p-3">
+                                        <div class="text-lg font-bold text-green-600">{{ $review->score_relevance }}/10</div>
+                                        <div class="text-xs text-gray-600">Liên quan</div>
+                                    </div>
+                                    @endif
+                                    @if($review->score_technical_quality)
+                                    <div class="text-center bg-white rounded-lg p-3">
+                                        <div class="text-lg font-bold text-blue-600">{{ $review->score_technical_quality }}/10</div>
+                                        <div class="text-xs text-gray-600">Kỹ thuật</div>
+                                    </div>
+                                    @endif
+                                    @if($review->score_presentation)
+                                    <div class="text-center bg-white rounded-lg p-3">
+                                        <div class="text-lg font-bold text-orange-600">{{ $review->score_presentation }}/10</div>
+                                        <div class="text-xs text-gray-600">Trình bày</div>
+                                    </div>
+                                    @endif
+                                    @if($review->score_references)
+                                    <div class="text-center bg-white rounded-lg p-3">
+                                        <div class="text-lg font-bold text-red-600">{{ $review->score_references }}/10</div>
+                                        <div class="text-xs text-gray-600">Tài liệu tham khảo</div>
+                                    </div>
+                                    @endif
+                                </div>
+                                @endif
+
+                                <!-- Recommendation -->
+                                @if($review->recommendation_code)
+                                <div class="flex items-center space-x-3 mb-4">
+                                    <span class="text-sm font-medium text-gray-700">Đề xuất:</span>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                        @if(strpos($review->recommendation_code, 'ACCEPT') !== false) bg-green-100 text-green-800
+                                        @elseif(strpos($review->recommendation_code, 'REJECT') !== false) bg-red-100 text-red-800
+                                        @else bg-yellow-100 text-yellow-800
+                                        @endif">
+                                        @if($review->recommendation_name)
+                                            {{ $review->recommendation_name }}
+                                        @else
+                                            {{ $review->recommendation_code }}
+                                        @endif
                                     </span>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4 mb-3">
-                                    <div>
-                                        <p class="text-sm text-gray-600">Điểm đánh giá:</p>
-                                        <p class="text-2xl font-bold text-blue-600">{{ $review->score }}/10</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600">Đề xuất:</p>
-                                        <p class="font-semibold">
-                                            @if($review->recommendation === 'ACCEPT')
-                                                <span class="text-green-600">Chấp nhận</span>
-                                            @elseif($review->recommendation === 'REJECT')
-                                                <span class="text-red-600">Từ chối</span>
-                                            @else
-                                                <span class="text-yellow-600">Yêu cầu sửa</span>
-                                            @endif
-                                        </p>
-                                    </div>
+                                @endif
+
+                                <!-- Comments -->
+                                @if($review->comment_author)
+                                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                                    <p class="text-sm font-medium text-gray-700 mb-2">Nhận xét cho tác giả:</p>
+                                    <div class="text-gray-700 text-sm leading-relaxed whitespace-pre-line">{{ $review->comment_author }}</div>
                                 </div>
-                                <div class="border-t border-yellow-300 pt-3">
-                                    <p class="text-sm font-medium text-gray-700 mb-2">Nhận xét:</p>
-                                    <p class="text-gray-700 whitespace-pre-line">{{ $review->review_content }}</p>
-                                </div>
+                                @endif
                             </div>
                             @endforeach
                         </div>
@@ -257,39 +384,89 @@
                     <h3 class="font-bold text-gray-900 mb-4 pb-3 border-b">Trạng thái phản biện</h3>
                     <div class="space-y-3">
                         @if($assignments->count() > 0)
+                            @php
+                                $totalAssignments = $assignments->count();
+                                $completedReviews = $assignments->where('review_submitted_at', '!=', null)->count();
+                                $acceptedAssignments = $assignments->where('status', 'ACCEPTED')->count();
+                                $pendingAssignments = $assignments->where('status', 'PENDING')->count();
+                            @endphp
+                            
+                            <!-- Summary Stats -->
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                <div class="grid grid-cols-3 gap-4 text-center">
+                                    <div>
+                                        <div class="text-2xl font-bold text-gray-900">{{ $totalAssignments }}</div>
+                                        <div class="text-xs text-gray-600">Tổng số</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold text-green-600">{{ $completedReviews }}</div>
+                                        <div class="text-xs text-gray-600">Hoàn thành</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-2xl font-bold 
+                                            @if($pendingAssignments > 0) text-yellow-600
+                                            @else text-blue-600 
+                                            @endif">{{ $acceptedAssignments }}</div>
+                                        <div class="text-xs text-gray-600">Đang phản biện</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Individual Assignments -->
                             @foreach($assignments as $index => $assignment)
-                            <div class="flex items-center space-x-3">
-                                @if($assignment->status_code === 'COMPLETED')
-                                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <div class="flex items-center space-x-3 p-3 bg-white border border-gray-200 rounded-lg">
+                                @if($assignment->review_submitted_at)
+                                    <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                     </svg>
-                                @elseif($assignment->status_code === 'ACCEPTED')
-                                    <svg class="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                @elseif($assignment->status === 'ACCEPTED')
+                                    <svg class="w-5 h-5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
                                     </svg>
-                                @else
-                                    <svg class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                @elseif($assignment->status === 'PENDING')
+                                    <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clip-rule="evenodd"></path>
                                     </svg>
+                                @else
+                                    <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm4.293-5.293a1 1 0 010 1.414L11.414 12l2.879 2.879a1 1 0 01-1.414 1.414L10 13.414l-2.879 2.879a1 1 0 01-1.414-1.414L8.586 12 5.707 9.121a1 1 0 011.414-1.414L10 10.586l2.879-2.879a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
                                 @endif
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">Phản biện {{ $index + 1 }}</p>
-                                    <p class="text-xs text-gray-600">
-                                        @if($assignment->status_code === 'COMPLETED')
-                                            Hoàn thành
-                                        @elseif($assignment->status_code === 'ACCEPTED')
-                                            Đang phản biện
-                                        @elseif($assignment->status_code === 'PENDING')
-                                            Chờ xác nhận
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">
+                                        @if($assignment->reviewer_name)
+                                            {{ $assignment->reviewer_name }}
                                         @else
-                                            {{ $assignment->status_code }}
+                                            Reviewer {{ $index + 1 }}
+                                        @endif
+                                    </p>
+                                    <p class="text-xs text-gray-600">
+                                        @if($assignment->review_submitted_at)
+                                            <span class="text-green-600 font-medium">Hoàn thành</span> 
+                                            - {{ \Carbon\Carbon::parse($assignment->review_submitted_at)->format('d/m/Y') }}
+                                        @elseif($assignment->status === 'ACCEPTED')
+                                            <span class="text-yellow-600 font-medium">Đang phản biện</span>
+                                            - Nhận {{ \Carbon\Carbon::parse($assignment->assigned_at)->format('d/m/Y') }}
+                                        @elseif($assignment->status === 'PENDING')
+                                            <span class="text-gray-500 font-medium">Chờ xác nhận</span>
+                                            - Gửi {{ \Carbon\Carbon::parse($assignment->assigned_at)->format('d/m/Y') }}
+                                        @elseif($assignment->status === 'DECLINED')
+                                            <span class="text-red-500 font-medium">Đã từ chối</span>
+                                        @else
+                                            <span class="text-gray-500 font-medium">{{ $assignment->status }}</span>
                                         @endif
                                     </p>
                                 </div>
                             </div>
                             @endforeach
                         @else
-                        <p class="text-sm text-gray-600">Chưa có phân công phản biện</p>
+                        <div class="text-center py-8">
+                            <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-sm text-gray-500 mb-2">Chưa có phân công phân biện</p>
+                            <p class="text-xs text-gray-400">Bài báo chưa được gửi cho reviewer nào</p>
+                        </div>
                         @endif
                     </div>
                 </div>
@@ -322,9 +499,4 @@
             </form>
         </div>
     </div>
-
-    <footer class="mt-12 py-6 text-center text-gray-600 text-sm">
-        <p>&copy; 2025 HUIT Conferences. All rights reserved.</p>
-    </footer>
-</body>
-</html>
+@endsection

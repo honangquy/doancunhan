@@ -6,16 +6,17 @@
     <title>Danh sách Hội thảo - HUIT Conferences</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @include('partials.favicon')
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         * {
             font-family: 'Inter', sans-serif;
         }
     </style>
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -44,7 +45,7 @@
                         <div class="text-xs text-blue-200">Hệ thống quản lý hội thảo</div>
                     </div>
                 </a>
-                
+
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="/" class="hover:text-orange-300 transition-all duration-300 font-medium">Trang chủ</a>
                     <a href="/conferences" class="text-orange-300 font-medium">Hội thảo</a>
@@ -52,7 +53,7 @@
                     <a href="/process" class="hover:text-orange-300 transition-all duration-300 font-medium">Quy trình</a>
                     <a href="/support" class="hover:text-orange-300 transition-all duration-300 font-medium">Hỗ trợ</a>
                 </div>
-                
+
                 <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -71,39 +72,62 @@
     </section>
 
     <!-- Search and Filters -->
-    <section class="py-8 bg-white border-b" x-data="{ 
-        searchQuery: '', 
-        selectedStatus: 'all',
-        selectedTopic: 'all',
-        sortBy: 'date'
-    }">
+    <section class="py-8 bg-white border-b">
         <div class="container mx-auto px-4">
-            <div class="grid md:grid-cols-4 gap-4">
+            <form method="GET" action="{{ route('conferences.index') }}" class="grid md:grid-cols-4 gap-4">
                 <!-- Search -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Tìm kiếm</label>
-                    <input x-model="searchQuery" 
-                           type="text" 
-                           placeholder="Nhập tên hội thảo, mã, lĩnh vực..." 
+                    <input name="search"
+                           type="text"
+                           value="{{ $search }}"
+                           placeholder="Nhập tên hội thảo, mô tả, từ khóa..."
                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
-                
+
                 <!-- Status Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
-                    <select x-model="selectedStatus" 
+                    <select name="status"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="all">Tất cả</option>
-                        <option value="open">Đang mở</option>
-                        <option value="upcoming">Sắp diễn ra</option>
-                        <option value="closed">Đã đóng</option>
+                        <option value="all" {{ $status == 'all' ? 'selected' : '' }}>Tất cả</option>
+                        <option value="open" {{ $status == 'open' ? 'selected' : '' }}>Đang nhận bài</option>
+                        <option value="upcoming" {{ $status == 'upcoming' ? 'selected' : '' }}>Sắp diễn ra</option>
+                        <option value="ongoing" {{ $status == 'ongoing' ? 'selected' : '' }}>Đang diễn ra</option>
+                        <option value="ended" {{ $status == 'ended' ? 'selected' : '' }}>Đã kết thúc</option>
                     </select>
                 </div>
-                
+
+                <!-- Level Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cấp độ</label>
+                    <select name="level"
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Tất cả cấp độ</option>
+                        @foreach($levels as $levelOption)
+                            <option value="{{ $levelOption }}" {{ $level == $levelOption ? 'selected' : '' }}>
+                                {{ $levelOption == 'KHOA' ? 'Cấp Khoa' : 'Cấp Trường' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex items-end">
+                    <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors">
+                        Tìm kiếm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+                </div>
+
                 <!-- Topic Filter -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Lĩnh vực</label>
-                    <select x-model="selectedTopic" 
+                    <select x-model="selectedTopic"
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="all">Tất cả</option>
                         <option value="cntt">Công nghệ thông tin</option>
@@ -114,7 +138,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <!-- Active Filters -->
             <div class="mt-4 flex flex-wrap items-center gap-2">
                 <span class="text-sm text-gray-600 font-medium">Bộ lọc:</span>
@@ -138,7 +162,7 @@
                         </button>
                     </span>
                 </template>
-                <button @click="searchQuery = ''; selectedStatus = 'all'; selectedTopic = 'all'" 
+                <button @click="searchQuery = ''; selectedStatus = 'all'; selectedTopic = 'all'"
                         class="text-xs text-gray-600 hover:text-gray-800 underline">
                     Xóa tất cả
                 </button>
@@ -316,8 +340,8 @@
             <div class="grid md:grid-cols-3 gap-8">
                 <div>
                     <h3 class="text-white font-bold mb-4">HUIT Conferences</h3>
-                    <p class="text-sm">Trường Đại học Công nghiệp TP.HCM</p>
-                    <p class="text-sm">Nền tảng quản lý hội thảo khoa học đa cấp</p>
+                    <p class="text-sm">Trường Đại học Công Thương TP. Hồ Chí Minh TP.HCM</p>
+                    <p class="text-sm mt-2">Nền tảng quản lý hội thảo khoa học đa cấp</p>
                 </div>
                 <div>
                     <h3 class="text-white font-bold mb-4">Liên kết</h3>

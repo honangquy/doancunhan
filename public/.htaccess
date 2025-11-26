@@ -19,3 +19,22 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# PDF Configuration - Force inline viewing instead of download
+<FilesMatch "\.pdf$">
+    Header always set Content-Disposition "inline"
+    Header always set Content-Type "application/pdf"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Cache-Control "public, max-age=31536000"
+</FilesMatch>
+
+# Additional MIME types for better compatibility
+<IfModule mod_mime.c>
+    AddType application/pdf .pdf
+</IfModule>
+
+# Security headers for PDF files
+<FilesMatch "\.pdf$">
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+</FilesMatch>

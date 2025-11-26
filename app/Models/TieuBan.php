@@ -9,14 +9,17 @@ class TieuBan extends Model
 {
     use HasFactory;
 
-    protected $table = 'TieuBan';
+    protected $table = 'tieuban';
     protected $primaryKey = 'track_id';
     public $timestamps = false;
 
     protected $fillable = [
         'conference_id',
         'title',
+        'committee_name',
+        'description',
         'chair_id',
+        'created_at',
     ];
 
     // Relationships

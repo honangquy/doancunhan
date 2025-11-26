@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class HoiThao extends Model
 {
     use HasFactory;
 
-    protected $table = 'HoiThao';
+    protected $table = 'hoithao';
     protected $primaryKey = 'conference_id';
     public $timestamps = false;
 
@@ -18,13 +19,31 @@ class HoiThao extends Model
         'level_code',
         'faculty_id',
         'title',
+        'description',
         'year',
         'start_date',
         'end_date',
         'deadline_submission',
         'deadline_review',
         'deadline_camera_ready',
+        'result_announcement_deadline',
+        'reviewers_per_paper',
+        'enable_coi_check',
+        'banner_path',
+        'chair_id',
         'status',
+        'field',
+        'level',
+        'faculty_name',
+        // Existing fields for conference detail page
+        'cfp_file_path',
+        'submission_guidelines',
+        'detailed_description',
+        'location',
+        'contact_email',
+        'contact_phone',
+        'keywords',
+        'acronym'
     ];
 
     protected $casts = [
@@ -34,9 +53,60 @@ class HoiThao extends Model
         'deadline_submission' => 'date',
         'deadline_review' => 'date',
         'deadline_camera_ready' => 'date',
+        'result_announcement_deadline' => 'date',
+        'reviewers_per_paper' => 'integer',
+        'enable_coi_check' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
+    // Mutators to ensure date fields are stored in Y-m-d format
+    public function setStartDateAttribute($value)
+    {
+        $this->attributes['start_date'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setEndDateAttribute($value)
+    {
+        $this->attributes['end_date'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setDeadlineSubmissionAttribute($value)
+    {
+        $this->attributes['deadline_submission'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setDeadlineReviewAttribute($value)
+    {
+        $this->attributes['deadline_review'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setDeadlineCameraReadyAttribute($value)
+    {
+        $this->attributes['deadline_camera_ready'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function setResultAnnouncementDeadlineAttribute($value)
+    {
+        $this->attributes['result_announcement_deadline'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
     // Relationships
+    public function chair()
+    {
+        return $this->belongsTo(NguoiDung::class, 'chair_id', 'user_id');
+    }
+
+    public function conferenceRequest()
+    {
+        return $this->belongsTo(YeuCauHoiThao::class, 'conference_request_id', 'request_id');
+    }
+
+    public function committees()
+    {
+        return $this->hasMany(TieuBan::class, 'conference_id', 'conference_id');
+    }
+
     public function khoa()
     {
         return $this->belongsTo(Khoa::class, 'faculty_id', 'faculty_id');
@@ -72,19 +142,128 @@ class HoiThao extends Model
         return $this->hasOne(YeuCauHoiThao::class, 'conference_id', 'conference_id');
     }
 
+    /**
+     * Get user roles for this conference
+     */
+    public function vaiTroNguoiDungs()
+    {
+        return $this->hasMany(VaiTroNguoiDung::class, 'conference_id', 'conference_id');
+    }
+
+    /**
+     * Get chairs for this conference
+     */
+    public function chairs()
+    {
+        return $this->vaiTroNguoiDungs()
+            ->where('role_code', 'CHAIR')
+            ->with('user');
+    }
+
+    /**
+     * Get reviewers for this conference
+     */
+    public function reviewers()
+    {
+        return $this->vaiTroNguoiDungs()
+            ->where('role_code', 'REVIEWER')
+            ->with('user');
+    }
+
+    /**
+     * Get join requests for this conference.
+     */
+    public function joinRequests()
+    {
+        return $this->hasMany(JoinRequest::class, 'conference_id', 'conference_id');
+    }
+
+    /**
+     * Get pending join requests.
+     */
+    public function pendingJoinRequests()
+    {
+        return $this->joinRequests()->where('status', JoinRequest::STATUS_PENDING);
+    }
+
+    /**
+     * Get approved join requests by role.
+     */
+    public function approvedJoinRequests($role = null)
+    {
+        $query = $this->joinRequests()->where('status', JoinRequest::STATUS_APPROVED);
+
+        if ($role) {
+            $query->where('role', $role);
+        }
+
+        return $query;
+    }
+
     // Helper methods
     public function isOpen()
     {
-        return $this->status === 'OPEN';
+        // Kiểm tra dựa trên deadline submission thực tế thay vì chỉ dựa trên status field
+        if (!$this->deadline_submission) {
+            // Nếu không có deadline, kiểm tra status field
+            return $this->status === 'open' || $this->status === 'OPEN' || $this->status === 'ACTIVE';
+        }
+
+        $now = Carbon::now();
+        $submissionDeadline = Carbon::parse($this->deadline_submission);
+
+        // Hội thảo được coi là "mở" nếu còn hạn nộp bài
+        return $now->lt($submissionDeadline);
+    }
+
+    public function isClosed()
+    {
+        return $this->status === 'closed';
+    }
+
+    public function isFinished()
+    {
+        return $this->status === 'finished';
     }
 
     public function isSubmissionOpen()
     {
-        return $this->deadline_submission >= now();
+        return $this->deadline_submission && $this->deadline_submission >= now()->startOfDay();
     }
 
     public function isReviewOpen()
     {
-        return $this->deadline_review >= now();
+        return $this->deadline_review && $this->deadline_review >= now()->startOfDay();
+    }
+
+    /**
+     * Get the number of days remaining until submission deadline.
+     */
+    public function getDaysUntilSubmission()
+    {
+        if (!$this->deadline_submission) {
+            return null;
+        }
+
+        $now = now()->startOfDay();
+        $deadline = \Carbon\Carbon::parse($this->deadline_submission)->startOfDay();
+
+        if ($deadline < $now) {
+            return 0;
+        }
+
+        return $now->diffInDays($deadline);
+    }
+
+    /**
+     * Get conference statistics.
+     */
+    public function getStats()
+    {
+        return [
+            'papers' => $this->baiBaos()->count(),
+            'reviewers' => $this->approvedJoinRequests(JoinRequest::ROLE_REVIEWER)->count(),
+            'authors' => $this->approvedJoinRequests(JoinRequest::ROLE_AUTHOR)->count()
+        ];
     }
 }

@@ -184,7 +184,7 @@
         <!-- COI Table -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden">
             <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-purple-100 border-b">
-                <h2 class="text-lg font-bold text-gray-800">📋 Danh sách COI đã khai báo</h2>
+                <h2 class="text-lg font-bold text-gray-800">Danh sách COI đã khai báo</h2>
                 <p class="text-sm text-gray-600 mt-1">Hiển thị {{ $declaredCOI->count() }} khai báo</p>
             </div>
 

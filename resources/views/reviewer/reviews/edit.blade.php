@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.favicon')
     <title>Edit Review - Conference Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -29,7 +30,7 @@
                 </a>
                 <div class="flex items-center space-x-4">
                     <a href="{{ route('reviewer.dashboard') }}" class="hover:text-purple-100">Dashboard</a>
-                    <a href="{{ route('reviewer.assignments') }}" class="hover:text-purple-100">Assignments</a>
+                    <a href="{{ route('reviewer.assignments.index') }}" class="hover:text-purple-100">Assignments</a>
                     <a href="{{ route('reviewer.reviews') }}" class="hover:text-purple-100">My Reviews</a>
                     <div class="h-6 w-px bg-purple-400"></div>
                     <span class="font-medium">{{ Auth::user()->full_name }}</span>

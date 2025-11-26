@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
+    @include('partials.favicon')
     <title>{{ $title ?? 'HUIT Conferences' }} - Hệ thống Quản lý Hội thảo</title>
 
     <!-- Fonts -->
@@ -14,7 +14,7 @@
 
     <!-- Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
     @stack('styles')
 </head>
 <body class="h-full bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500">
@@ -45,11 +45,11 @@
         <!-- Footer -->
         <div class="mt-8 text-center">
             <p class="text-sm text-blue-100">
-                © {{ date('Y') }} HUIT - Trường Đại học Công nghiệp TP.HCM
+                © {{ date('Y') }} HUIT - Trường Đại học Công Thương TP. Hồ Chí Minh
             </p>
         </div>
     </div>
-    
+
     @stack('scripts')
 </body>
 </html>

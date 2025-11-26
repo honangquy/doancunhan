@@ -24,7 +24,7 @@ class ReviewController extends Controller
 
         // Validate input
         $validator = Validator::make($request->all(), [
-            'assignment_id' => 'required|integer|exists:PhanCongPhanBien,assignment_id',
+            'assignment_id' => 'required|integer|exists:phancongphanbien,assignment_id',
             'recommendation_code' => 'required|string|exists:LoaiKhuyenNghi,recommendation_code',
             'score' => 'nullable|integer|min:0|max:10',
             'comment_author' => 'nullable|string',
@@ -520,9 +520,9 @@ class ReviewController extends Controller
                 });
             }
         })
-        ->join('PhanCongPhanBien', 'PhanBien.assignment_id', '=', 'PhanCongPhanBien.assignment_id')
-        ->distinct('PhanCongPhanBien.reviewer_id')
-        ->count('PhanCongPhanBien.reviewer_id');
+        ->join('phancongphanbien', 'phanbien.assignment_id', '=', 'phancongphanbien.assignment_id')
+        ->distinct('phancongphanbien.reviewer_id')
+        ->count('phancongphanbien.reviewer_id');
 
         return response()->json([
             'success' => true,
@@ -540,7 +540,7 @@ class ReviewController extends Controller
     // Helper methods
     private function isAdmin($user)
     {
-        return DB::table('VaiTroNguoiDung')
+        return DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->where('role_code', 'ADMIN')
             ->exists();
@@ -548,7 +548,7 @@ class ReviewController extends Controller
 
     private function isReviewer($user)
     {
-        return DB::table('VaiTroNguoiDung')
+        return DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->where('role_code', 'REVIEWER')
             ->exists();
@@ -560,3 +560,7 @@ class ReviewController extends Controller
         return $track && $track->chair_id == $user->user_id;
     }
 }
+
+
+
+

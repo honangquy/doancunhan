@@ -24,6 +24,14 @@ class CheckRole
     {
         // Check if user is authenticated
         if (!Auth::check()) {
+            // For API requests, return JSON
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
             return redirect('/login')
                 ->with('error', 'Vui lòng đăng nhập để tiếp tục.');
         }
@@ -37,7 +45,16 @@ class CheckRole
             }
         }
 
-        // User doesn't have required role - return 403
+        // User doesn't have required role
+        // For API requests, return JSON
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền truy cập. Chỉ Chair mới có quyền thực hiện thao tác này.'
+            ], 403);
+        }
+
+        // For web requests, abort with 403
         abort(403, 'Bạn không có quyền truy cập trang này.');
     }
 }

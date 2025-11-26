@@ -9,7 +9,7 @@ class VaiTroNguoiDung extends Model
 {
     use HasFactory;
 
-    protected $table = 'VaiTroNguoiDung';
+    protected $table = 'vaitronguoidung';
     protected $primaryKey = 'user_role_id';
     public $timestamps = false;
 

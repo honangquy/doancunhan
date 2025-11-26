@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @include('partials.favicon')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Reviews - {{ $paper->title }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,7 +52,7 @@
         <!-- Page Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                📋 Tất cả nhận xét
+                Tất cả nhận xét
             </h1>
             <p class="text-gray-600">Bài báo #{{ $paper->paper_id }}</p>
         </div>
@@ -413,7 +414,7 @@
         @if($pendingReviews->count() > 0)
         <div class="space-y-4">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                ⏳ Nhận xét đang chờ ({{ $pendingReviews->count() }})
+                 Nhận xét đang chờ ({{ $pendingReviews->count() }})
             </h3>
 
             @foreach($pendingReviews as $pending)

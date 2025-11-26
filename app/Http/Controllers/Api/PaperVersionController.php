@@ -363,7 +363,7 @@ class PaperVersionController extends Controller
     // Helper method to check if user is admin
     private function isAdmin($user)
     {
-        return DB::table('VaiTroNguoiDung')
+        return DB::table('vaitronguoidung')
             ->where('user_id', $user->user_id)
             ->where('role_code', 'ADMIN')
             ->exists();
@@ -398,3 +398,7 @@ class PaperVersionController extends Controller
         return round($bytes, $precision) . ' ' . $units[$pow];
     }
 }
+
+
+
+

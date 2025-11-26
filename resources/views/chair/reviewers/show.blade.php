@@ -183,7 +183,7 @@
                     <button @click="activeTab = 'assignments'" 
                             :class="activeTab === 'assignments' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                             class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition">
-                        📋 Phân công ({{ $stats['total_assignments'] }})
+                          Phân công ({{ $stats['total_assignments'] }})
                     </button>
                     <button @click="activeTab = 'completed'" 
                             :class="activeTab === 'completed' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"

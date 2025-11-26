@@ -562,3 +562,7 @@ class BiddingController extends Controller
         return $names[$code] ?? $code;
     }
 }
+
+
+
+
