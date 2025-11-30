@@ -1047,17 +1047,33 @@ window.bulkDelete = function() {
                             <svg class="w-4 h-4 inline mr-1.5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
                             </svg>
-                            Vai trò
+                            Vai trò (Global) <span class="text-xs text-gray-500 font-normal ml-1">(Có thể chọn nhiều)</span>
                         </label>
-                        <select id="editRole" name="role" required 
-                                class="form-input w-full px-3 py-2 text-sm border border-gray-300 rounded-lg leading-5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition-all">
-                            <option value="">Chọn vai trò</option>
-                            <option value="USER">Người dùng</option>
-                            <option value="AUTHOR">Tác giả</option>
-                            <option value="REVIEWER">Phản biện viên</option>
-                            <option value="CHAIR">Chủ tịch</option>
-                            <option value="ADMIN">Quản trị viên</option>
-                        </select>
+                        <div class="space-y-2 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-2 rounded transition">
+                                <input type="checkbox" name="roles[]" value="USER" class="form-checkbox h-4 w-4 text-emerald-600 rounded">
+                                <span class="text-sm">Người dùng</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-2 rounded transition">
+                                <input type="checkbox" name="roles[]" value="AUTHOR" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                <span class="text-sm">Tác giả</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-2 rounded transition">
+                                <input type="checkbox" name="roles[]" value="REVIEWER" class="form-checkbox h-4 w-4 text-purple-600 rounded">
+                                <span class="text-sm">Phản biện viên</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-2 rounded transition">
+                                <input type="checkbox" name="roles[]" value="CHAIR" class="form-checkbox h-4 w-4 text-orange-600 rounded">
+                                <span class="text-sm">Chủ tịch</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-2 rounded transition">
+                                <input type="checkbox" name="roles[]" value="ADMIN" class="form-checkbox h-4 w-4 text-red-600 rounded">
+                                <span class="text-sm">Quản trị viên</span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1" id="editRoleNote">
+                            Lưu ý: Chỉ cập nhật vai trò global. Vai trò theo hội thảo sẽ được giữ nguyên.
+                        </p>
                     </div>
                 </div>
                 
@@ -1224,8 +1240,37 @@ async function editUser(userId) {
             document.getElementById('editUserId').value = data.user.user_id;
             document.getElementById('editFullName').value = data.user.full_name;
             document.getElementById('editEmail').value = data.user.email;
-            document.getElementById('editRole').value = data.user.role_code || '';
             document.getElementById('editPassword').value = '';
+            
+            // Uncheck all role checkboxes first
+            document.querySelectorAll('input[name="roles[]"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Check the roles that user has
+            if (data.user.role_codes && data.user.role_codes.length > 0) {
+                data.user.role_codes.forEach(roleCode => {
+                    const checkbox = document.querySelector(`input[name="roles[]"][value="${roleCode}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                });
+            }
+            
+            // Show role details if available
+            if (data.user.roles && data.user.roles.length > 0) {
+                const conferenceRoles = data.user.roles.filter(r => r.conference_id !== null);
+                if (conferenceRoles.length > 0) {
+                    let roleNoteHtml = 'Lưu ý: Người dùng cũng có vai trò theo hội thảo:<br>';
+                    conferenceRoles.forEach(r => {
+                        roleNoteHtml += `• ${r.role_code} - ${r.conference_title || 'N/A'}<br>`;
+                    });
+                    roleNoteHtml += '<small>Các vai trò này sẽ được giữ nguyên.</small>';
+                    document.getElementById('editRoleNote').innerHTML = roleNoteHtml;
+                } else {
+                    document.getElementById('editRoleNote').innerHTML = 'Lưu ý: Chỉ cập nhật vai trò global. Vai trò theo hội thảo sẽ được giữ nguyên.';
+                }
+            }
             
             // Update email verification status
             updateEmailVerificationStatus(data.user.email_verified_at, data.user.user_id);
@@ -1246,6 +1291,13 @@ function initEditUserForm() {
     if (editForm) {
         editForm.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Validate at least one role is selected
+            const selectedRoles = document.querySelectorAll('input[name="roles[]"]:checked');
+            if (selectedRoles.length === 0) {
+                showError('Vui lòng chọn ít nhất một vai trò');
+                return;
+            }
             
             const userId = document.getElementById('editUserId').value;
             const formData = new FormData(this);

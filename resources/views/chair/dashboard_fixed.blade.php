@@ -13,10 +13,10 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -35,11 +35,11 @@
 
     <style>
         [x-cloak] { display: none !important; }
-        
+
         .stat-card {
             transition: all 0.3s ease;
         }
-        
+
         .stat-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 12px 24px -10px rgba(234, 88, 12, 0.3);
@@ -72,8 +72,8 @@
                             </svg>
                             <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                         </button>
-                        
-                        <div x-show="open" 
+
+                        <div x-show="open"
                              @click.away="open = false"
                              x-transition:enter="transition ease-out duration-200"
                              x-transition:enter-start="opacity-0 scale-95"
@@ -121,16 +121,16 @@
                     <!-- User Menu -->
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open" class="flex items-center space-x-3 hover:bg-orange-700 rounded-lg px-3 py-2 transition">
-                            <img src="https://ui-avatars.com/api/?name=Chair+User&background=ea580c&color=fff&bold=true" 
-                                 alt="User" 
+                            <img src="https://ui-avatars.com/api/?name=Chair+User&background=ea580c&color=fff&bold=true"
+                                 alt="User"
                                  class="w-8 h-8 rounded-full border-2 border-orange-300">
                             <span class="font-medium hidden md:block">Chair User</span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        
-                        <div x-show="open" 
+
+                        <div x-show="open"
                              @click.away="open = false"
                              x-transition:enter="transition ease-out duration-200"
                              x-transition:enter-start="opacity-0 scale-95"
@@ -186,42 +186,42 @@
                     </svg>
                     <span>Dashboard</span>
                 </a>
-                
+
                 <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                     </svg>
                     <span>Hội thảo của tôi</span>
                 </a>
-                
+
                 <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     <span>Quản lý bài báo</span>
                 </a>
-                
+
                 <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                     <span>Quản lý reviewer</span>
                 </a>
-                
+
                 <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                     </svg>
                     <span>Phân công phản biện</span>
                 </a>
-                
+
                 <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
                     <span>Kiểm tra COI</span>
                 </a>
-                
+
                 <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -242,7 +242,7 @@
             <!-- Stats Cards -->
             <div x-data="{ animate: false }" x-init="setTimeout(() => animate = true, 100)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <!-- Card 1: Total Papers -->
-                <div :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'" 
+                <div :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      class="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-orange-500 transition-all duration-500"
                      style="transition-delay: 0ms;">
                     <div class="flex items-center justify-between">
@@ -260,14 +260,14 @@
                 </div>
 
                 <!-- Card 2: Accepted Papers -->
-                <div :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'" 
+                <div :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      class="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500 transition-all duration-500"
                      style="transition-delay: 100ms;">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-sm font-medium">Đã chấp nhận</p>
                             <h3 class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['accepted'] ?? 0 }}</h3>
-                            <p class="text-xs text-green-600 mt-2">✓ Đã duyệt</p>
+                            <p class="text-xs text-green-600 mt-2">Đã duyệt</p>
                         </div>
                         <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -278,7 +278,7 @@
                 </div>
 
                 <!-- Card 3: Under Review -->
-                <div :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'" 
+                <div :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      class="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500 transition-all duration-500"
                      style="transition-delay: 200ms;">
                     <div class="flex items-center justify-between">
@@ -296,7 +296,7 @@
                 </div>
 
                 <!-- Card 4: Need Reviewers -->
-                <div :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'" 
+                <div :class="animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      class="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500 transition-all duration-500"
                      style="transition-delay: 300ms;">
                     <div class="flex items-center justify-between">
@@ -512,8 +512,8 @@
                         <div class="p-6 space-y-4">
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div class="flex items-center space-x-3">
-                                    <img src="https://ui-avatars.com/api/?name=Reviewer+A&background=10b981&color=fff" 
-                                         alt="Reviewer" 
+                                    <img src="https://ui-avatars.com/api/?name=Reviewer+A&background=10b981&color=fff"
+                                         alt="Reviewer"
                                          class="w-10 h-10 rounded-full">
                                     <div>
                                         <div class="font-medium text-gray-900">Dr. Reviewer A</div>
@@ -528,8 +528,8 @@
 
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div class="flex items-center space-x-3">
-                                    <img src="https://ui-avatars.com/api/?name=Reviewer+B&background=3b82f6&color=fff" 
-                                         alt="Reviewer" 
+                                    <img src="https://ui-avatars.com/api/?name=Reviewer+B&background=3b82f6&color=fff"
+                                         alt="Reviewer"
                                          class="w-10 h-10 rounded-full">
                                     <div>
                                         <div class="font-medium text-gray-900">Prof. Reviewer B</div>
@@ -544,8 +544,8 @@
 
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div class="flex items-center space-x-3">
-                                    <img src="https://ui-avatars.com/api/?name=Reviewer+C&background=f59e0b&color=fff" 
-                                         alt="Reviewer" 
+                                    <img src="https://ui-avatars.com/api/?name=Reviewer+C&background=f59e0b&color=fff"
+                                         alt="Reviewer"
                                          class="w-10 h-10 rounded-full">
                                     <div>
                                         <div class="font-medium text-gray-900">Dr. Reviewer C</div>

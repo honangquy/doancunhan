@@ -18,6 +18,9 @@ class User extends Authenticatable
     // Specify the primary key
     protected $primaryKey = 'user_id';
 
+    // Disable updated_at (table only has created_at)
+    const UPDATED_AT = null;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -26,11 +29,16 @@ class User extends Authenticatable
     protected $fillable = [
         'full_name',
         'email',
-        'password',
+        'password_hash',
         'phone',
         'affiliation',
         'bio',
-        'expertise'
+        'expertise',
+        'faculty_id',
+        'is_student',
+        'organization',
+        'avatar_url',
+        'locked'
     ];
 
     /**
@@ -39,8 +47,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'password_hash',
     ];
 
     /**
@@ -189,10 +196,34 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the password attribute (alias for password_hash)
+     */
+    public function getPasswordAttribute()
+    {
+        return $this->password_hash;
+    }
+
+    /**
+     * Set the password attribute (maps to password_hash)
+     */
+    public function setPasswordAttribute($value)
+    {
+        $this->attributes['password_hash'] = $value;
+    }
+
+    /**
      * Override the getName method for authentication
      */
     public function getAuthIdentifierName()
     {
         return 'user_id';
+    }
+
+    /**
+     * Get the password for authentication
+     */
+    public function getAuthPassword()
+    {
+        return $this->password_hash;
     }
 }

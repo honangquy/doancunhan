@@ -14,27 +14,27 @@ return new class extends Migration
     public function up()
     {
         Schema::table('yeucauhoithao', function (Blueprint $table) {
-            // Chỉ thêm các cột chưa có
+            // Chỉ thêm các cột chưa có (không dùng after() để tránh lỗi cột không tồn tại)
             if (!Schema::hasColumn('yeucauhoithao', 'year')) {
-                $table->year('year')->nullable()->after('acronym');
+                $table->year('year')->nullable();
             }
             if (!Schema::hasColumn('yeucauhoithao', 'description')) {
-                $table->text('description')->nullable()->after('objective');
+                $table->text('description')->nullable();
             }
             if (!Schema::hasColumn('yeucauhoithao', 'detailed_description')) {
-                $table->text('detailed_description')->nullable()->after('description');
+                $table->text('detailed_description')->nullable();
             }
             if (!Schema::hasColumn('yeucauhoithao', 'submission_guidelines')) {
-                $table->text('submission_guidelines')->nullable()->after('detailed_description');
+                $table->text('submission_guidelines')->nullable();
             }
             if (!Schema::hasColumn('yeucauhoithao', 'cfp_url')) {
-                $table->string('cfp_url', 500)->nullable()->after('submission_guidelines');
+                $table->string('cfp_url', 500)->nullable();
             }
             if (!Schema::hasColumn('yeucauhoithao', 'start_date')) {
-                $table->date('start_date')->nullable()->after('keywords');
+                $table->date('start_date')->nullable();
             }
             if (!Schema::hasColumn('yeucauhoithao', 'end_date')) {
-                $table->date('end_date')->nullable()->after('start_date');
+                $table->date('end_date')->nullable();
             }
         });
     }

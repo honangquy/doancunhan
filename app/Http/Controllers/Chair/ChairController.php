@@ -120,13 +120,13 @@ class ChairController extends Controller
                 ->whereIn('conference_id', $conferenceIds)
                 ->whereIn('status_code', ['ACCEPTED', 'REJECTED'])
                 ->count();
-                
+
             // Papers by decision status
             $stats['accepted'] = DB::table('baibao')
                 ->whereIn('conference_id', $conferenceIds)
                 ->where('decision', 'ACCEPT')
                 ->count();
-                
+
             $stats['published'] = DB::table('baibao')
                 ->whereIn('conference_id', $conferenceIds)
                 ->where('decision', 'PUBLISHED')
@@ -247,7 +247,7 @@ class ChairController extends Controller
 
         if ($request->filled('status')) {
             $status = $request->status;
-            
+
             // Check if filtering by decision
             if (str_starts_with($status, 'decision:')) {
                 $decisionValue = substr($status, 9); // Remove 'decision:' prefix
@@ -324,7 +324,7 @@ class ChairController extends Controller
         $pendingCount = $statusCounts['SUBMITTED'] ?? 0;
         $acceptedCount = $statusCounts['ACCEPTED'] ?? 0;
         $rejectedCount = $statusCounts['REJECTED'] ?? 0;
-        
+
         // Count papers by decision status
         $decisionCounts = DB::table('baibao')
             ->whereIn('conference_id', $conferenceIds)
@@ -332,9 +332,9 @@ class ChairController extends Controller
             ->groupBy('decision')
             ->pluck('count', 'decision')
             ->all();
-            
+
         $publishedCount = $decisionCounts['PUBLISHED'] ?? 0;
-        
+
         return view('chair.papers.index', [
             'papers' => $papers,
             'conferences' => $conferences,
@@ -1051,7 +1051,7 @@ class ChairController extends Controller
                 'ht.title as conference_title',
                 'ht.conference_id',
                 'nd.full_name as author_name',
-                'tt.status_name_vi as status_name'
+                'tt.status_name as status_name'
             )
             ->first();
 
@@ -1066,9 +1066,9 @@ class ChairController extends Controller
             ->where('pc.paper_id', $paperId)
             ->select(
                 'pc.assignment_id',
-                'pc.assigned_date',
+                'pc.assigned_at',
                 'pc.deadline',
-                'pc.status as assignment_status',
+                'pc.status_code as assignment_status',
                 'nd.user_id as reviewer_id',
                 'nd.full_name as reviewer_name',
                 'nd.email as reviewer_email',
@@ -1088,7 +1088,7 @@ class ChairController extends Controller
                 'pn.submitted_at'
             )
             ->orderBy('pn.submitted_at', 'desc')
-            ->orderBy('pc.assigned_date', 'desc')
+            ->orderBy('pc.assigned_at', 'desc')
             ->get();
 
         // Separate completed and pending reviews

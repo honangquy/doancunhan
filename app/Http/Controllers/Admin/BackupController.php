@@ -39,7 +39,7 @@ class BackupController extends Controller
 
         // Get Settings
         $settings = SystemSetting::all()->pluck('value', 'key')->toArray();
-        
+
         // Get DB Structure
         $dbStructure = $this->getDatabaseStructure();
 
@@ -81,17 +81,17 @@ class BackupController extends Controller
     {
         $tables = DB::select('SHOW TABLES');
         $structure = [];
-        
+
         foreach ($tables as $table) {
             $tableArray = (array)$table;
             $tableName = array_values($tableArray)[0];
-            
+
             // Get columns
             $columns = DB::select("DESCRIBE `$tableName`");
-            
+
             // Get row count
             $count = DB::table($tableName)->count();
-            
+
             $structure[$tableName] = [
                 'columns' => $columns,
                 'rows' => $count
@@ -113,7 +113,7 @@ class BackupController extends Controller
         try {
             $filename = 'backup-' . Carbon::now()->format('Y-m-d-H-i-s') . '.sql';
             $path = storage_path('app/backups/' . $filename);
-            
+
             // Ensure directory exists
             if (!file_exists(storage_path('app/backups'))) {
                 mkdir(storage_path('app/backups'), 0755, true);
@@ -128,27 +128,42 @@ class BackupController extends Controller
             // Determine mysqldump path (adjust for XAMPP)
             $mysqldumpPath = 'mysqldump';
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                $mysqldumpPath = 'c:\xampp\mysql\bin\mysqldump.exe'; 
+                $mysqldumpPath = 'c:\xampp\mysql\bin\mysqldump.exe';
                 if (!file_exists($mysqldumpPath)) {
                     // Try to find it in path or default location
-                    $mysqldumpPath = 'mysqldump'; 
+                    $mysqldumpPath = 'mysqldump';
+                }
+            } elseif (strtoupper(substr(PHP_OS, 0, 6)) === 'DARWIN') {
+                // macOS - XAMPP path
+                $mysqldumpPath = '/Applications/XAMPP/xamppfiles/bin/mysqldump';
+                if (!file_exists($mysqldumpPath)) {
+                    // Fallback to system path
+                    $mysqldumpPath = 'mysqldump';
                 }
             }
 
-            $command = "\"{$mysqldumpPath}\" --user=\"{$dbUser}\" --password=\"{$dbPassword}\" --host=\"{$dbHost}\" --port=\"{$dbPort}\" \"{$dbName}\" > \"{$path}\"";
-            
-            // Execute command
-            // Note: Using shell_exec or exec for simplicity in XAMPP environment
-            // For production, consider using spatie/laravel-backup
-            
+            // Build command with proper password handling
+            if (empty($dbPassword)) {
+                $command = "\"{$mysqldumpPath}\" --user=\"{$dbUser}\" --host=\"{$dbHost}\" --port=\"{$dbPort}\" \"{$dbName}\" > \"{$path}\" 2>&1";
+            } else {
+                $command = "\"{$mysqldumpPath}\" --user=\"{$dbUser}\" --password=\"{$dbPassword}\" --host=\"{$dbHost}\" --port=\"{$dbPort}\" \"{$dbName}\" > \"{$path}\" 2>&1";
+            }
+
             // Mask password in log
-            $logCommand = str_replace($dbPassword, '*****', $command);
+            $logCommand = empty($dbPassword) ? $command : str_replace($dbPassword, '*****', $command);
             \Log::info("Starting backup: " . $logCommand);
 
             exec($command, $output, $returnVar);
 
             if ($returnVar !== 0) {
-                throw new \Exception("Backup failed with exit code $returnVar");
+                $outputStr = implode("\n", $output);
+                \Log::error("Backup failed. Return code: $returnVar. Output: $outputStr");
+                throw new \Exception("Backup failed with exit code $returnVar. Output: $outputStr");
+            }
+
+            // Verify backup file was created
+            if (!file_exists($path) || filesize($path) === 0) {
+                throw new \Exception("Backup file was not created or is empty");
             }
 
             return redirect()->route('admin.settings.index')->with('success', 'Tạo bản sao lưu thành công: ' . $filename);
@@ -190,7 +205,7 @@ class BackupController extends Controller
 
         try {
             $path = storage_path('app/backups/' . $filename);
-            
+
             if (!file_exists($path)) {
                 throw new \Exception("File backup không tồn tại.");
             }
@@ -208,14 +223,28 @@ class BackupController extends Controller
                 if (!file_exists($mysqlPath)) {
                     $mysqlPath = 'mysql';
                 }
+            } elseif (strtoupper(substr(PHP_OS, 0, 6)) === 'DARWIN') {
+                // macOS - XAMPP path
+                $mysqlPath = '/Applications/XAMPP/xamppfiles/bin/mysql';
+                if (!file_exists($mysqlPath)) {
+                    $mysqlPath = 'mysql';
+                }
             }
 
-            $command = "\"{$mysqlPath}\" --user=\"{$dbUser}\" --password=\"{$dbPassword}\" --host=\"{$dbHost}\" --port=\"{$dbPort}\" \"{$dbName}\" < \"{$path}\"";
+            // Build command with proper password handling
+            if (empty($dbPassword)) {
+                $command = "\"{$mysqlPath}\" --user=\"{$dbUser}\" --host=\"{$dbHost}\" --port=\"{$dbPort}\" \"{$dbName}\" < \"{$path}\" 2>&1";
+            } else {
+                $command = "\"{$mysqlPath}\" --user=\"{$dbUser}\" --password=\"{$dbPassword}\" --host=\"{$dbHost}\" --port=\"{$dbPort}\" \"{$dbName}\" < \"{$path}\" 2>&1";
+            }
 
+            \Log::info("Starting restore from: $filename");
             exec($command, $output, $returnVar);
 
             if ($returnVar !== 0) {
-                throw new \Exception("Restore failed with exit code $returnVar");
+                $outputStr = implode("\n", $output);
+                \Log::error("Restore failed. Return code: $returnVar. Output: $outputStr");
+                throw new \Exception("Restore failed with exit code $returnVar. Output: $outputStr");
             }
 
             return redirect()->route('admin.settings.index')->with('success', 'Phục hồi dữ liệu thành công từ: ' . $filename);

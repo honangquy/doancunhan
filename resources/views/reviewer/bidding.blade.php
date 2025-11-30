@@ -79,7 +79,7 @@
                 Làm mới
             </button>
         </div>
-        <select x-model="selectedConference" @change="loadPapers()" 
+        <select x-model="selectedConference" @change="loadPapers()"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value="">-- Chọn hội thảo --</option>
             <template x-for="conference in conferences" :key="conference.conference_id">
@@ -170,7 +170,7 @@
                                     </div>
                                 </td>
                                 <td class="px-4 py-4 text-center">
-                                    <button @click="openBiddingModal(paper)" 
+                                    <button @click="openBiddingModal(paper)"
                                             class="px-3 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition">
                                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -236,7 +236,7 @@
                                 <div class="text-xs text-gray-500" x-text="'ID: ' + assignment.paper_id"></div>
                             </td>
                             <td class="px-4 py-4 text-center">
-                                <span :class="getStatusColor(assignment.status)" 
+                                <span :class="getStatusColor(assignment.status)"
                                       class="px-2 py-1 text-xs font-semibold rounded-full"
                                       x-text="getStatusLabel(assignment.status)">
                                 </span>
@@ -244,7 +244,7 @@
                             <td class="px-4 py-4 text-center text-sm text-gray-600" x-text="formatDate(assignment.assigned_at)"></td>
                             <td class="px-4 py-4 text-center">
                                 <div class="flex justify-center space-x-2">
-                                    <button x-show="assignment.status === 'PENDING'" 
+                                    <button x-show="assignment.status === 'PENDING'"
                                             @click="respondToAssignment(assignment.id, 'ACCEPTED')"
                                             class="px-3 py-1 text-xs text-green-600 border border-green-600 rounded hover:bg-green-50 transition">
                                         <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,7 +252,7 @@
                                         </svg>
                                         Chấp nhận
                                     </button>
-                                    <button x-show="assignment.status === 'PENDING'" 
+                                    <button x-show="assignment.status === 'PENDING'"
                                             @click="respondToAssignment(assignment.id, 'DECLINED')"
                                             class="px-3 py-1 text-xs text-red-600 border border-red-600 rounded hover:bg-red-50 transition">
                                         <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,7 +260,7 @@
                                         </svg>
                                         Từ chối
                                     </button>
-                                    <button x-show="assignment.status === 'ACCEPTED'" 
+                                    <button x-show="assignment.status === 'ACCEPTED'"
                                             class="px-3 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-50 transition">
                                         <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -271,7 +271,7 @@
                             </td>
                         </tr>
                     </template>
-                    
+
                     <tr x-show="assignments.length === 0">
                         <td colspan="4" class="px-4 py-12 text-center text-gray-500">
                             <svg class="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -287,15 +287,15 @@
 
     <!-- Bidding Detail Modal -->
     <div x-show="showModal" x-transition.opacity class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div @click.away="showModal = false" 
+        <div @click.away="showModal = false"
              class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transform transition-all"
              x-transition:enter="transition ease-out duration-300"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100">
-            
+
             <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
                 <h3 class="text-lg font-semibold text-gray-900">Chi tiết Bidding & COI</h3>
-                
+
                 <!-- Paper Details Section -->
                 <div class="mt-4 space-y-3 bg-white rounded-lg p-4 shadow-sm">
                     <!-- Paper Title -->
@@ -303,19 +303,19 @@
                         <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Tên bài báo</label>
                         <p class="text-sm font-medium text-gray-900 mt-1" x-text="selectedPaper?.title || 'Không có thông tin'"></p>
                     </div>
-                    
+
                     <!-- Keywords -->
                     <div>
                         <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Từ khóa</label>
                         <p class="text-sm text-gray-700 mt-1" x-text="selectedPaper?.keywords || 'Không có từ khóa'"></p>
                     </div>
-                    
+
                     <!-- Author Names -->
                     <div>
                         <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Tác giả</label>
                         <p class="text-sm text-gray-700 mt-1" x-text="selectedPaper?.author_names || selectedPaper?.submitted_by_name || 'Không có thông tin'"></p>
                     </div>
-                    
+
                     <!-- Abstract -->
                     <div>
                         <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Tóm tắt</label>
@@ -323,7 +323,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="p-6 space-y-6">
                 <!-- Bidding Selection -->
                 <div>
@@ -346,17 +346,17 @@
                     <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                         <div class="flex items-center space-x-3 mb-3">
                             <label class="flex items-center cursor-pointer">
-                                <input type="checkbox" x-model="selectedPaper.coi" 
+                                <input type="checkbox" x-model="selectedPaper.coi"
                                        class="form-checkbox text-red-600 border-red-300 rounded focus:ring-red-500">
                                 <span class="ml-2 text-sm text-gray-700 font-medium">Tôi có xung đột lợi ích với bài báo này</span>
                             </label>
                         </div>
-                        
+
                         <div x-show="selectedPaper?.coi" x-transition class="mt-3">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Lý do COI <span class="text-red-500">*</span>
                             </label>
-                            <textarea x-model="selectedPaper.coi_reason" rows="3" 
+                            <textarea x-model="selectedPaper.coi_reason" rows="3"
                                       placeholder="Vui lòng mô tả chi tiết lý do xung đột lợi ích (ví dụ: đồng tác giả, cùng đơn vị, quan hệ thầy trò...)"
                                       class="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"></textarea>
                         </div>
@@ -366,18 +366,18 @@
                 <!-- Note -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Ghi chú (tùy chọn)</label>
-                    <textarea x-model="selectedPaper.note" rows="2" 
+                    <textarea x-model="selectedPaper.note" rows="2"
                               placeholder="Thêm ghi chú về chuyên môn, kinh nghiệm liên quan..."
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                 </div>
             </div>
 
             <div class="p-6 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50">
-                <button @click="showModal = false" 
+                <button @click="showModal = false"
                         class="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
                     Hủy
                 </button>
-                <button @click="saveBidding(selectedPaper)" 
+                <button @click="saveBidding(selectedPaper)"
                         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg">
                     <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -424,7 +424,7 @@ function reviewerBiddingApp() {
         },
         biddingLabels: {
             0: 'Không muốn',
-            1: 'Sẵn sàng', 
+            1: 'Sẵn sàng',
             2: 'Có thể',
             3: 'Rất muốn'
         },
@@ -440,14 +440,18 @@ function reviewerBiddingApp() {
                 if (conferenceResponse.ok) {
                     const conferenceData = await conferenceResponse.json();
                     this.conferences = conferenceData.conferences || [];
+                } else {
+                    console.error('Failed to load conferences:', conferenceResponse.status);
                 }
 
                 // Load assignments
-                const assignmentResponse = await fetch('/reviewer/assignments');
+                const assignmentResponse = await fetch('/reviewer/assignments/data');
                 if (assignmentResponse.ok) {
                     const assignmentData = await assignmentResponse.json();
                     this.assignments = assignmentData.assignments || [];
                     this.updateStats();
+                } else {
+                    console.error('Failed to load assignments:', assignmentResponse.status);
                 }
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -465,7 +469,7 @@ function reviewerBiddingApp() {
             try {
                 const response = await fetch(`/reviewer/conference/${this.selectedConference}/papers`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     this.papers = data.papers || [];
                     this.updateStats();
@@ -529,14 +533,14 @@ function reviewerBiddingApp() {
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Update paper in list
                     const index = this.papers.findIndex(p => p.paper_id === paper.paper_id);
                     if (index !== -1) {
                         this.papers[index] = { ...paper, modified: false };
                     }
-                    
+
                     this.showModal = false;
                     this.showMessage('Đã lưu thành công!', 'success');
                     this.updateStats();
@@ -551,7 +555,7 @@ function reviewerBiddingApp() {
 
         async saveAllBiddings() {
             const modifiedPapers = this.papers.filter(p => p.modified);
-            
+
             if (modifiedPapers.length === 0) {
                 this.showMessage('Không có thay đổi nào để lưu', 'error');
                 return;
@@ -585,7 +589,7 @@ function reviewerBiddingApp() {
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Mark all as not modified
                     this.papers.forEach(p => p.modified = false);
@@ -603,7 +607,7 @@ function reviewerBiddingApp() {
 
         async respondToAssignment(assignmentId, status) {
             let declineReason = '';
-            
+
             if (status === 'DECLINED') {
                 declineReason = prompt('Vui lòng nhập lý do từ chối:');
                 if (declineReason === null) return; // User cancelled
@@ -623,7 +627,7 @@ function reviewerBiddingApp() {
                 });
 
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Update assignment in list
                     const assignment = this.assignments.find(a => a.id === assignmentId);
@@ -634,7 +638,7 @@ function reviewerBiddingApp() {
                             assignment.decline_reason = declineReason;
                         }
                     }
-                    
+
                     this.showMessage(data.message, 'success');
                     this.updateStats();
                 } else {
@@ -666,7 +670,7 @@ function reviewerBiddingApp() {
             const colors = {
                 0: 'bg-gray-100 text-gray-800',
                 1: 'bg-yellow-100 text-yellow-800',
-                2: 'bg-blue-100 text-blue-800', 
+                2: 'bg-blue-100 text-blue-800',
                 3: 'bg-green-100 text-green-800'
             };
             return colors[bid] || 'bg-gray-100 text-gray-800';
@@ -686,7 +690,7 @@ function reviewerBiddingApp() {
             const labels = {
                 'PENDING': 'Chờ phản hồi',
                 'ACCEPTED': 'Đã chấp nhận',
-                'DECLINED': 'Đã từ chối', 
+                'DECLINED': 'Đã từ chối',
                 'COMPLETED': 'Hoàn thành'
             };
             return labels[status] || status;

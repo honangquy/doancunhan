@@ -181,9 +181,9 @@ class NguoiDung extends Authenticatable implements JWTSubject, MustVerifyEmail
         return $this->hasRole('REVIEWER', $conferenceId);
     }
 
-    public function isAuthor()
+    public function isAuthor($conferenceId = null)
     {
-        return $this->hasRole('AUTHOR');
+        return $this->hasRole('AUTHOR', $conferenceId);
     }
 
     // Email Verification Methods

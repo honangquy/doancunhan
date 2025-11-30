@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Rules\StrongPassword;
 use App\Models\NguoiDung;
 use App\Models\VaiTroNguoiDung;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|unique:NguoiDung,email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => ['required', 'string', 'confirmed', new StrongPassword()],
             'full_name' => 'required|string|max:200',
             'is_student' => 'boolean',
             'faculty_id' => 'nullable|exists:Khoa,faculty_id',
@@ -248,7 +249,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'current_password' => 'required|string',
-            'new_password' => 'required|string|min:6|confirmed',
+            'new_password' => ['required', 'string', 'confirmed', new StrongPassword()],
         ]);
 
         if ($validator->fails()) {

@@ -229,7 +229,7 @@
                                     $userData = null;
                                     if(Auth::check()) {
                                         $roles = DB::table('VaiTroNguoiDung')->where('user_id', Auth::id())->get();
-                                        
+
                                         // Filter out USER role if other roles exist
                                         if ($roles->count() > 1) {
                                             $roles = $roles->reject(function($r) {
@@ -633,7 +633,9 @@
                             <input type="password" id="password" name="password"
                                    required
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <p class="text-xs text-gray-500 mt-1">Tối thiểu 6 ký tự</p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Tối thiểu 8 ký tự, bao gồm ít nhất 3 trong 4: chữ in hoa, chữ thường, chữ số, ký tự đặc biệt (!@#$%^&*)
+                            </p>
                         </div>
 
                         <div>
