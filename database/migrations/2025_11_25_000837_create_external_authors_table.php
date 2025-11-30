@@ -13,19 +13,21 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('external_authors', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('paper_id');
-            $table->string('name');
-            $table->string('email');
-            $table->string('organization')->nullable();
-            $table->integer('author_order');
-            $table->boolean('is_contact')->default(0);
-            $table->timestamps();
+        if (!Schema::hasTable('external_authors')) {
+            Schema::create('external_authors', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('paper_id');
+                $table->string('name');
+                $table->string('email');
+                $table->string('organization')->nullable();
+                $table->integer('author_order');
+                $table->boolean('is_contact')->default(0);
+                $table->timestamps();
 
-            $table->foreign('paper_id')->references('paper_id')->on('baibao')->onDelete('cascade');
-            $table->index(['paper_id', 'author_order']);
-        });
+                $table->foreign('paper_id')->references('paper_id')->on('baibao')->onDelete('cascade');
+                $table->index(['paper_id', 'author_order']);
+            });
+        }
     }
 
     /**

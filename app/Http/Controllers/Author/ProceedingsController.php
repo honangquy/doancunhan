@@ -73,8 +73,33 @@ class ProceedingsController extends Controller
             abort(403, 'Bạn không có quyền truy cập kỷ yếu của hội thảo này. Chỉ tác giả tham gia hội thảo mới được xem.');
         }
 
-        // Kiểm tra kỷ yếu đã được xuất bản chưa
-        $hasProceedings = !empty($conference->proceedings_file);
+        // Get all published papers in this conference (not just user's papers)
+        $publishedPapers = DB::table('baibao as b')
+            ->join('nguoidung as n', 'b.submitter_id', '=', 'n.user_id')
+            ->leftJoin('tieuban as tb', 'b.track_id', '=', 'tb.track_id')
+            ->where('b.conference_id', $conferenceId)
+            ->where('b.decision', 'PUBLISHED')
+            ->select(
+                'b.paper_id',
+                'b.title',
+                'b.abstract',
+                'b.keywords',
+                'b.start_page',
+                'b.end_page',
+                'b.file_path',
+                'n.full_name as author_name',
+                'n.email as author_email',
+                'tb.title as track_name'
+            )
+            ->orderBy('b.start_page', 'asc')
+            ->get();
+
+        // Get user's published papers count in this conference  
+        $myPublishedPapersCount = DB::table('baibao')
+            ->where('submitter_id', $userId)
+            ->where('conference_id', $conferenceId)
+            ->where('decision', 'PUBLISHED')
+            ->count();
 
         return view('author.proceedings.show', [
             'title' => 'Kỷ yếu - ' . $conference->title,

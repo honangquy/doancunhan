@@ -132,11 +132,91 @@
         </div>
     @endif
 
-    <!-- Additional Info -->
-    <div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div class="flex items-start">
-            <svg class="w-5 h-5 text-gray-600 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+<!-- Published Papers -->
+<div class="card">
+    <div class="p-6 border-b border-gray-200">
+        <h2 class="text-xl font-bold text-gray-900">Danh sách bài báo xuất bản</h2>
+        <p class="text-gray-600 text-sm mt-1">Kỷ yếu {{ $conference->title }}</p>
+    </div>
+    
+    @if($publishedPapers->count() > 0)
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="text-left py-3 px-6 font-semibold text-gray-700 text-sm">STT</th>
+                    <th class="text-left py-3 px-6 font-semibold text-gray-700 text-sm">Tiêu đề</th>
+                    <th class="text-left py-3 px-6 font-semibold text-gray-700 text-sm">Tác giả</th>
+                    <th class="text-left py-3 px-6 font-semibold text-gray-700 text-sm">Tiểu ban</th>
+                    <th class="text-left py-3 px-6 font-semibold text-gray-700 text-sm">Trang</th>
+                    <th class="text-right py-3 px-6 font-semibold text-gray-700 text-sm">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($publishedPapers as $index => $paper)
+                <tr class="paper-row">
+                    <td class="py-4 px-6">
+                        <span class="font-mono text-sm text-gray-600">{{ $index + 1 }}</span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="font-medium text-gray-900 hover:text-blue-600">
+                            {{ $paper->title }}
+                        </div>
+                        @if($paper->keywords)
+                        <div class="text-xs text-gray-500 mt-1">
+                            <strong>Từ khóa:</strong> {{ Str::limit($paper->keywords, 60) }}
+                        </div>
+                        @endif
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="text-sm">
+                            <div class="font-medium text-gray-900">{{ $paper->author_name }}</div>
+                            <div class="text-gray-500 text-xs">{{ $paper->author_email }}</div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        @if($paper->track_name)
+                            <span class="badge bg-blue-100 text-blue-800 text-xs">{{ $paper->track_name }}</span>
+                        @else
+                            <span class="text-gray-400 text-xs">-</span>
+                        @endif
+                    </td>
+                    <td class="py-4 px-6">
+                        @if($paper->start_page && $paper->end_page)
+                            <span class="text-sm text-gray-600 font-mono">{{ $paper->start_page }}-{{ $paper->end_page }}</span>
+                        @else
+                            <span class="text-gray-400 text-sm">-</span>
+                        @endif
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center justify-end space-x-2">
+                            @if($paper->file_path)
+                                <a href="{{ route('author.proceedings.download', [$conference->conference_id, $paper->paper_id]) }}" 
+                                   class="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded transition"
+                                   title="Tải xuống PDF">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </a>
+                            @else
+                                <span class="p-2 text-gray-400 cursor-not-allowed" title="Không có file">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </span>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @else
+    <div class="p-8 text-center">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
             </svg>
             <div class="text-sm text-gray-700">
                 <p class="font-medium mb-2">Thông tin về kỷ yếu:</p>

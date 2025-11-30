@@ -34,9 +34,9 @@
             <div class="text-center">
                 @php
                     $totalPages = $publishedPapers->filter(function($paper) {
-                        return $paper->page_start && $paper->page_end;
+                        return $paper->start_page && $paper->end_page;
                     })->sum(function($paper) {
-                        return $paper->page_end - $paper->page_start + 1;
+                        return $paper->end_page - $paper->start_page + 1;
                     });
                 @endphp
                 <div class="text-3xl font-bold">{{ $totalPages }}</div>
