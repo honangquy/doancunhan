@@ -234,6 +234,13 @@ Route::middleware(['auth:api'])->group(function () {
     Route::patch('notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
     Route::patch('notifications/read-all', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
     Route::delete('notifications/{id}', [\App\Http\Controllers\Api\NotificationController::class, 'destroy']);
+
+    // Proceedings Management (Author View) - NEW!
+    Route::prefix('proceedings')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\ProceedingsController::class, 'index']); // Danh sách hội thảo có thể xem kỷ yếu
+        Route::get('/{conferenceId}', [\App\Http\Controllers\Api\ProceedingsController::class, 'show']); // Chi tiết kỷ yếu
+        Route::get('/{conferenceId}/download', [\App\Http\Controllers\Api\ProceedingsController::class, 'download']); // Tải kỷ yếu
+    });
 });
 
 // Health check

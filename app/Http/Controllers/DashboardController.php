@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Traits\LogsActivity;
 use App\Models\ActivityLog;
+use App\Rules\StrongPassword;
 
 class DashboardController extends Controller
 {
@@ -417,7 +418,7 @@ class DashboardController extends Controller
             $validated = $request->validate([
                 'full_name' => 'required|string|min:3|max:200',
                 'email' => 'required|email|max:255|unique:nguoidung,email',
-                'password' => 'required|string|min:6|max:100',
+                'password' => ['required', 'string', 'max:100', new StrongPassword()],
                 'role' => 'required|in:ADMIN,CHAIR,REVIEWER,AUTHOR,USER'
             ], [
                 'full_name.required' => 'Họ tên không được để trống',
@@ -499,15 +500,13 @@ class DashboardController extends Controller
     {
         try {
             $user = DB::table('nguoidung')
-                ->leftjoin('vaitronguoidung', 'nguoidung.user_id', '=', 'vaitronguoidung.user_id')
                 ->select(
-                    'nguoidung.user_id',
-                    'nguoidung.full_name',
-                    'nguoidung.email',
-                    'nguoidung.email_verified_at',
-                    'vaitronguoidung.role_code'
+                    'user_id',
+                    'full_name',
+                    'email',
+                    'email_verified_at'
                 )
-                ->where('nguoidung.user_id', $id)
+                ->where('user_id', $id)
                 ->first();
 
             if (!$user) {
@@ -516,6 +515,21 @@ class DashboardController extends Controller
                     'message' => 'Không tìm thấy người dùng!'
                 ], 404);
             }
+
+            // Lấy TẤT CẢ roles của user (bao gồm cả global và conference-specific)
+            $roles = DB::table('vaitronguoidung')
+                ->leftJoin('hoithao', 'vaitronguoidung.conference_id', '=', 'hoithao.conference_id')
+                ->select(
+                    'vaitronguoidung.role_code',
+                    'vaitronguoidung.conference_id',
+                    'hoithao.title as conference_title'
+                )
+                ->where('vaitronguoidung.user_id', $id)
+                ->get();
+
+            // Thêm roles vào user object
+            $user->roles = $roles;
+            $user->role_codes = $roles->pluck('role_code')->unique()->toArray();
 
             return response()->json([
                 'success' => true,
@@ -540,7 +554,8 @@ class DashboardController extends Controller
                 'full_name' => 'required|string|min:3|max:200',
                 'email' => 'required|email|max:255|unique:nguoidung,email,' . $id . ',user_id',
                 'password' => 'nullable|string|min:6|max:100',
-                'role' => 'required|in:ADMIN,CHAIR,REVIEWER,AUTHOR,USER'
+                'roles' => 'required|array|min:1',
+                'roles.*' => 'required|in:ADMIN,CHAIR,REVIEWER,AUTHOR,USER'
             ], [
                 'full_name.required' => 'Họ tên không được để trống',
                 'full_name.min' => 'Họ tên phải có ít nhất 3 ký tự',
@@ -551,8 +566,8 @@ class DashboardController extends Controller
                 'email.unique' => 'Email này đã được sử dụng',
                 'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự',
                 'password.max' => 'Mật khẩu không được vượt quá 100 ký tự',
-                'role.required' => 'Vai trò không được để trống',
-                'role.in' => 'Vai trò không hợp lệ',
+                'roles.required' => 'Vai trò không được để trống',
+                'roles.*.in' => 'Vai trò không hợp lệ',
             ]);
 
             DB::beginTransaction();
@@ -573,31 +588,38 @@ class DashboardController extends Controller
                     ->update(['password_hash' => bcrypt($request->password)]);
             }
 
-            // Get old roles for logging
+            // Get old global roles for logging (conference_id = null)
             $oldRoles = DB::table('vaitronguoidung')
                 ->where('user_id', $id)
+                ->whereNull('conference_id')
                 ->pluck('role_code')
                 ->toArray();
 
-            // Update role - xóa tất cả vai trò cũ trước khi thêm vai trò mới
+            // CHỈ xóa global roles (conference_id = null), GIỮ NGUYÊN conference-specific roles
             DB::table('vaitronguoidung')
                 ->where('user_id', $id)
-                ->delete(); // Xóa tất cả vai trò cũ
+                ->whereNull('conference_id')
+                ->delete();
 
-            // Thêm vai trò mới
-            \App\Models\VaiTroNguoiDung::create([
-                'user_id' => $id,
-                'role_code' => $request->role,
-                'conference_id' => null, // Global role
-            ]);
+            // Thêm các global roles mới
+            $newRoles = $request->roles;
+            foreach ($newRoles as $roleCode) {
+                DB::table('vaitronguoidung')->insert([
+                    'user_id' => $id,
+                    'role_code' => $roleCode,
+                    'conference_id' => null,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
 
             // Log user update
-            $roleChanged = !in_array($request->role, $oldRoles);
+            $roleChanged = (count(array_diff($newRoles, $oldRoles)) > 0) || (count(array_diff($oldRoles, $newRoles)) > 0);
             $this->logCrudOperation('update', 'Người dùng', $id, [
                 'updated_user_email' => $request->email,
                 'updated_user_name' => $request->full_name,
                 'old_roles' => $oldRoles,
-                'new_role' => $request->role,
+                'new_roles' => $newRoles,
                 'role_changed' => $roleChanged,
                 'password_updated' => $request->filled('password')
             ]);
@@ -607,7 +629,8 @@ class DashboardController extends Controller
             $message = 'Cập nhật người dùng thành công!';
             if ($roleChanged) {
                 $oldRoleText = implode(', ', $oldRoles);
-                $message .= " Vai trò đã được thay đổi từ [{$oldRoleText}] thành [{$request->role}].";
+                $newRoleText = implode(', ', $newRoles);
+                $message .= " Vai trò đã được thay đổi từ [{$oldRoleText}] thành [{$newRoleText}].";
             }
 
             return response()->json([

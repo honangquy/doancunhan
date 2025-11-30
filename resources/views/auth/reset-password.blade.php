@@ -55,7 +55,10 @@
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Mật khẩu mới</label>
                     <input type="password" name="password" id="password" required
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                           placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
+                           placeholder="Nhập mật khẩu mới">
+                    <p class="text-xs text-gray-500 mt-1">
+                        Tối thiểu 8 ký tự, bao gồm ít nhất 3 trong 4: chữ in hoa, chữ thường, chữ số, ký tự đặc biệt (!@#$%^&*)
+                    </p>
                 </div>
 
                 <!-- Confirm Password -->
@@ -80,7 +83,7 @@
 
             <!-- Back to Login -->
             <div class="mt-6 pt-6 border-t border-gray-200 text-center">
-                <a href="{{ route('login') }}" 
+                <a href="{{ route('login') }}"
                    class="text-sm text-indigo-600 hover:text-indigo-500 font-medium">
                     ← Quay lại đăng nhập
                 </a>

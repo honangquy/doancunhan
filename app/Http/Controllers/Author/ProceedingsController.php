@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Author;
 
 use App\Http\Controllers\Controller;
+use App\Models\HoiThao;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,31 +17,30 @@ class ProceedingsController extends Controller
     }
 
     /**
-     * Display proceedings for author's published papers
+     * Hiển thị danh sách hội thảo mà Author tham gia để chọn xem kỷ yếu
      */
     public function index()
     {
         $userId = Auth::id();
-        
-        // Get conferences where author has published papers
-        $conferences = DB::table('hoithao as h')
-            ->join('baibao as b', 'h.conference_id', '=', 'b.conference_id')
-            ->where('b.submitter_id', $userId)
-            ->where('b.decision', 'PUBLISHED')
-            ->select(
-                'h.conference_id',
-                'h.title',
-                'h.acronym',
-                'h.description',
-                'h.start_date',
-                'h.end_date',
-                'h.location',
-                'h.year',
-                DB::raw('COUNT(b.paper_id) as published_papers_count')
-            )
-            ->groupBy('h.conference_id', 'h.title', 'h.acronym', 'h.description', 'h.start_date', 'h.end_date', 'h.location', 'h.year')
-            ->orderBy('h.start_date', 'desc')
+
+        // Lấy danh sách hội thảo mà user có role AUTHOR
+        $conferences = HoiThao::whereHas('vaiTroNguoiDungs', function($query) use ($userId) {
+                $query->where('user_id', $userId)
+                      ->where('role_code', 'AUTHOR');
+            })
+            ->orderBy('start_date', 'desc')
             ->get();
+
+        // Thêm thông tin về kỷ yếu cho mỗi hội thảo
+        foreach ($conferences as $conference) {
+            $conference->has_proceedings = !empty($conference->proceedings_file);
+
+            // Đếm số bài báo của author trong hội thảo này
+            $conference->my_papers_count = DB::table('baibao')
+                ->where('submitter_id', $userId)
+                ->where('conference_id', $conference->conference_id)
+                ->count();
+        }
 
         return view('author.proceedings.index', [
             'title' => 'Kỷ yếu hội thảo',
@@ -49,68 +49,42 @@ class ProceedingsController extends Controller
     }
 
     /**
-     * Show proceedings for a specific conference
+     * Xem kỷ yếu của một hội thảo cụ thể
      */
     public function show($conferenceId)
     {
         $userId = Auth::id();
 
-        // Get conference details
-        $conference = DB::table('hoithao')->where('conference_id', $conferenceId)->first();
-        
+        // Lấy thông tin hội thảo
+        $conference = HoiThao::where('conference_id', $conferenceId)->first();
+
         if (!$conference) {
             abort(404, 'Không tìm thấy hội thảo.');
         }
 
-        // Check if user has published papers in this conference
-        $hasPublishedPapers = DB::table('baibao')
-            ->where('submitter_id', $userId)
+        // Kiểm tra user có role AUTHOR trong hội thảo này không
+        $isAuthor = DB::table('vaitronguoidung')
+            ->where('user_id', $userId)
             ->where('conference_id', $conferenceId)
-            ->where('decision', 'PUBLISHED')
+            ->where('role_code', 'AUTHOR')
             ->exists();
 
-        if (!$hasPublishedPapers) {
-            abort(403, 'Bạn không có bài báo đã xuất bản trong hội thảo này.');
+        if (!$isAuthor) {
+            abort(403, 'Bạn không có quyền truy cập kỷ yếu của hội thảo này. Chỉ tác giả tham gia hội thảo mới được xem.');
         }
 
-        // Get all published papers in this conference (not just user's papers)
-        $publishedPapers = DB::table('baibao as b')
-            ->join('nguoidung as n', 'b.submitter_id', '=', 'n.user_id')
-            ->leftJoin('tieuban as tb', 'b.track_id', '=', 'tb.track_id')
-            ->where('b.conference_id', $conferenceId)
-            ->where('b.decision', 'PUBLISHED')
-            ->select(
-                'b.paper_id',
-                'b.title',
-                'b.abstract',
-                'b.keywords',
-                'b.page_start',
-                'b.page_end',
-                'b.file_path',
-                'n.full_name as author_name',
-                'n.email as author_email',
-                'tb.title as track_name'
-            )
-            ->orderBy('b.page_start', 'asc')
-            ->get();
-
-        // Get user's published papers count in this conference  
-        $myPublishedPapersCount = DB::table('baibao')
-            ->where('submitter_id', $userId)
-            ->where('conference_id', $conferenceId)
-            ->where('decision', 'PUBLISHED')
-            ->count();
+        // Kiểm tra kỷ yếu đã được xuất bản chưa
+        $hasProceedings = !empty($conference->proceedings_file);
 
         return view('author.proceedings.show', [
             'title' => 'Kỷ yếu - ' . $conference->title,
             'conference' => $conference,
-            'publishedPapers' => $publishedPapers,
-            'myPublishedPapersCount' => $myPublishedPapersCount
+            'hasProceedings' => $hasProceedings
         ]);
     }
 
     /**
-     * Download a published paper from proceedings
+     * Download a published paper from proceedings (legacy - giữ lại để tương thích)
      */
     public function downloadPaper($conferenceId, $paperId)
     {

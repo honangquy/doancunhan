@@ -68,7 +68,7 @@
                 </svg>
                 Nội dung bài báo
             </h2>
-            
+
             <!-- Abstract -->
             @if($paper->abstract)
             <div class="mb-6">
@@ -150,7 +150,7 @@
                         Tổng số phiên bản: <strong>{{ $versions->count() }}</strong>
                     </span>
                     @if($versions->count() >= 2)
-                    <button @click="expandedVersions = !expandedVersions" 
+                    <button @click="expandedVersions = !expandedVersions"
                             class="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center space-x-1">
                         <span x-text="expandedVersions ? 'Thu gọn' : 'Xem tất cả'"></span>
                         <svg class="w-4 h-4 transition-transform" :class="expandedVersions ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +166,7 @@
                          x-transition:enter="transition ease-out duration-200"
                          x-transition:enter-start="opacity-0 transform scale-95"
                          x-transition:enter-end="opacity-100 transform scale-100">
-                        
+
                         <!-- Version Header -->
                         <div class="px-4 py-3 {{ $index === 0 ? 'bg-purple-50' : 'bg-gray-50' }} border-b border-gray-200">
                             <div class="flex items-center justify-between">
@@ -192,7 +192,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <a href="{{ route('chair.papers.download', $paperId) }}?version={{ $version->version_no }}" 
+                                <a href="{{ route('chair.papers.download', $paperId) }}?version={{ $version->version_no }}"
                                    target="_blank"
                                    class="inline-flex items-center space-x-1 px-3 py-2 text-sm font-semibold text-white {{ $index === 0 ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700' }} rounded-lg transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,7 +304,7 @@
                             </div>
                         </div>
                         <div class="flex-shrink-0">
-                            <a href="{{ route('chair.papers.download', $paperId) }}" 
+                            <a href="{{ route('chair.papers.download', $paperId) }}"
                                target="_blank"
                                class="inline-flex items-center space-x-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm hover:shadow-md">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,7 +342,7 @@
                             <div class="text-sm font-medium text-gray-900">{{ basename($paper->file_path) }}</div>
                             <div class="text-xs text-gray-500">Bài báo chính thức</div>
                         </div>
-                        <a href="{{ asset('storage/' . $paper->file_path) }}" 
+                        <a href="{{ asset('storage/' . $paper->file_path) }}"
                            target="_blank"
                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
                             Tải xuống
@@ -469,7 +469,7 @@
             $allReviewsCompleted = $reviewStats['completed'] > 0 && $reviewStats['pending'] == 0;
             $hasDecision = !empty($paper->final_decision ?? null);
         @endphp
-        
+
         @if($allReviewsCompleted || $hasDecision)
         <div class="bg-white rounded-lg shadow-sm border-2 {{ $hasDecision ? 'border-green-500' : 'border-orange-500' }} p-6 mb-6">
             <div class="flex items-center justify-between">
@@ -480,7 +480,7 @@
                         </svg>
                         Quyết định cuối cùng
                     </h3>
-                    
+
                     @if($hasDecision)
                         <div class="flex items-center space-x-4 mb-3">
                             @if($paper->decision === 'ACCEPT')
@@ -496,27 +496,27 @@
                                 ↻ Yêu cầu sửa lại
                             </span>
                             @endif
-                            
+
                             @if($paper->decision_date)
                             <span class="text-sm text-gray-600">
                                 {{ \Carbon\Carbon::parse($paper->decision_date)->format('d/m/Y H:i') }}
                             </span>
                             @endif
                         </div>
-                        
+
                         @if($paper->decision_comments)
                         <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 mb-3">
                             <p class="font-medium text-gray-900 mb-2">Nhận xét:</p>
                             <p class="whitespace-pre-wrap">{{ $paper->decision_comments }}</p>
                         </div>
                         @endif
-                        
+
                         @if($paper->decision === 'REVISE' && $paper->revision_deadline)
                         <p class="text-sm text-gray-600 mb-3">
                             📅 Deadline sửa lại: <span class="font-medium">{{ \Carbon\Carbon::parse($paper->revision_deadline)->format('d/m/Y') }}</span>
                         </p>
                         @endif
-                        
+
                         <button onclick="if(window.Alpine && Alpine.$data(document.body).viewDecision) { Alpine.$data(document.body).viewDecision({{ $paper->paper_id }}); } else { window.location.href = '{{ route('chair.papers.decision', $paper->paper_id) }}'; }"
                            class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition">
                             Cập nhật quyết định
@@ -564,10 +564,10 @@
                         Xem tất cả nhận xét
                     </button>
                     @endif
-                    <button onclick="if(window.Alpine && Alpine.$data(document.body).viewAssignReviewer) { Alpine.$data(document.body).viewAssignReviewer({{ $paper->paper_id }}); } else { window.location.href = '{{ route('chair.papers.assign', $paper->paper_id) }}'; }"
-                       class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition">
+                    <a href="{{ route('chair.assignments.index') }}"
+                       class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition inline-block">
                         + Phân công thêm
-                    </button>
+                    </a>
                 </div>
             </h2>
 
@@ -623,7 +623,7 @@
                             </td>
                             <td class="px-4 py-4 text-sm">
                                 @if($assignment->review_id)
-                                <button onclick="viewReview({{ $assignment->assignment_id }}, {{ $assignment->review_id }})" 
+                                <button onclick="viewReview({{ $assignment->assignment_id }}, {{ $assignment->review_id }})"
                                         class="text-orange-600 hover:text-orange-700 font-medium focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 rounded px-2 py-1 transition-colors">
                                     Xem review
                                 </button>
@@ -642,9 +642,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
                 <p class="text-sm font-medium">Chưa có reviewer nào được phân công</p>
-                <button class="mt-4 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition">
+                <a href="{{ route('chair.assignments.index') }}" class="mt-4 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition inline-block">
                     Phân công reviewer
-                </button>
+                </a>
             </div>
             @endif
         </div>
@@ -701,7 +701,7 @@
                     </div>
                     @endif
                     <div class="mt-3 text-right">
-                        <button onclick="viewReview({{ $review->assignment_id }}, {{ $review->review_id }})" 
+                        <button onclick="viewReview({{ $review->assignment_id }}, {{ $review->review_id }})"
                                 class="text-orange-600 hover:text-orange-700 font-medium text-sm">
                             Xem chi tiết →
                         </button>
@@ -723,7 +723,7 @@ function getFileName(filePath) {
 
 function viewReview(assignmentId, reviewId) {
     console.log('viewReview called with:', assignmentId, reviewId);
-    
+
     // Tạo modal để hiển thị review details
     const modalHtml = `
         <div id="reviewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
@@ -745,9 +745,9 @@ function viewReview(assignmentId, reviewId) {
             </div>
         </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+
     // Fetch review details
     fetch(`/chair/reviews/${reviewId}`, {
         method: 'GET',
@@ -775,7 +775,7 @@ function viewReview(assignmentId, reviewId) {
                         <p class="text-sm"><strong>Email:</strong> ${data.reviewer_email}</p>
                         <p class="text-sm"><strong>Nộp lúc:</strong> ${new Date(data.submitted_at).toLocaleString('vi-VN')}</p>
                     </div>
-                    
+
                     <!-- Scores -->
                     <div class="bg-orange-50 rounded-lg p-4">
                         <h4 class="font-semibold text-orange-900 mb-3">Điểm đánh giá</h4>
@@ -806,7 +806,7 @@ function viewReview(assignmentId, reviewId) {
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Recommendation -->
                     <div class="bg-blue-50 rounded-lg p-4">
                         <h4 class="font-semibold text-blue-900 mb-2">Khuyến nghị</h4>
@@ -814,7 +814,7 @@ function viewReview(assignmentId, reviewId) {
                             ${getRecommendationLabel(data.recommendation_code)}
                         </span>
                     </div>
-                    
+
                     <!-- Comments -->
                     ${data.detailed_comments ? `
                     <div class="bg-gray-50 rounded-lg p-4">
@@ -822,21 +822,21 @@ function viewReview(assignmentId, reviewId) {
                         <p class="text-sm text-gray-700 whitespace-pre-wrap">${data.detailed_comments}</p>
                     </div>
                     ` : ''}
-                    
+
                     ${data.comment_author ? `
                     <div class="bg-green-50 rounded-lg p-4">
                         <h4 class="font-semibold text-green-900 mb-2">Nhận xét cho tác giả</h4>
                         <p class="text-sm text-green-800 whitespace-pre-wrap">${data.comment_author}</p>
                     </div>
                     ` : ''}
-                    
+
                     ${data.comment_chair ? `
                     <div class="bg-purple-50 rounded-lg p-4">
                         <h4 class="font-semibold text-purple-900 mb-2">Nhận xét riêng cho Chair</h4>
                         <p class="text-sm text-purple-800 whitespace-pre-wrap">${data.comment_chair}</p>
                     </div>
                     ` : ''}
-                    
+
                     <!-- Review File Attachment -->
                     ${data.review_file_path ? `
                     <div class="bg-indigo-50 rounded-lg p-4">
@@ -851,8 +851,8 @@ function viewReview(assignmentId, reviewId) {
                                 <div class="text-sm font-medium text-indigo-900">${getFileName(data.review_file_path)}</div>
                                 <div class="text-xs text-indigo-700">File phản biện chi tiết</div>
                             </div>
-                            <a href="/storage/${data.review_file_path}" 
-                               target="_blank" 
+                            <a href="/storage/${data.review_file_path}"
+                               target="_blank"
                                class="px-3 py-1 text-xs font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors">
                                 Tải xuống
                             </a>
@@ -912,7 +912,7 @@ function getRecommendationLabel(code) {
         'STRONG_ACCEPT': 'Chấp nhận mạnh',
         'WEAK_ACCEPT': 'Chấp nhận yếu',
         'MINOR_REVISION': 'Sửa đổi nhỏ',
-        'MAJOR_REVISION': 'Sửa đổi lớn', 
+        'MAJOR_REVISION': 'Sửa đổi lớn',
         'WEAK_REJECT': 'Từ chối yếu',
         'REJECT': 'Từ chối',
         'STRONG_REJECT': 'Từ chối mạnh'

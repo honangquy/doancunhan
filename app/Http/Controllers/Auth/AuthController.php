@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Models\NguoiDung;
 use App\Models\ActivityLog;
+use App\Rules\StrongPassword;
 
 class AuthController extends Controller
 {
@@ -335,14 +336,13 @@ class AuthController extends Controller
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'email' => 'required|email|unique:NguoiDung,email',
-            'password' => 'required|min:6|confirmed',
+            'password' => ['required', 'confirmed', new StrongPassword()],
         ], [
             'full_name.required' => 'Vui lòng nhập họ tên',
             'email.required' => 'Vui lòng nhập email',
             'email.email' => 'Email không hợp lệ',
             'email.unique' => 'Email này đã được sử dụng',
             'password.required' => 'Vui lòng nhập mật khẩu',
-            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự',
             'password.confirmed' => 'Xác nhận mật khẩu không khớp',
         ]);
 
@@ -490,11 +490,10 @@ class AuthController extends Controller
 
         $validated = $request->validate([
             'current_password' => 'required',
-            'password' => 'required|min:6|confirmed',
+            'password' => ['required', 'confirmed', new StrongPassword()],
         ], [
             'current_password.required' => 'Vui lòng nhập mật khẩu hiện tại',
             'password.required' => 'Vui lòng nhập mật khẩu mới',
-            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự',
             'password.confirmed' => 'Xác nhận mật khẩu không khớp',
         ]);
 
@@ -777,7 +776,7 @@ class AuthController extends Controller
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => 'required|min:6|confirmed',
+            'password' => ['required', 'confirmed', new StrongPassword()],
         ]);
 
         // Check if reset record exists

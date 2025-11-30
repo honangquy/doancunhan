@@ -122,7 +122,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
                     </svg>
-                    <span>Tin tức & Sự kiện</span>
+                    <span>Quản lý tin tức & sự kiện</span>
                 </a>
 
                 <a href="{{ route('chair.proceedings.select') }}"
@@ -134,7 +134,7 @@
                 </a>
 
                 <!-- Phân công Dropdown Menu -->
-                <div x-data="{ open: {{ request()->routeIs('chair.reviewers*') || request()->routeIs('chair.assignments*') || request()->routeIs('chair.coi*') ? 'true' : 'false' }} }" class="space-y-1">
+                <div x-data="{ open: {{ request()->routeIs('chair.reviewers*') || request()->routeIs('chair.assignments*') ? 'true' : 'false' }} }" class="space-y-1">
                     <!-- Main Menu Item -->
                     <button @click="open = !open"
                             :class="open ? 'bg-orange-500 font-semibold' : 'hover:bg-orange-500'"
@@ -175,15 +175,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
                             </svg>
                             <span>Phân công</span>
-                        </a>
-
-                        <!-- Kiểm tra COI (submenu) -->
-                        <a href="{{ route('chair.coi.index') }}"
-                           class="flex items-center space-x-3 px-4 py-2 rounded-lg transition text-sm {{ request()->routeIs('chair.coi*') ? 'bg-orange-400 font-medium' : 'hover:bg-orange-400' }}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>Kiểm tra COI</span>
                         </a>
                     </div>
                     </div>

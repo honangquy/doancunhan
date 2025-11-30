@@ -93,7 +93,55 @@ class ConferenceController extends Controller
         // Calculate time remaining until submission deadline
         $timeRemaining = $conference->getDaysUntilSubmission();
 
-        return view('conferences.show', compact('conference', 'stats', 'timeRemaining'));
+        // Get user's previous join request data to pre-fill form (if authenticated)
+        $previousData = null;
+        if (Auth::check()) {
+            // Get the most recent and most complete join request
+            // Priority: requests with more filled fields
+            $previousData = DB::table('join_requests')
+                ->where('user_id', Auth::id())
+                ->whereNotNull('organization') // Must have at least organization
+                ->orderByRaw('
+                    (CASE WHEN country IS NOT NULL THEN 1 ELSE 0 END +
+                     CASE WHEN department IS NOT NULL THEN 1 ELSE 0 END +
+                     CASE WHEN field_of_study IS NOT NULL THEN 1 ELSE 0 END +
+                     CASE WHEN academic_title IS NOT NULL THEN 1 ELSE 0 END +
+                     CASE WHEN phone IS NOT NULL THEN 1 ELSE 0 END +
+                     CASE WHEN expertise_keywords IS NOT NULL THEN 1 ELSE 0 END) DESC
+                ') // Sort by number of filled fields (descending)
+                ->orderBy('created_at', 'desc') // Then by most recent
+                ->first();
+        }
+
+        return view('conferences.show', compact('conference', 'stats', 'timeRemaining', 'previousData'));
+    }
+
+    /**
+     * Show the join conference form (Author registration)
+     */
+    public function showJoinForm($id)
+    {
+        $conference = HoiThao::where('status', 'ACTIVE')->findOrFail($id);
+        $user = Auth::user();
+
+        // Check if user already has a pending or approved join request for this conference
+        $existingRequest = JoinRequest::where('user_id', $user->user_id)
+            ->where('conference_id', $conference->conference_id)
+            ->where('role', JoinRequest::ROLE_AUTHOR)
+            ->whereIn('status', [JoinRequest::STATUS_PENDING, JoinRequest::STATUS_APPROVED])
+            ->first();
+
+        if ($existingRequest) {
+            if ($existingRequest->status === JoinRequest::STATUS_APPROVED) {
+                return redirect()->route('conferences.show', $conference->conference_id)
+                    ->with('info', 'Bạn đã là tác giả của hội thảo này.');
+            } else {
+                return redirect()->route('conferences.show', $conference->conference_id)
+                    ->with('info', 'Yêu cầu tham gia của bạn đang chờ admin phê duyệt.');
+            }
+        }
+
+        return view('conferences.join-form', compact('conference', 'user'));
     }
 
     /**
@@ -374,7 +422,7 @@ class ConferenceController extends Controller
         $isAdmin = VaiTroNguoiDung::where('user_id', $user->user_id)
             ->where('role_code', 'ADMIN')
             ->exists();
-        
+
         if (!$isAdmin) {
             return response()->json([
                 'success' => false,
@@ -438,8 +486,22 @@ class ConferenceController extends Controller
             // If approved, assign the requested role to the user
             if ($validated['action'] === 'approve') {
                 try {
-                    // Get the conference_id from join request (may be null for global roles)
+                    // Get the conference_id from join request
+                    // IMPORTANT: For REVIEWER role, conference_id MUST NOT be null
+                    // because reviewers need to be assigned to specific conferences
                     $conferenceId = $joinRequest->conference_id;
+
+                    // Validate conference_id for REVIEWER role
+                    if ($joinRequest->role === 'REVIEWER' && !$conferenceId) {
+                        Log::error('Cannot approve REVIEWER role without conference_id', [
+                            'request_id' => $requestId,
+                            'user_id' => $joinRequest->user_id
+                        ]);
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Không thể duyệt vai trò Reviewer mà không có hội thảo cụ thể'
+                        ], 400);
+                    }
 
                     // Check if user already has this role for this conference
                     $existingRole = VaiTroNguoiDung::where('user_id', $joinRequest->user_id)
@@ -483,6 +545,50 @@ class ConferenceController extends Controller
                         'request_id' => $requestId
                     ]);
                     // Don't fail the entire request if role assignment fails
+                }
+
+                // Update reviewer_invitations status if this request came from an invitation
+                if ($joinRequest->invitation_token) {
+                    try {
+                        DB::table('reviewer_invitations')
+                            ->where('token', $joinRequest->invitation_token)
+                            ->update([
+                                'status' => 'ACCEPTED',
+                                'updated_at' => now()
+                            ]);
+
+                        Log::info('Reviewer invitation status updated to ACCEPTED', [
+                            'token' => $joinRequest->invitation_token,
+                            'request_id' => $requestId
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to update reviewer invitation status', [
+                            'token' => $joinRequest->invitation_token,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            } else {
+                // If rejected and came from invitation, update status to REJECTED
+                if ($joinRequest->invitation_token) {
+                    try {
+                        DB::table('reviewer_invitations')
+                            ->where('token', $joinRequest->invitation_token)
+                            ->update([
+                                'status' => 'REJECTED',
+                                'updated_at' => now()
+                            ]);
+
+                        Log::info('Reviewer invitation status updated to REJECTED', [
+                            'token' => $joinRequest->invitation_token,
+                            'request_id' => $requestId
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to update reviewer invitation status', [
+                            'token' => $joinRequest->invitation_token,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
                 }
             }
 

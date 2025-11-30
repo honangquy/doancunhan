@@ -3,7 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DashboardController;
@@ -220,7 +222,7 @@ Route::post('/submit-conference-request', function (\Illuminate\Http\Request $re
                     }
                 }
             } else {
-                \Log::info('[WEB ROUTE] No valid co-chairs data');
+                \Illuminate\Support\Facades\Log::info('[WEB ROUTE] No valid co-chairs data');
             }
         } else {
             \Log::info('[WEB ROUTE] No co-chairs in request');
@@ -519,13 +521,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Phase 8.10: Reviewers Management - Direct to invitation controller
         Route::get('/reviewers', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'index'])->name('reviewers.index');
 
-        // Phase 8.10: COI Management
-        Route::get('/coi', [\App\Http\Controllers\Chair\COIController::class, 'index'])->name('coi.index');
-        Route::get('/coi/{id}', [\App\Http\Controllers\Chair\COIController::class, 'show'])->name('coi.show');
-        Route::get('/coi/{id}/resolve', [\App\Http\Controllers\Chair\COIController::class, 'resolveForm'])->name('coi.resolve-form');
-        Route::post('/coi/{id}/resolve', [\App\Http\Controllers\Chair\COIController::class, 'resolve'])->name('coi.resolve');
-        Route::get('/conferences/{conferenceId}/coi-statistics', [\App\Http\Controllers\Chair\COIController::class, 'statistics'])->name('coi.statistics');
-
         // Reviewer Invitation Management
         Route::get('/reviewers/invite', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'index'])->name('reviewers.invite');
         Route::post('/reviewers/invite/send', [\App\Http\Controllers\Chair\ReviewerInvitationController::class, 'sendInvitation'])->name('reviewers.invite.send');
@@ -558,6 +553,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/proceedings/{conferenceId}/update-pagination', [\App\Http\Controllers\Chair\ProceedingsController::class, 'updatePagination'])->name('proceedings.update-pagination');
         Route::post('/proceedings/{conferenceId}/publish', [\App\Http\Controllers\Chair\ProceedingsController::class, 'publish'])->name('proceedings.publish');
         Route::get('/proceedings/{conferenceId}/show', [\App\Http\Controllers\Chair\ProceedingsController::class, 'proceedings'])->name('conferences.proceedings');
+
+        // Proceedings PDF Upload (Kỷ yếu)
+        Route::get('/conferences/{conferenceId}/proceedings-upload', [\App\Http\Controllers\Chair\ProceedingsController::class, 'showUploadForm'])->name('proceedings.upload');
+        Route::post('/conferences/{conferenceId}/proceedings-upload', [\App\Http\Controllers\Chair\ProceedingsController::class, 'uploadProceedings'])->name('proceedings.upload.store');
         Route::get('/proceedings/{conferenceId}/download/{paperId}', [\App\Http\Controllers\Chair\ProceedingsController::class, 'downloadPaper'])->name('proceedings.download');
 
         // Notifications
@@ -658,7 +657,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
                     'tb.created_at',
                     'ht.title as conference_name'
                 )
-                ->whereIn('tb.conference_id', $conferenceIds)
+                ->where(function($q) use ($conferenceIds) {
+                    // Broadcast notifications (conference_id = null) OR notifications for user's conferences
+                    $q->whereNull('tb.conference_id')
+                      ->orWhereIn('tb.conference_id', $conferenceIds);
+                })
                 ->orderBy('tb.created_at', 'desc');
 
             // Filter by status
@@ -692,22 +695,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 return $item;
             });
 
-            // Calculate stats (only for user's conferences)
+            // Calculate stats (including broadcast + user's conferences)
             $stats = [
                 'total' => DB::table('thongbao')
-                    ->whereIn('conference_id', $conferenceIds)
+                    ->where(function($q) use ($conferenceIds) {
+                        $q->whereNull('conference_id')
+                          ->orWhereIn('conference_id', $conferenceIds);
+                    })
                     ->count(),
                 'sent' => DB::table('thongbao')
                     ->where('status', 'SENT')
-                    ->whereIn('conference_id', $conferenceIds)
+                    ->where(function($q) use ($conferenceIds) {
+                        $q->whereNull('conference_id')
+                          ->orWhereIn('conference_id', $conferenceIds);
+                    })
                     ->count(),
                 'scheduled' => DB::table('thongbao')
                     ->where('status', 'SCHEDULED')
-                    ->whereIn('conference_id', $conferenceIds)
+                    ->where(function($q) use ($conferenceIds) {
+                        $q->whereNull('conference_id')
+                          ->orWhereIn('conference_id', $conferenceIds);
+                    })
                     ->count(),
                 'failed' => DB::table('thongbao')
                     ->where('status', 'FAILED')
-                    ->whereIn('conference_id', $conferenceIds)
+                    ->where(function($q) use ($conferenceIds) {
+                        $q->whereNull('conference_id')
+                          ->orWhereIn('conference_id', $conferenceIds);
+                    })
                     ->count(),
             ];
 

@@ -24,9 +24,9 @@ class ReviewerInvitationController extends Controller
     {
         try {
             $userId = Auth::id();
-            
+
             \Log::info('ReviewerInvitationController@index called', ['user_id' => $userId]);
-            
+
             // Lấy danh sách hội thảo mà chair quản lý - kiểm tra và sửa lại query
             $conferences = DB::table('hoithao as ht')
                 ->join('vaitronguoidung as vt', 'ht.conference_id', '=', 'vt.conference_id')
@@ -44,13 +44,13 @@ class ReviewerInvitationController extends Controller
             ]);
 
             return view('chair.reviewers.invite', compact('conferences'));
-            
+
         } catch (\Exception $e) {
             \Log::error('Error in ReviewerInvitationController@index: ' . $e->getMessage(), [
                 'user_id' => Auth::id(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             // Fallback với empty conferences nhưng với thông báo lỗi
             $conferences = collect();
             return view('chair.reviewers.invite', compact('conferences'))
@@ -64,13 +64,23 @@ class ReviewerInvitationController extends Controller
     public function sendInvitation(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'emails' => 'required_without:csv_file|string',
+            'csv_file' => 'required_without:emails|file|mimes:csv,txt|max:2048',
             'conference_id' => 'required|exists:hoithao,conference_id',
         ]);
 
-        $email = $request->email;
         $conferenceId = $request->conference_id;
         $userId = Auth::id();
+
+        // Thu thập danh sách email từ input hoặc CSV
+        $emails = $this->collectEmails($request);
+
+        if (empty($emails)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có email hợp lệ để gửi lời mời.'
+            ], 400);
+        }
 
         // Kiểm tra xem chair có quyền quản lý hội thảo này không
         $isChairOfConference = DB::table('vaitronguoidung')
@@ -88,101 +98,170 @@ class ReviewerInvitationController extends Controller
 
         // Lấy thông tin hội thảo
         $conference = DB::table('hoithao')->where('conference_id', $conferenceId)->first();
-        
-        // Kiểm tra email đã tồn tại trong hệ thống
-        $existingUser = DB::table('nguoidung')->where('email', $email)->first();
 
-        if ($existingUser) {
-            // 1. Không thể mời chính mình
-            if ($existingUser->user_id == $userId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Bạn không thể mời chính mình làm reviewer."
-                ], 400);
+        // Xử lý từng email
+        $results = [
+            'success' => [],
+            'failed' => [],
+            'skipped' => []
+        ];
+
+        foreach ($emails as $email) {
+            $result = $this->processInvitation($email, $conferenceId, $userId, $conference);
+
+            if ($result['status'] === 'success') {
+                $results['success'][] = $email;
+            } elseif ($result['status'] === 'skipped') {
+                $results['skipped'][] = ['email' => $email, 'reason' => $result['message']];
+            } else {
+                $results['failed'][] = ['email' => $email, 'reason' => $result['message']];
             }
-
-            // 2. Kiểm tra xem đã là CHAIR của hội thảo này chưa (Đồng chủ tịch)
-            $isCoChair = DB::table('vaitronguoidung')
-                ->where('user_id', $existingUser->user_id)
-                ->where('conference_id', $conferenceId)
-                ->where('role_code', 'CHAIR')
-                ->exists();
-
-            if ($isCoChair) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Người dùng này đã là Đồng chủ tịch (Chair) của hội thảo."
-                ], 400);
-            }
-
-            // 3. Kiểm tra xem đã là REVIEWER của hội thảo này chưa
-            $isReviewer = DB::table('vaitronguoidung')
-                ->where('user_id', $existingUser->user_id)
-                ->where('conference_id', $conferenceId)
-                ->where('role_code', 'REVIEWER')
-                ->exists();
-
-            if ($isReviewer) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Người dùng này đã là Phản biện viên (Reviewer) của hội thảo."
-                ], 400);
-            }
-
-            // Nếu là các role khác (AUTHOR, USER, hoặc role ở hội thảo khác) -> Cho phép mời
-            // Logic tiếp tục bên dưới để tạo lời mời
         }
 
-        // Kiểm tra xem đã gửi lời mời cho email này chưa
-        $existingInvitation = DB::table('reviewer_invitations')
-            ->where('email', $email)
-            ->where('conference_id', $conferenceId)
-            ->where('status', 'PENDING')
-            ->first();
+        $totalProcessed = count($emails);
+        $successCount = count($results['success']);
+        $failedCount = count($results['failed']);
+        $skippedCount = count($results['skipped']);
 
-        if ($existingInvitation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Lời mời đã được gửi cho email này.'
-            ], 400);
-        }
+        $message = "Đã xử lý {$totalProcessed} email: ";
+        $message .= "{$successCount} thành công, ";
+        $message .= "{$skippedCount} bỏ qua, ";
+        $message .= "{$failedCount} thất bại.";
 
-        // Tạo token cho lời mời
-        $token = Str::random(64);
-        $expiresAt = Carbon::now()->addDays(7); // Lời mời có hiệu lực 7 ngày
-
-        // Lưu lời mời vào database
-        $invitationId = DB::table('reviewer_invitations')->insertGetId([
-            'email' => $email,
-            'conference_id' => $conferenceId,
-            'invited_by' => $userId,
-            'token' => $token,
-            'status' => 'PENDING',
-            'expires_at' => $expiresAt,
-            'created_at' => now(),
-            'updated_at' => now()
+        return response()->json([
+            'success' => $successCount > 0,
+            'message' => $message,
+            'details' => $results
         ]);
+    }
 
-        // Gửi email mời
+    /**
+     * Thu thập danh sách email từ input hoặc CSV file
+     */
+    private function collectEmails(Request $request)
+    {
+        $emails = [];
+
+        // Xử lý email từ textarea (nhiều email cách nhau bởi dấu phẩy hoặc xuống dòng)
+        if ($request->has('emails') && !empty($request->emails)) {
+            $emailsString = $request->emails;
+            // Split bởi dấu phẩy, xuống dòng, hoặc khoảng trắng
+            $emailArray = preg_split('/[,\s\n\r]+/', $emailsString, -1, PREG_SPLIT_NO_EMPTY);
+
+            foreach ($emailArray as $email) {
+                $email = trim($email);
+                if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $emails[] = $email;
+                }
+            }
+        }
+
+        // Xử lý CSV file
+        if ($request->hasFile('csv_file')) {
+            $file = $request->file('csv_file');
+            $handle = fopen($file->getPathname(), 'r');
+
+            $firstRow = true;
+            while (($data = fgetcsv($handle)) !== false) {
+                // Skip header row nếu có
+                if ($firstRow) {
+                    $firstRow = false;
+                    // Kiểm tra xem row đầu có phải header không (chứa chữ "email")
+                    if (isset($data[0]) && stripos($data[0], 'email') !== false) {
+                        continue;
+                    }
+                }
+
+                // Lấy email từ cột đầu tiên
+                if (isset($data[0])) {
+                    $email = trim($data[0]);
+                    if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        $emails[] = $email;
+                    }
+                }
+            }
+            fclose($handle);
+        }
+
+        // Loại bỏ email trùng lặp
+        return array_unique($emails);
+    }
+
+    /**
+     * Xử lý invitation cho 1 email
+     */
+    private function processInvitation($email, $conferenceId, $userId, $conference)
+    {
         try {
-            $this->sendInvitationEmail($email, $conference, $token);
-            
-            \Log::info("Invitation email sent to {$email} with token {$token}");
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Lời mời đã được gửi thành công qua email!'
+            // Kiểm tra email đã tồn tại trong hệ thống
+            $existingUser = DB::table('nguoidung')->where('email', $email)->first();
+
+            if ($existingUser) {
+                // 1. Không thể mời chính mình
+                if ($existingUser->user_id == $userId) {
+                    return ['status' => 'skipped', 'message' => 'Không thể mời chính mình'];
+                }
+
+                // 2. Kiểm tra xem đã là CHAIR của hội thảo này chưa
+                $isCoChair = DB::table('vaitronguoidung')
+                    ->where('user_id', $existingUser->user_id)
+                    ->where('conference_id', $conferenceId)
+                    ->where('role_code', 'CHAIR')
+                    ->exists();
+
+                if ($isCoChair) {
+                    return ['status' => 'skipped', 'message' => 'Đã là Chair của hội thảo'];
+                }
+
+                // 3. Kiểm tra xem đã là REVIEWER của hội thảo này chưa
+                $isReviewer = DB::table('vaitronguoidung')
+                    ->where('user_id', $existingUser->user_id)
+                    ->where('conference_id', $conferenceId)
+                    ->where('role_code', 'REVIEWER')
+                    ->exists();
+
+                if ($isReviewer) {
+                    return ['status' => 'skipped', 'message' => 'Đã là Reviewer của hội thảo'];
+                }
+            }
+
+            // Kiểm tra xem đã gửi lời mời cho email này chưa
+            $existingInvitation = DB::table('reviewer_invitations')
+                ->where('email', $email)
+                ->where('conference_id', $conferenceId)
+                ->where('status', 'PENDING')
+                ->first();
+
+            if ($existingInvitation) {
+                return ['status' => 'skipped', 'message' => 'Đã có lời mời đang chờ xử lý'];
+            }
+
+            // Tạo token cho lời mời
+            $token = Str::random(64);
+            $expiresAt = Carbon::now()->addDays(7);
+
+            // Lưu lời mời vào database
+            $invitationId = DB::table('reviewer_invitations')->insertGetId([
+                'email' => $email,
+                'conference_id' => $conferenceId,
+                'invited_by' => $userId,
+                'token' => $token,
+                'status' => 'PENDING',
+                'expires_at' => $expiresAt,
+                'created_at' => now(),
+                'updated_at' => now()
             ]);
+
+            // Gửi email mời
+            $this->sendInvitationEmail($email, $conference, $token);
+
+            \Log::info("Invitation email sent to {$email} with token {$token}");
+
+            return ['status' => 'success', 'message' => 'Gửi thành công'];
+
         } catch (\Exception $e) {
-            // Xóa lời mời nếu gửi email thất bại
-            DB::table('reviewer_invitations')->where('id', $invitationId)->delete();
-            
-            \Log::error('Error sending invitation email: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi gửi email: ' . $e->getMessage()
-            ], 500);
+            \Log::error("Error processing invitation for {$email}: " . $e->getMessage());
+            return ['status' => 'failed', 'message' => $e->getMessage()];
         }
     }
 
@@ -192,7 +271,7 @@ class ReviewerInvitationController extends Controller
     private function sendInvitationEmail($email, $conference, $token)
     {
         $inviteUrl = route('reviewer.invitation.accept', ['token' => $token]);
-        
+
         $mailData = [
             'name' => 'Reviewer', // Tên chung cho reviewer
             'email' => $email,
@@ -243,7 +322,7 @@ class ReviewerInvitationController extends Controller
     public function resendInvitation(Request $request, $id)
     {
         $userId = Auth::id();
-        
+
         // Kiểm tra lời mời có tồn tại và thuộc về chair hiện tại không
         $invitation = DB::table('reviewer_invitations')
             ->where('id', $id)
@@ -281,7 +360,7 @@ class ReviewerInvitationController extends Controller
 
             // Lấy thông tin hội thảo để gửi email
             $conference = DB::table('hoithao')->where('conference_id', $invitation->conference_id)->first();
-            
+
             // Gửi email với token mới
             $this->sendInvitationEmail($invitation->email, $conference, $newToken);
 
@@ -294,7 +373,7 @@ class ReviewerInvitationController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Error resending invitation: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi gửi lại lời mời: ' . $e->getMessage()
@@ -308,7 +387,7 @@ class ReviewerInvitationController extends Controller
     public function revokeInvitation(Request $request, $id)
     {
         $userId = Auth::id();
-        
+
         // Kiểm tra lời mời có tồn tại và thuộc về chair hiện tại không
         $invitation = DB::table('reviewer_invitations')
             ->where('id', $id)
@@ -349,7 +428,7 @@ class ReviewerInvitationController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Error revoking invitation: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi thu hồi lời mời: ' . $e->getMessage()

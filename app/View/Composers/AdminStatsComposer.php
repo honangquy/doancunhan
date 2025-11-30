@@ -20,9 +20,7 @@ class AdminStatsComposer
     {
         $adminStats = [
             'pending_conference_requests' => YeuCauHoiThao::where('status', 'PENDING')->count(),
-            'pending_configured_conferences' => HoiThao::whereNotNull('conference_request_id')
-                ->where('status', '!=', 'ACTIVE')
-                ->count(),
+            'pending_configured_conferences' => HoiThao::where('status', '!=', 'ACTIVE')->count(),
             'pending_join_requests' => JoinRequest::where('status', 'PENDING')->count(),
             'pending_news' => News::where('status', 'PENDING')->count(),
         ];

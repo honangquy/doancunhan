@@ -290,9 +290,9 @@ class ConferenceSetupController extends Controller
         $totalProceedingsPages = DB::table('baibao')
             ->where('conference_id', $conferenceId)
             ->where('decision', 'PUBLISHED')
-            ->whereNotNull('page_start')
-            ->whereNotNull('page_end')
-            ->selectRaw('SUM(page_end - page_start + 1) as total_pages')
+            ->whereNotNull('start_page')
+            ->whereNotNull('end_page')
+            ->selectRaw('SUM(end_page - start_page + 1) as total_pages')
             ->value('total_pages') ?? 0;
 
         return view('chair.conferences.show', compact('conference', 'totalPapers', 'acceptedPapers', 'pendingPapers', 'totalReviewers', 'recentPapers', 'committees', 'acceptedPapersCount', 'publishedPapersCount', 'totalProceedingsPages'));

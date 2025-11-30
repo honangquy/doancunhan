@@ -6,6 +6,199 @@
 @php
     $conferenceId = $conference->conference_id ?? request()->route('id') ?? $conference->id;
 @endphp
+
+<script>
+function conferenceDetail() {
+    const data = {
+        activeTab: 'overview',
+        openJoinModal: {!! session('invitation_data') ? 'true' : 'false' !!},
+        joinRole: {!! session('invitation_data') ? "'REVIEWER'" : "'AUTHOR'" !!},
+        isSubmitting: false,
+        invitationData: @json(session('invitation_data', null)),
+        formData: {
+            full_name: @json(Auth::check() ? (Auth::user()->full_name ?? '') : (session('invitation_data.full_name', ''))),
+            email_contact: @json(Auth::check() ? (Auth::user()->email ?? '') : (session('invitation_data.email', ''))),
+            commitment_confirmed: false,
+            country: @json(isset($previousData) && $previousData ? ($previousData->country ?? '') : ''),
+            organization: @json(isset($previousData) && $previousData ? ($previousData->organization ?? '') : ''),
+            department: @json(isset($previousData) && $previousData ? ($previousData->department ?? '') : ''),
+            field_of_study: @json(isset($previousData) && $previousData ? ($previousData->field_of_study ?? '') : ''),
+            academic_title: @json(isset($previousData) && $previousData ? ($previousData->academic_title ?? '') : ''),
+            phone: @json(isset($previousData) && $previousData ? ($previousData->phone ?? '') : ''),
+            notes: '',
+            expertise_keywords: @json(isset($previousData) && $previousData ? ($previousData->expertise_keywords ?? '') : ''),
+            max_papers: {{ isset($previousData) && $previousData && $previousData->max_papers ? $previousData->max_papers : 1 }}
+        },
+        deadline: @json(isset($conference->deadline_submission) ? \Carbon\Carbon::parse($conference->deadline_submission)->format('d/m/Y') : 'TBA'),
+        timeRemaining: {{ $timeRemaining ?? 0 }},
+
+        resetForm() {
+            this.formData = {
+                full_name: '',
+                email_contact: '',
+                commitment_confirmed: false,
+                country: '',
+                organization: '',
+                department: '',
+                field_of_study: '',
+                academic_title: '',
+                phone: '',
+                notes: '',
+                expertise_keywords: '',
+                max_papers: 1
+            };
+        },
+
+        submitJoinRequest() {
+            if (!this.joinRole || !this.formData.commitment_confirmed) return;
+
+            if (this.invitationData && this.invitationData.invited && this.joinRole === 'REVIEWER') {
+                if (this.formData.email_contact !== this.invitationData.email) {
+                    alert('Email không trùng với email được mời. Vui lòng sử dụng email: ' + this.invitationData.email);
+                    return;
+                }
+            }
+
+            this.isSubmitting = true;
+            const conferenceId = {!! json_encode($conference->conference_id ?? 1) !!};
+
+            let submitData = {
+                role: this.joinRole,
+                full_name: this.formData.full_name,
+                email_contact: this.formData.email_contact,
+                commitment_confirmed: this.formData.commitment_confirmed ? 1 : 0
+            };
+
+            if (this.invitationData && this.invitationData.token) {
+                submitData.invitation_token = this.invitationData.token;
+            }
+
+            if (this.joinRole === 'AUTHOR') {
+                submitData = {
+                    ...submitData,
+                    country: this.formData.country,
+                    organization: this.formData.organization,
+                    department: this.formData.department,
+                    field_of_study: this.formData.field_of_study,
+                    academic_title: this.formData.academic_title,
+                    phone: this.formData.phone,
+                    notes: this.formData.notes
+                };
+            } else if (this.joinRole === 'REVIEWER') {
+                submitData = {
+                    ...submitData,
+                    organization: this.formData.organization,
+                    expertise_keywords: this.formData.expertise_keywords,
+                    max_papers: this.formData.max_papers
+                };
+            }
+
+            // Kiểm tra đăng nhập (runtime check)
+            const isAuthenticated = {{ Auth::check() ? 'true' : 'false' }};
+            if (!isAuthenticated) {
+                alert('Bạn cần đăng nhập để gửi yêu cầu tham gia');
+                window.location.href = '/login';
+                return;
+            }
+
+            fetch(`{{ route('conferences.join-request', ['id' => '__ID__']) }}`.replace('__ID__', conferenceId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(submitData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.isSubmitting = false;
+                if (data.success) {
+                    alert(data.message);
+                    this.openJoinModal = false;
+                    this.joinRole = '';
+                    this.resetForm();
+                    if (data.data && data.data.is_invited) {
+                        this.invitationData = null;
+                    }
+                } else {
+                    if (data.errors) {
+                        let errorMessages = [];
+                        for (const field in data.errors) {
+                            errorMessages.push(data.errors[field].join(', '));
+                        }
+                        alert('Lỗi nhập liệu:\n' + errorMessages.join('\n'));
+                    } else {
+                        alert('Có lỗi xảy ra: ' + (data.message || 'Vui lòng thử lại'));
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi gửi yêu cầu');
+                this.isSubmitting = false;
+            });
+        },
+
+        shareConference(platform) {
+            const url = window.location.href;
+            const title = document.title;
+
+            switch (platform) {
+                case 'copy':
+                    navigator.clipboard.writeText(url).then(() => {
+                        alert('Đã sao chép link!');
+                    });
+                    break;
+                case 'facebook':
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                    break;
+                case 'linkedin':
+                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+                    break;
+            }
+        },
+
+        addToCalendar() {
+            const startDate = {!! isset($conference->start_date) ? '"' . \Carbon\Carbon::parse($conference->start_date)->format('Ymd') . '"' : '""' !!};
+            const endDate = {!! isset($conference->end_date) ? '"' . \Carbon\Carbon::parse($conference->end_date)->format('Ymd') . '"' : '""' !!};
+            const title = @json($conference->title ?? 'Hội thảo');
+            const description = @json($conference->description ?? '');
+            const location = @json($conference->location ?? 'Online');
+
+            if (!startDate) {
+                alert('Thông tin lịch chưa đầy đủ');
+                return;
+            }
+
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//HUIT Conferences//EN',
+                'BEGIN:VEVENT',
+                'UID:conf-{{ $conference->conference_id ?? 1 }}@huit.edu.vn',
+                `DTSTART:${startDate}T090000Z`,
+                `DTEND:${endDate || startDate}T180000Z`,
+                `SUMMARY:${title}`,
+                `DESCRIPTION:${description}`,
+                `LOCATION:${location}`,
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\r\n');
+
+            const blob = new Blob([icsContent], { type: 'text/calendar' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+        }
+    };
+
+    return data;
+}
+</script>
+
 <div x-data="conferenceDetail()">
     <!-- Breadcrumb -->
     <nav class="flex items-center space-x-2 text-sm text-gray-600 mb-6">
@@ -127,11 +320,17 @@
                         $canJoin = $submissionDeadline && $now->lt($submissionDeadline);
                         // Kiểm tra xem user có phải là Chair của hội thảo này không
                         $isChair = Auth::user()->isChair($conference->conference_id);
+                        // Kiểm tra xem user đã là Author của hội thảo này chưa
+                        $isAuthor = Auth::user()->isAuthor($conference->conference_id);
                     @endphp
 
                     @if($isChair)
                         <div class="px-6 py-3 bg-purple-100 text-purple-800 font-medium rounded-lg text-center border border-purple-200">
                             Bạn là Chủ tịch của hội thảo này
+                        </div>
+                    @elseif($isAuthor)
+                        <div class="px-6 py-3 bg-green-100 text-green-800 font-medium rounded-lg text-center border border-green-200">
+                            Bạn đã là Tác giả của hội thảo này
                         </div>
                     @elseif($canJoin)
                         <button @click="openJoinModal = true; joinRole = 'AUTHOR'"
@@ -632,6 +831,40 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Proceedings Download Section -->
+                    @if(!empty($conference->proceedings_file))
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Kỷ yếu hội thảo</h3>
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border border-blue-200">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0">
+                                    <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-md font-semibold text-gray-900 mb-2">
+                                        Kỷ yếu đã được xuất bản
+                                    </h4>
+                                    @if(!empty($conference->proceedings_published_at))
+                                        <p class="text-sm text-gray-600 mb-4">
+                                            Ngày xuất bản: {{ \Carbon\Carbon::parse($conference->proceedings_published_at)->format('d/m/Y') }}
+                                        </p>
+                                    @endif
+                                    <a href="{{ Storage::url($conference->proceedings_file) }}"
+                                       target="_blank"
+                                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
+                                        Tải kỷ yếu PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -666,6 +899,8 @@
                 <form @submit.prevent="submitJoinRequest()">
                     <!-- Thông báo thông tin tài khoản -->
                     @auth
+                    @if(isset($previousData) && $previousData)
+                    @else
                     <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                         <div class="flex items-start space-x-2">
                             <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -673,11 +908,14 @@
                             </svg>
                             <div class="text-sm">
                                 <p class="font-medium text-blue-800">Thông tin cá nhân</p>
-                                <p class="text-blue-700 mt-1">Họ tên và email được lấy từ hồ sơ tài khoản của bạn.
-                                Để thay đổi thông tin này, vui lòng liên hệ quản trị viên hệ thống.</p>
+                                <p class="text-blue-700 mt-1">
+                                    Họ tên và email được lấy từ hồ sơ tài khoản của bạn.
+                                    Để thay đổi họ tên/email, vui lòng liên hệ quản trị viên hệ thống.
+                                </p>
                             </div>
                         </div>
                     </div>
+                    @endif
                     @endauth
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -711,42 +949,60 @@
 
                         <!-- Quốc gia -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Quốc gia <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Quốc gia <span class="text-red-500">*</span>
+                                {!! isset($previousData) && $previousData && $previousData->country ? '<span class="text-xs text-green-600 font-normal"></span>' : '' !!}
+                            </label>
                             <input type="text" x-model="formData.country" required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
 
                         <!-- Đơn vị công tác -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Đơn vị công tác <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Đơn vị công tác <span class="text-red-500">*</span>
+                                {!! isset($previousData) && $previousData && $previousData->organization ? '<span class="text-xs text-green-600 font-normal"></span>' : '' !!}
+                            </label>
                             <input type="text" x-model="formData.organization" required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
 
                         <!-- Khoa -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Khoa <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Khoa <span class="text-red-500">*</span>
+                                {!! isset($previousData) && $previousData && $previousData->department ? '<span class="text-xs text-green-600 font-normal"></span>' : '' !!}
+                            </label>
                             <input type="text" x-model="formData.department" required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
 
                         <!-- Lĩnh vực -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Lĩnh vực <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Lĩnh vực <span class="text-red-500">*</span>
+                                {!! isset($previousData) && $previousData && $previousData->field_of_study ? '<span class="text-xs text-green-600 font-normal"></span>' : '' !!}
+                            </label>
                             <input type="text" x-model="formData.field_of_study" required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
 
                         <!-- Chức danh/Học vị -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Học hàm/Học vị <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Học hàm/Học vị <span class="text-red-500">*</span>
+                                {!! isset($previousData) && $previousData && $previousData->academic_title ? '<span class="text-xs text-green-600 font-normal"></span>' : '' !!}
+                            </label>
                             <input type="text" x-model="formData.academic_title" required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
 
                         <!-- Số điện thoại -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Số điện thoại <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Số điện thoại <span class="text-red-500">*</span>
+                                {!! isset($previousData) && $previousData && $previousData->phone ? '<span class="text-xs text-green-600 font-normal"></span>' : '' !!}
+                            </label>
                             <input type="tel" x-model="formData.phone" required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
@@ -824,14 +1080,20 @@
 
                         <!-- Đơn vị công tác -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Đơn vị công tác <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Đơn vị công tác <span class="text-red-500">*</span>
+                                {!! isset($previousData) && $previousData && $previousData->organization ? '<span class="text-xs text-green-600 font-normal"></span>' : '' !!}
+                            </label>
                             <input type="text" x-model="formData.organization" required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
                         </div>
 
                         <!-- Từ khóa chuyên môn -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Từ khóa chuyên môn <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Từ khóa chuyên môn <span class="text-red-500">*</span>
+                                {!! isset($previousData) && $previousData && $previousData->expertise_keywords ? '<span class="text-xs text-green-600 font-normal"></span>' : '' !!}
+                            </label>
                             <textarea x-model="formData.expertise_keywords" rows="3" required
                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                                       placeholder="Ví dụ: Machine Learning, Computer Vision, Natural Language Processing..."></textarea>
@@ -873,227 +1135,4 @@
     </div>
 </div>
 
-@push('scripts')
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-<script>
-    function conferenceDetail() {
-        return {
-            activeTab: 'overview',
-            openJoinModal: @if(session('invitation_data'))true @else false @endif, // Auto-open if invited
-            joinRole: @if(session('invitation_data'))'REVIEWER'@else 'AUTHOR'@endif, // Default to AUTHOR, REVIEWER only if invited
-            isSubmitting: false,
-            invitationData: @json(session('invitation_data', null)),
-            formData: {
-                // Common fields - get from logged in user profile
-                full_name: @if(Auth::check())'{{ Auth::user()->full_name ?? Auth::user()->name ?? "" }}'@elseif(session('invitation_data'))'{{ session('invitation_data.full_name', '') }}'@else ''@endif,
-                email_contact: @if(Auth::check())'{{ Auth::user()->email ?? "" }}'@elseif(session('invitation_data'))'{{ session('invitation_data.email', '') }}'@else ''@endif,
-                commitment_confirmed: false,
-
-                // Author specific fields
-                country: '',
-                organization: '',
-                department: '',
-                field_of_study: '',
-                academic_title: '',
-                phone: '',
-                notes: '',
-
-                // Reviewer specific fields
-                expertise_keywords: '',
-                max_papers: 1
-            },
-            deadline: '@if(isset($conference->deadline_submission)){{ \Carbon\Carbon::parse($conference->deadline_submission)->format("d/m/Y") }}@else{{ "TBA" }}@endif',
-            timeRemaining: '{{ $timeRemaining ?? "--" }}',
-
-            resetForm() {
-                this.formData = {
-                    full_name: '',
-                    email_contact: '',
-                    commitment_confirmed: false,
-                    country: '',
-                    organization: '',
-                    department: '',
-                    field_of_study: '',
-                    academic_title: '',
-                    phone: '',
-                    notes: '',
-                    expertise_keywords: '',
-                    max_papers: 1
-                };
-            },
-
-            submitJoinRequest() {
-                if (!this.joinRole || !this.formData.commitment_confirmed) return;
-
-                // Validate email for invited reviewer
-                if (this.invitationData && this.invitationData.invited && this.joinRole === 'REVIEWER') {
-                    if (this.formData.email_contact !== this.invitationData.email) {
-                        alert('Email không trùng với email được mời. Vui lòng sử dụng email: ' + this.invitationData.email);
-                        return;
-                    }
-                }
-
-                this.isSubmitting = true;
-                const conferenceId = '{{ $conference->conference_id ?? 1 }}';
-
-                // Prepare data based on role
-                let submitData = {
-                    role: this.joinRole,
-                    full_name: this.formData.full_name,
-                    email_contact: this.formData.email_contact,
-                    commitment_confirmed: this.formData.commitment_confirmed ? 1 : 0
-                };
-
-                // Add invitation token if exists
-                if (this.invitationData && this.invitationData.token) {
-                    submitData.invitation_token = this.invitationData.token;
-                }
-
-                if (this.joinRole === 'AUTHOR') {
-                    submitData = {
-                        ...submitData,
-                        country: this.formData.country,
-                        organization: this.formData.organization,
-                        department: this.formData.department,
-                        field_of_study: this.formData.field_of_study,
-                        academic_title: this.formData.academic_title,
-                        phone: this.formData.phone,
-                        notes: this.formData.notes
-                    };
-                } else if (this.joinRole === 'REVIEWER') {
-                    submitData = {
-                        ...submitData,
-                        organization: this.formData.organization,
-                        expertise_keywords: this.formData.expertise_keywords,
-                        max_papers: this.formData.max_papers
-                    };
-                }
-
-                // Submit form data
-                console.log('Submitting data:', submitData);
-
-                @guest
-                alert('Bạn cần đăng nhập để gửi yêu cầu tham gia');
-                window.location.href = '/login';
-                return;
-                @endguest
-
-                fetch(`{{ route('conferences.join-request', ['id' => '__ID__']) }}`.replace('__ID__', conferenceId), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify(submitData)
-                })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Response data:', data);
-                    this.isSubmitting = false;
-                    if (data.success) {
-                        alert(data.message);
-                        this.openJoinModal = false;
-                        this.joinRole = '';
-                        this.resetForm();
-
-                        // Clear invitation data if this was an invited user
-                        if (data.data && data.data.is_invited) {
-                            this.invitationData = null;
-                        }
-                    } else {
-                        if (data.errors) {
-                            // Display validation errors
-                            let errorMessages = [];
-                            for (const field in data.errors) {
-                                errorMessages.push(...data.errors[field]);
-                            }
-                            alert('Lỗi nhập liệu:\n' + errorMessages.join('\n'));
-                        } else {
-                            alert('Có lỗi xảy ra: ' + (data.message || 'Vui lòng thử lại'));
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Có lỗi xảy ra khi gửi yêu cầu');
-                });
-            },
-
-            shareConference(platform) {
-                const url = window.location.href;
-                const title = document.title;
-
-                switch (platform) {
-                    case 'copy':
-                        navigator.clipboard.writeText(url).then(() => {
-                            alert('Đã sao chép link!');
-                        });
-                        break;
-                    case 'facebook':
-                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-                        break;
-                    case 'linkedin':
-                        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
-                        break;
-                }
-            },
-
-            addToCalendar() {
-                const startDate = '@if(isset($conference->start_date)){{ \Carbon\Carbon::parse($conference->start_date)->format("Ymd") }}@endif';
-                const endDate = '@if(isset($conference->end_date)){{ \Carbon\Carbon::parse($conference->end_date)->format("Ymd") }}@endif';
-                const title = '{{ $conference->title ?? "Hội thảo" }}';
-                const description = '{{ $conference->description ?? "" }}';
-                const location = '{{ $conference->location ?? "Online" }}';
-
-                if (!startDate) {
-                    alert('Thông tin lịch chưa đầy đủ');
-                    return;
-                }
-
-                const icsContent = [
-                    'BEGIN:VCALENDAR',
-                    'VERSION:2.0',
-                    'PRODID:-//HUIT Conferences//EN',
-                    'BEGIN:VEVENT',
-                    'UID:conf-{{ $conference->conference_id ?? 1 }}@huit.edu.vn',
-                    `DTSTART:${startDate}T090000Z`,
-                    `DTEND:${endDate || startDate}T180000Z`,
-                    `SUMMARY:${title}`,
-                    `DESCRIPTION:${description}`,
-                    `LOCATION:${location}`,
-                    'END:VEVENT',
-                    'END:VCALENDAR'
-                ].join('\r\n');
-
-                const blob = new Blob([icsContent], { type: 'text/calendar' });
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
-                link.click();
-                window.URL.revokeObjectURL(url);
-            }
-        };
-    }
-
-    // PDF Viewer Functions
-    function showEmbeddedViewer() {
-        const embeddedViewer = document.getElementById('embedded-viewer');
-        if (embeddedViewer) {
-            embeddedViewer.classList.remove('hidden');
-            embeddedViewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
-
-    function hideEmbeddedViewer() {
-        const embeddedViewer = document.getElementById('embedded-viewer');
-        if (embeddedViewer) {
-            embeddedViewer.classList.add('hidden');
-        }
-    }
-</script>
-@endpush
 @endsection

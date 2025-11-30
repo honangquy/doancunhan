@@ -24,11 +24,11 @@
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="font-semibold">{{ $request->title }}</h3>
                     @if($request->status == 'APPROVED')
-                        <span class="bg-green-500 text-xs px-2 py-1 rounded-full">✓ Đã duyệt</span>
+                        <span class="bg-green-500 text-xs px-2 py-1 rounded-full">Đã duyệt</span>
                     @elseif($request->status == 'PENDING')
-                        <span class="bg-yellow-500 text-xs px-2 py-1 rounded-full">⏳ Chờ duyệt</span>
+                        <span class="bg-yellow-500 text-xs px-2 py-1 rounded-full">Chờ duyệt</span>
                     @elseif($request->status == 'REJECTED')
-                        <span class="bg-red-500 text-xs px-2 py-1 rounded-full">✗ Từ chối</span>
+                        <span class="bg-red-500 text-xs px-2 py-1 rounded-full">Từ chối</span>
                     @endif
                 </div>
                 <p class="text-sm opacity-90">{{ \Carbon\Carbon::parse($request->created_at)->format('d/m/Y H:i') }}</p>
@@ -81,7 +81,7 @@
                         <div>
                             <p class="text-gray-500 text-sm font-medium">Đã chấp nhận</p>
                             <h3 class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['accepted'] ?? 0 }}</h3>
-                            <p class="text-xs text-green-600 mt-2">✓ Đã duyệt</p>
+                            <p class="text-xs text-green-600 mt-2">Đã duyệt</p>
                         </div>
                         <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

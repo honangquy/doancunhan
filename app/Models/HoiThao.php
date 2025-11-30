@@ -43,7 +43,10 @@ class HoiThao extends Model
         'contact_email',
         'contact_phone',
         'keywords',
-        'acronym'
+        'acronym',
+        // Proceedings fields
+        'proceedings_file',
+        'proceedings_published_at',
     ];
 
     protected $casts = [
@@ -58,6 +61,7 @@ class HoiThao extends Model
         'enable_coi_check' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'proceedings_published_at' => 'datetime',
     ];
 
     // Mutators to ensure date fields are stored in Y-m-d format
