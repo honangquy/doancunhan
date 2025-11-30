@@ -124,16 +124,16 @@ class ProceedingsController extends Controller
         $validated = $request->validate([
             'papers' => 'required|array',
             'papers.*.paper_id' => 'required|integer|exists:baibao,paper_id',
-            'papers.*.page_start' => 'required|integer|min:1',
-            'papers.*.page_end' => 'required|integer|min:1',
+            'papers.*.start_page' => 'required|integer|min:1',
+            'papers.*.end_page' => 'required|integer|min:1',
         ]);
         
         DB::beginTransaction();
         
         try {
             foreach ($validated['papers'] as $paperData) {
-                // Validate that page_end >= page_start
-                if ($paperData['page_end'] < $paperData['page_start']) {
+                // Validate that end_page >= start_page
+                if ($paperData['end_page'] < $paperData['start_page']) {
                     throw new \Exception("Trang kết thúc phải lớn hơn hoặc bằng trang bắt đầu cho bài báo ID: {$paperData['paper_id']}");
                 }
                 
@@ -141,8 +141,8 @@ class ProceedingsController extends Controller
                     ->where('paper_id', $paperData['paper_id'])
                     ->where('conference_id', $conferenceId)
                     ->update([
-                        'page_start' => $paperData['page_start'],
-                        'page_end' => $paperData['page_end']
+                        'start_page' => $paperData['start_page'],
+                        'end_page' => $paperData['end_page'],
                     ]);
             }
             
@@ -286,7 +286,7 @@ class ProceedingsController extends Controller
                 'v.file_path as latest_version_path',
                 'v.version_no as latest_version'
             )
-            ->orderBy('b.page_start')
+            ->orderBy('b.start_page')
             ->get();
             
         // Get authors for each paper

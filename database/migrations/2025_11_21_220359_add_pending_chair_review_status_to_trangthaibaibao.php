@@ -14,10 +14,17 @@ return new class extends Migration
      */
     public function up()
     {
-        DB::table('TrangThaiBaiBao')->insert([
-            'status_code' => 'PENDING_CHAIR_REVIEW',
-            'status_name' => 'Chờ Chair duyệt lại'
-        ]);
+        // Check if status already exists before inserting
+        $exists = DB::table('TrangThaiBaiBao')
+            ->where('status_code', 'PENDING_CHAIR_REVIEW')
+            ->exists();
+            
+        if (!$exists) {
+            DB::table('TrangThaiBaiBao')->insert([
+                'status_code' => 'PENDING_CHAIR_REVIEW',
+                'status_name' => 'Chờ Chair duyệt lại'
+            ]);
+        }
     }
 
     /**

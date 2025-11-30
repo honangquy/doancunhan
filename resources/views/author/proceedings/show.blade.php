@@ -160,8 +160,8 @@
                         @endif
                     </td>
                     <td class="py-4 px-6">
-                        @if($paper->page_start && $paper->page_end)
-                            <span class="text-sm text-gray-600 font-mono">{{ $paper->page_start }}-{{ $paper->page_end }}</span>
+                        @if($paper->start_page && $paper->end_page)
+                            <span class="text-sm text-gray-600 font-mono">{{ $paper->start_page }}-{{ $paper->end_page }}</span>
                         @else
                             <span class="text-gray-400 text-sm">-</span>
                         @endif

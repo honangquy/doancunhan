@@ -84,14 +84,14 @@ class ProceedingsController extends Controller
                 'b.title',
                 'b.abstract',
                 'b.keywords',
-                'b.page_start',
-                'b.page_end',
+                'b.start_page',
+                'b.end_page',
                 'b.file_path',
                 'n.full_name as author_name',
                 'n.email as author_email',
                 'tb.title as track_name'
             )
-            ->orderBy('b.page_start', 'asc')
+            ->orderBy('b.start_page', 'asc')
             ->get();
 
         // Get user's published papers count in this conference  

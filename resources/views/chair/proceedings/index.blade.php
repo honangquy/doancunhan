@@ -148,8 +148,8 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                @if($paper->page_start && $paper->page_end)
-                                    {{ $paper->page_start }} - {{ $paper->page_end }}
+                                @if($paper->start_page && $paper->end_page)
+                                    {{ $paper->start_page }} - {{ $paper->end_page }}
                                 @else
                                     <span class="text-gray-400">Chưa cập nhật</span>
                                 @endif
@@ -215,13 +215,13 @@
                                         </td>
                                         <td class="px-6 py-4">
                                             <input type="number" 
-                                                   x-model="paginationData[{{ $paper->paper_id }}].page_start"
+                                                   x-model="paginationData[{{ $paper->paper_id }}].start_page"
                                                    class="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
                                                    min="1">
                                         </td>
                                         <td class="px-6 py-4">
                                             <input type="number" 
-                                                   x-model="paginationData[{{ $paper->paper_id }}].page_end"
+                                                   x-model="paginationData[{{ $paper->paper_id }}].end_page"
                                                    class="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
                                                    min="1">
                                         </td>
@@ -255,13 +255,13 @@ function proceedingsManager() {
         paginationData: @json($acceptedPapers->keyBy('paper_id')->map(function($paper) {
             return [
                 'paper_id' => $paper->paper_id,
-                'page_start' => $paper->page_start ?? 1,
-                'page_end' => $paper->page_end ?? 1
+                'start_page' => $paper->start_page ?? 1,
+                'end_page' => $paper->end_page ?? 10,
             ];
         })),
         
         get papersWithPagination() {
-            return Object.values(this.paginationData).filter(p => p.page_start && p.page_end).length;
+            return Object.values(this.paginationData).filter(p => p.start_page && p.end_page).length;
         },
         
         toggleAll(event) {
@@ -275,8 +275,8 @@ function proceedingsManager() {
         async savePagination() {
             const papers = Object.values(this.paginationData).map(p => ({
                 paper_id: p.paper_id,
-                page_start: parseInt(p.page_start),
-                page_end: parseInt(p.page_end)
+                start_page: parseInt(p.start_page),
+                end_page: parseInt(p.end_page)
             }));
             
             try {
