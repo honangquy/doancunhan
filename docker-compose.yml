@@ -50,6 +50,10 @@ services:
     image: mysql:8.0
     container_name: huit_db
     restart: unless-stopped
+    # Force MySQL to treat all table names as lowercase.
+    # This fixes the mismatch between PascalCase table creation (NguoiDung)
+    # and lowercase foreign key references (nguoidung) that breaks on Linux.
+    command: --lower-case-table-names=1
     ports:
       - "${DB_FORWARD_PORT:-3307}:3306"
     environment:
