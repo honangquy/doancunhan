@@ -16,7 +16,7 @@ class LookupTablesSeeder extends Seeder
     public function run()
     {
         // TrangThaiBaiBao
-        DB::table('TrangThaiBaiBao')->insert([
+        DB::table('TrangThaiBaiBao')->insertOrIgnore([
             ['status_code' => 'SUBMITTED', 'status_name' => 'Đã nộp'],
             ['status_code' => 'UNDER_REVIEW', 'status_name' => 'Đang phản biện'],
             ['status_code' => 'REVISION_REQUIRED', 'status_name' => 'Yêu cầu chỉnh sửa'],
