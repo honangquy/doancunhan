@@ -17,7 +17,7 @@ RUN npm run build
 # =============================================================================
 # Stage 2: PHP application
 # =============================================================================
-FROM php:8.2-fpm
+FROM php:8.3-fpm
 
 # Build args let you map host UID/GID to avoid permission issues on bind mounts.
 ARG UID=1000
