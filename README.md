@@ -138,8 +138,23 @@ qlyhoithao/
 
 ## Screenshots
 
-![Trang chủ/Dashboard Placeholder](https://via.placeholder.com/800x450?text=Dashboard+Screenshot)
-*Giao diện Dashboard thống kê Hội thảo*
+<img width="1900" height="2075" alt="fullpage (44)" src="https://github.com/user-attachments/assets/055b98d9-4b02-414c-b364-c9d9322336ba" />
 
-![Quản lý bài báo Placeholder](https://via.placeholder.com/800x450?text=Paper+Management+Screenshot)
-*Giao diện quản lý quá trình nộp và duyệt bài báo*
+*Giao diện Trang Chủ Hội thảo*
+
+<img width="1898" height="901" alt="image" src="https://github.com/user-attachments/assets/ccacd527-9056-4626-aaea-1d74d1fb4593" />
+
+*Giao diện Author Dasboard*
+
+<img width="1903" height="910" alt="image" src="https://github.com/user-attachments/assets/c797cf52-96d6-4490-bf5c-7bbe2a8b227b" />
+
+*Giao diện Chair Dasboard*
+
+<img width="1897" height="908" alt="image" src="https://github.com/user-attachments/assets/f9dc2acb-9db8-4c9f-9d8c-64d097c1e74a" />
+
+*Giao diện Reviewer Dasboard*
+
+<img width="1895" height="908" alt="image" src="https://github.com/user-attachments/assets/4d4e0a91-290d-4522-b997-816f5f1fe0ff" />
+
+*Giao diện Admin Dasboard*
+
