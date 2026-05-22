@@ -135,6 +135,12 @@ class BackupController extends Controller
                 }
             }
 
+            // Verify mysqldump exists
+            exec("{$mysqldumpPath} --version 2>&1", $versionOutput, $versionReturn);
+            if ($versionReturn !== 0) {
+                throw new \Exception("Không tìm thấy công cụ mysqldump. Vui lòng cài đặt mysql-client trên server.");
+            }
+
             // Build command with proper password handling
             if (empty($dbPassword)) {
                 $command = "\"{$mysqldumpPath}\" --user=\"{$dbUser}\" --host=\"{$dbHost}\" --port=\"{$dbPort}\" \"{$dbName}\" > \"{$path}\" 2>&1";
@@ -224,6 +230,12 @@ class BackupController extends Controller
                 }
             }
 
+            // Verify mysql client exists before wiping
+            exec("{$mysqlPath} --version 2>&1", $versionOutput, $versionReturn);
+            if ($versionReturn !== 0) {
+                throw new \Exception("Không tìm thấy công cụ mysql client. Vui lòng cài đặt mysql-client trên server.");
+            }
+
             // Build command with proper password handling
             if (empty($dbPassword)) {
                 $command = "\"{$mysqlPath}\" --user=\"{$dbUser}\" --host=\"{$dbHost}\" --port=\"{$dbPort}\" \"{$dbName}\" < \"{$path}\" 2>&1";
@@ -289,6 +301,12 @@ class BackupController extends Controller
                 if (!file_exists($mysqlPath)) {
                     $mysqlPath = 'mysql';
                 }
+            }
+
+            // Verify mysql client exists before wiping
+            exec("{$mysqlPath} --version 2>&1", $versionOutput, $versionReturn);
+            if ($versionReturn !== 0) {
+                throw new \Exception("Không tìm thấy công cụ mysql client. Vui lòng cài đặt mysql-client trên server.");
             }
 
             // Build command with proper password handling
