@@ -19,8 +19,9 @@ jobs:
             set -e
 
             # --- Configuration ---------------------------------------------------
-            PROJECT_DIR="/var/www/qlyhoithao"   # <-- Sửa nếu đường dẫn khác
-            COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml"
+            PROJECT_DIR="/var/www/qlyhoithao"
+            # ĐÃ SỬA: Xóa đoạn "-f docker-compose.prod.yml" vì bạn chỉ dùng 1 file docker-compose.yml
+            COMPOSE_FILES="-f docker-compose.yml"
 
             echo "========================================"
             echo "  Deploying HUIT Conferences"
@@ -45,7 +46,9 @@ jobs:
             # 4. Wait for app container to be healthy, then clear caches
             echo "[4/5] Clearing old caches..."
             sleep 10
-            docker exec huit_app php artisan optimize:clear
+            
+            # ĐÃ SỬA: Đổi tên container từ huit_app thành laravel_app cho đúng với thực tế
+            docker exec laravel_app php artisan optimize:clear
 
             # 5. Cleanup unused Docker images
             echo "[5/5] Cleaning up old images..."
