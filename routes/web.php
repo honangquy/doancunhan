@@ -1084,6 +1084,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/settings', [\App\Http\Controllers\Admin\BackupController::class, 'index'])->name('settings.index');
         Route::post('/settings/update', [\App\Http\Controllers\Admin\BackupController::class, 'updateSettings'])->name('settings.update');
         Route::post('/settings/backup', [\App\Http\Controllers\Admin\BackupController::class, 'create'])->name('settings.backup.create');
+        Route::post('/settings/backup/upload', [\App\Http\Controllers\Admin\BackupController::class, 'restoreUpload'])->name('settings.backup.upload');
         Route::get('/settings/backup/{filename}/download', [\App\Http\Controllers\Admin\BackupController::class, 'download'])->name('settings.backup.download');
         Route::delete('/settings/backup/{filename}', [\App\Http\Controllers\Admin\BackupController::class, 'delete'])->name('settings.backup.delete');
         Route::post('/settings/backup/{filename}/restore', [\App\Http\Controllers\Admin\BackupController::class, 'restore'])->name('settings.backup.restore');

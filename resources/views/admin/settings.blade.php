@@ -61,14 +61,32 @@
 
     <!-- Tab Content: Backup & Restore -->
     <div x-show="activeTab === 'backup'" class="space-y-6">
-        <div class="flex justify-end">
-            <button @click="showPasswordModal = true; modalAction = '{{ route('admin.settings.backup.create') }}'; modalTitle = 'Xác nhận tạo bản sao lưu'; modalDescription = 'Vui lòng nhập mật khẩu để xác nhận tạo bản sao lưu mới.';" 
-                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Tạo bản sao lưu mới
-            </button>
+        <div class="flex justify-end space-x-4">
+            <form action="{{ route('admin.settings.backup.upload') }}" method="POST" enctype="multipart/form-data" class="flex items-center">
+                @csrf
+                <input type="file" name="sql_file" accept=".sql" required class="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-green-50 file:text-green-700
+                    hover:file:bg-green-100">
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium flex items-center whitespace-nowrap ml-2" onclick="return confirm('CẢNH BÁO: Dữ liệu hiện tại sẽ bị ghi đè bởi file SQL này. Bạn có chắc chắn?');">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>
+                    Phục hồi từ File
+                </button>
+            </form>
+
+            <form action="{{ route('admin.settings.backup.create') }}" method="POST" class="inline-block">
+                @csrf
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium flex items-center whitespace-nowrap">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Tạo bản sao lưu mới
+                </button>
+            </form>
         </div>
 
         <div class="bg-white rounded-lg shadow overflow-hidden">
