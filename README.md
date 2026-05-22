@@ -1,4 +1,4 @@
-<img width="1903" height="910" alt="image" src="https://github.com/user-attachments/assets/82a3ea25-721e-410c-8400-f344eb79424b" /># HUIT Conferences (Hệ thống Quản lý Hội thảo)
+# HUIT Conferences (Hệ thống Quản lý Hội thảo)
 
 ![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
