@@ -47,8 +47,8 @@ jobs:
             echo "[4/5] Clearing old caches..."
             sleep 10
             
-            # ĐÃ SỬA: Đổi tên container từ huit_app thành laravel_app cho đúng với thực tế
-            docker exec laravel_app php artisan optimize:clear
+            # Sửa laravel_app thành huit_app ở dòng dưới đây:
+            docker exec huit_app php artisan optimize:clear
 
             # 5. Cleanup unused Docker images
             echo "[5/5] Cleaning up old images..."
