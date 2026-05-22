@@ -1,3 +1,22 @@
+# =============================================================================
+# Stage 1: Build frontend assets (Vite + Tailwind CSS)
+# =============================================================================
+FROM node:18-alpine AS frontend
+
+WORKDIR /build
+
+# Copy only package files first to leverage Docker layer caching.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy frontend source files and build.
+COPY vite.config.js tailwind.config.js postcss.config.js ./
+COPY resources/ resources/
+RUN npm run build
+
+# =============================================================================
+# Stage 2: PHP application
+# =============================================================================
 FROM php:8.2-fpm
 
 # Build args let you map host UID/GID to avoid permission issues on bind mounts.
@@ -44,6 +63,24 @@ RUN groupadd -g ${GID} laravel \
     && sed -ri 's/^listen.group = www-data/listen.group = laravel/' /usr/local/etc/php-fpm.d/www.conf
 
 WORKDIR /var/www
+
+# Copy composer files first to leverage Docker layer caching for dependencies.
+COPY composer.json composer.lock ./
+RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
+
+# Copy the rest of the application source code.
+COPY . .
+
+# Run post-install scripts now that full source is available.
+RUN composer run-script post-autoload-dump
+
+# Copy built frontend assets from Stage 1.
+COPY --from=frontend /build/public/build public/build
+
+# Ensure runtime directories exist and have correct ownership.
+RUN mkdir -p storage/framework/{sessions,views,cache} bootstrap/cache \
+    && chown -R laravel:laravel storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 # App startup script: fix permissions and run migrations before PHP-FPM starts.
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh

@@ -1,0 +1,36 @@
+# docker-compose.prod.yml
+# Production overrides - use with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Key differences from development:
+#   - App container uses the baked-in source from the Docker image (no bind-mount)
+#   - Web container only mounts the built image, not host source
+#   - DB and Redis ports are NOT exposed to the host (only reachable inside the network)
+#   - Storage volume is persisted separately so uploads survive rebuilds
+
+
+services:
+  app:
+    volumes:
+      # Override: remove the bind-mount of host source.
+      # Only persist storage/ so file uploads survive container rebuilds.
+      - huit_storage:/var/www/storage
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+
+  web:
+    volumes:
+      # Override: remove the bind-mount of host source, only keep nginx config.
+      - ./docker/nginx/app.conf:/etc/nginx/conf.d/default.conf:ro
+    # In production, web container shares the built source from the app image
+    # via the Docker network (PHP-FPM). Static files are served from the image.
+
+  db:
+    ports: []   # Do NOT expose MySQL to the host in production.
+
+  redis:
+    ports: []   # Do NOT expose Redis to the host in production.
+
+volumes:
+  huit_storage:

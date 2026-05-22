@@ -16,3 +16,5 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+.laravel_vps_deployment_guide.md
+.DEPLOYMENT.md

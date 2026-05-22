@@ -1,0 +1,47 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Dependencies (will be installed inside the container)
+/node_modules
+/vendor
+
+# IDE / Editor
+.idea
+.vscode
+.fleet
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment (production .env is created directly on VPS)
+.env
+.env.backup
+.env.production
+
+# Testing
+/tests
+phpunit.xml
+.phpunit.result.cache
+
+# Documentation
+*.md
+LICENSE
+docs/
+
+# Docker (avoid recursive copy)
+docker-compose*.yml
+Dockerfile
+
+# Build output
+/public/build
+/public/hot
+
+# Misc
+/storage/*.key
+npm-debug.log
+yarn-error.log
